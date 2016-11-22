@@ -1,0 +1,35 @@
+This code was developed in the Billinge Group at Columbia University.
+The main developers are
+
+    Christopher J. Wright (CJ-Wright)
+
+with significant inputs from
+
+    Simon J. L. Billinge
+    Timothy Liu
+    Daniel Allen
+    Tom Caswell
+
+Contributions and extensive testing of the code was carried out by current
+members of the Billinge group and XPD beamline staff, notably (alphabetical by first name)
+
+    Emil Bozin
+    Max Terban
+    Neno Fuller
+    Pavol Juhas
+    Sanjit Ghose
+    Simon Billinge
+    Soham Banerjee
+    Timothy Liu
+
+Please see the header of each source file for a detailed list of
+contributors.  This is an open-source project and we hope and expect
+that the list of contributors will expand with time.  Many thanks to
+all current and future contributors!
+
+For more information email sb2896@columbia.edu
+
+Acknowledgments:
+
+We are truly grateful to all the people who have contributed, in all
+different ways:
