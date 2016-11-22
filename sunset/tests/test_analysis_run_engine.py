@@ -1,7 +1,7 @@
 import numpy as np
 from pprint import pprint
 
-from xpdan.analysis_run_engine import AnalysisRunEngine, RunFunction
+from ..analysis_run_engine import AnalysisRunEngine, RunFunction
 
 
 def example_run_func(event_stream1, event_stream2, name):
@@ -9,13 +9,16 @@ def example_run_func(event_stream1, event_stream2, name):
         yield e1['data'][name] - e2['data'][name]
 
 
-def test_analysis_run_engine(exp_db, an_db, mk_glbl):
+def test_analysis_run_engine(exp_db, tmp_dir):
     subtract = RunFunction(example_run_func, ['img'],
                            [dict(source='testing',
                                  external='FILESTORE:',
                                  dtype='array')], save_func=np.save,
-                           save_loc=mk_glbl.base)
-    are = AnalysisRunEngine(exp_db, an_db)
+                           save_loc=tmp_dir)
+    are = AnalysisRunEngine(exp_db)
+    run_hdrs = exp_db[-1]
     uid = are([exp_db[-1], exp_db[-1]], subtract, 'pe1_image')
-    pprint(an_db[uid])
-    assert an_db[uid]['stop']['exit_status'] != 'failure'
+    pprint(exp_db[uid])
+    assert exp_db[uid]['stop']['exit_status'] != 'failure'
+    assert len(list(exp_db.get_events(exp_db[uid]))) == len(list(
+        exp_db.get_events(run_hdrs)))
