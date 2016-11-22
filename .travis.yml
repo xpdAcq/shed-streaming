@@ -48,14 +48,14 @@ before_install:
 
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
-  - conda create --yes -n testenv numpy scipy nose python=$TRAVIS_PYTHON_VERSION scipy jsonschema traitlets pytest coverage pip databroker ophyd historydict boltons doct pyepics super_state_machine xray-vision lmfit jinja2 icu pyzmq mongoquery mock xlrd scikit-beam -c lightsource2 -c conda-forge -c soft-matter
+  - conda create --yes -n testenv numpy scipy nose python=$TRAVIS_PYTHON_VERSION scipy jsonschema pytest coverage pip databroker historydict boltons doct super_state_machine lmfit jinja2 icu pyzmq mongoquery -c lightsource2 -c conda-forge -c soft-matter
   - source activate testenv
   - 'pip install python-coveralls'
   - 'pip install https://github.com/NSLS-II/event-model/zipball/master#egg=event_model'
-#  - conda remove metadatastore databroker filestore --yes
-#  - 'pip install https://github.com/NSLS-II/databroker/zipball/master#egg=databroker'
-#  - 'pip install https://github.com/NSLS-II/filestore/zipball/master#egg=filestore'
-#  - 'pip install https://github.com/NSLS-II/metadatastore/zipball/master#egg=metadatastore'
+  - conda remove metadatastore databroker filestore --yes
+  - 'pip install https://github.com/NSLS-II/databroker/zipball/master#egg=databroker'
+  - 'pip install https://github.com/NSLS-II/filestore/zipball/master#egg=filestore'
+  - 'pip install https://github.com/NSLS-II/metadatastore/zipball/master#egg=metadatastore'
   - 'pip install https://github.com/NSLS-II/portable-mds/zipball/master#egg=portable_mds'
   - 'pip install https://github.com/NSLS-II/portable-fs/zipball/master#egg=portable_fs'
   - 'pip install https://github.com/NSLS-II/bluesky/zipball/master#egg=bluesky'
@@ -66,7 +66,7 @@ install:
   - python -c "from filestore import utils, conf; utils.install_sentinels(conf.connection_config, 1)"
   # make sure the sqlite file exists to avoid race conditions
   - python -c "from bluesky.utils import get_history; get_history()"
-  - pip install codecov flake8 pyFAI pytest-env
+  - pip install codecov flake8 pytest-env
   - git clean -xfd
 
 script:

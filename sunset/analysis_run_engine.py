@@ -9,9 +9,12 @@ class AnalysisRunEngine:
     def __init__(self, input_dbs, analysis_db):
         self.input_dbs = input_dbs
         self.an_db = analysis_db
+        # TODO: create DB registry which tracks the input DBs such that we
+        # connect to the correct dbs for each header, also store db instances
+        # so we don't keep making new connections
 
     def __call__(self, hdrs, run_function, *args, md=None,
-                 subscription=[], **kwargs):
+                 subscription=(), **kwargs):
         if not isinstance(hdrs, list):
             hdrs = [hdrs]
         # issue run start
@@ -72,12 +75,14 @@ class RunFunction:
                  save_loc=None,
                  spec=None, resource_kwargs={}, datum_kwargs={},
                  save_kwargs={}, save_to_filestore=True):
+        # TODO: Need to store function location and other things needed to
+        # rehydrate it.
         self.function = function
         self.data_names = data_names
         self.data_sub_keys = data_sub_keys
         if not hasattr(save_func, '__iter__'):
             save_func = [save_func]
-        self.save_func = save_func
+        self.save_fun1c = save_func
         self.save_loc = save_loc
         self.spec = spec
         self.resource_kwargs = resource_kwargs
@@ -113,3 +118,8 @@ class RunFunction:
                     else:
                         returns.append(s(b))
             yield returns, output
+
+    def _to_dict(self):
+        # TODO: Report needed inputs as a dict, such that we can rehydrate the
+        # object
+        pass
