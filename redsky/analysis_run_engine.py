@@ -18,6 +18,27 @@ class AnalysisRunEngine:
 
     def __call__(self, hdrs, run_function, *args, md=None,
                  subscription=(), **kwargs):
+        """Run the analysis
+
+        Parameters
+        ----------
+        hdrs: header or list of headers
+            The data to be handed to the RunFunction
+        run_function: RunFunction instance
+            The RunFunction to process the data
+        args: args, optional
+            Arguments to be passed to the RunFunction call
+        md: dict, optional
+            Metadata to be added to the analysis header
+        subscription: iterable of functions, optional
+            Call back function to run on the processed data
+        kwargs: kwargs, optional
+            Key word arguments passed to the RunFunction call
+
+        Returns
+        -------
+
+        """
         if not isinstance(hdrs, list):
             hdrs = [hdrs]
         # issue run start
@@ -46,7 +67,6 @@ class AnalysisRunEngine:
         try:
             rf = run_function(event_streams, *args, fs=self.an_db.fs, **kwargs)
             for i, (res, data) in enumerate(rf):
-                print(res, data)
                 self.an_db.mds.insert_event(
                     descriptor=descriptor,
                     uid=str(uuid4()),
@@ -61,6 +81,7 @@ class AnalysisRunEngine:
             print(e)
             # Just for testing
             print(traceback.format_exc())
+
             # Analysis failed!
             exit_md['exit_status'] = 'failure'
             exit_md['reason'] = repr(e)
@@ -73,15 +94,41 @@ class AnalysisRunEngine:
 
 
 class RunFunction:
-    def __init__(self, function, data_names, data_sub_keys, save_func=None,
+    def __init__(self, function, data_names, descriptors, save_func=None,
                  save_loc=None,
                  spec=None, resource_kwargs={}, datum_kwargs={},
                  save_kwargs={}, save_to_filestore=True):
+        """Initialize a RunFunction
+
+        Parameters
+        ----------
+        function: generator
+            The generator which takes in event streams and processes them
+        data_names: list of str
+            The names for each piece data that comes out of the function
+        descriptors: list of dicts
+            The data descriptor
+        save_func: function or None, optional
+            Function to save the resulting data to disk. If None data is not
+            saved to disk.
+        save_loc: str, optional
+            Path to the directory where the files are to be saved
+        spec: list of str or str, optional
+            Filestore spec, defaults to None
+        resource_kwargs: dict, optional
+            Keyword arguments passed to insert_resource, defaults to {}
+        datum_kwargs: dict, optional
+            Keyword arguments passed to insert_datum, defaults to {}
+        save_kwargs: dict, optional
+            Keyword arguments passed to the save function
+        save_to_filestore: bool
+            The
+        """
         # TODO: Need to store function location and other things needed to
         # rehydrate it.
         self.function = function
         self.data_names = data_names
-        self.data_sub_keys = data_sub_keys
+        self.data_sub_keys = descriptors
         if not hasattr(save_func, '__iter__'):
             save_func = [save_func]
         self.save_func = save_func
