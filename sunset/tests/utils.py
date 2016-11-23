@@ -59,10 +59,10 @@ def insert_imgs(mds, fs, n, shape, save_dir=tempfile.mkdtemp()):
     sc_dk_field_uid = str(uuid4())
     run_start = mds.insert_run_start(uid=sc_dk_field_uid, time=time.time(),
                                      name='test-dark',
-                                     dark_frame=True,)
+                                     dark_frame=True, )
     data_keys = {
         'pe1_image': dict(source='testing', external='FILESTORE:',
-                    dtype='array')}
+                          dtype='array')}
     data_hdr = dict(run_start=run_start,
                     data_keys=data_keys,
                     time=time.time(), uid=str(uuid4()))

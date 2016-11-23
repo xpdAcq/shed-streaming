@@ -1,6 +1,6 @@
 [run]
 source = 
-    xpdan
+    redsky
 [report]
 omit =
     */python?.?/*
