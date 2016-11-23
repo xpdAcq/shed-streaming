@@ -30,7 +30,7 @@ def img_size():
 
 @pytest.fixture(params=[
     # 'sqlite',
-    'mongo'], scope='module')
+    'mongo'], scope='function')
 def db(request):
     param_map = {
         # 'sqlite': build_sqlite_backed_broker,
@@ -39,27 +39,12 @@ def db(request):
     return param_map[request.param](request)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def exp_db(db, tmp_dir, img_size):
     db2 = db
     mds = db2.mds
     fs = db2.fs
     insert_imgs(mds, fs, 5, img_size, tmp_dir)
-    yield db2
-    print("DROPPING MDS")
-    mds._connection.drop_database(mds.config['database'])
-    print("DROPPING FS")
-    fs._connection.drop_database(fs.config['database'])
-    if os.path.exists(tmp_dir):
-        print('removing {}'.format(tmp_dir))
-        shutil.rmtree(tmp_dir)
-
-
-@pytest.fixture(scope='module')
-def an_db(db):
-    db2 = db
-    mds = db2.mds
-    fs = db2.fs
     yield db2
     print("DROPPING MDS")
     mds._connection.drop_database(mds.config['database'])
