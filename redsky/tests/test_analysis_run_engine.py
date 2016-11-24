@@ -30,14 +30,13 @@ def test_analysis_run_engine(exp_db, tmp_dir):
                            )
     are = AnalysisRunEngine(exp_db)
     run_hdrs = exp_db[-1]
-    uid = are([run_hdrs] * 2, subtract, 'pe1_image')
+    uid = are([run_hdrs] * 2, subtract, 'pe1_image', subscription=print)
     result_header = exp_db[uid]
     pprint(result_header)
     assert result_header['stop']['exit_status'] != 'failure'
     assert len(list(exp_db.get_events(result_header))) == len(list(
         exp_db.get_events(run_hdrs)))
     for res in exp_db.get_events(result_header, fill=True):
-        print(res)
         img = res['data']['img']
         assert_array_equal(img, np.zeros(img.shape))
 
