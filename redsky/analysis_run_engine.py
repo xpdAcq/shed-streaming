@@ -45,8 +45,8 @@ class AnalysisRunEngine:
         run_start_uid = self.an_db.mds.insert_run_start(
             uid=str(uuid4()), time=time.time(),
             parents=[hdr['start']['uid'] for hdr in hdrs],
-            provenance={'function_name': run_function.__name__,
-                        'args': args,
+            function_name=run_function.__name__,
+            provenance={'args': args,
                         'kwargs': kwargs,
                         'conda_env': str(subprocess.check_output(
                             ['conda', 'list', '-e']).decode())})
