@@ -75,5 +75,5 @@ def test_analysis_run_engine_fail(exp_db, tmp_dir):
     assert result_header['stop']['exit_status'] == 'failure'
     assert len(list(exp_db.get_events(result_header))) != len(list(
         exp_db.get_events(run_hdrs)))
-    assert result_header['stop']['reason'] == \
-           "NotImplementedError('Known Error',)"
+    assert result_header['stop']['reason'] == "NotImplementedError('" \
+                                              "Known Error',)"
