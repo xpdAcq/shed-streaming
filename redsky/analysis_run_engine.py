@@ -151,8 +151,10 @@ class RunFunction:
             returns = []
             # For each of the outputs save them to filestore, maybe
             if not isinstance(output, (tuple, list)):
-                output = [output]
-            for b, s in zip(output, self.save_func):
+                op = [output]
+            else:
+                op = output
+            for b, s in zip(op, self.save_func):
                 print(b.shape)
                 if self.save_to_filestore:
                     uid = str(uuid4())
