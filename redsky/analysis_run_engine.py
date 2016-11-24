@@ -95,7 +95,7 @@ class AnalysisRunEngine:
 
 class RunFunction:
     def __init__(self, function, data_names, descriptors, save_func=None,
-                 save_loc=None,
+                 save_loc=None, ext=None,
                  spec=None, resource_kwargs={}, datum_kwargs={},
                  save_kwargs={}, save_to_filestore=True):
         """Initialize a RunFunction
@@ -126,6 +126,7 @@ class RunFunction:
         """
         # TODO: Need to store function location and other things needed to
         # rehydrate it.
+        self.ext = ext
         self.function = function
         self.data_names = data_names
         self.data_sub_keys = descriptors
@@ -149,11 +150,14 @@ class RunFunction:
         for output in gen:
             returns = []
             # For each of the outputs save them to filestore, maybe
+            if not isinstance(output, (tuple, list)):
+                output = [output]
             for b, s in zip(output, self.save_func):
+                print(b.shape)
                 if self.save_to_filestore:
                     uid = str(uuid4())
                     # make save name
-                    save_name = self.save_loc + uid
+                    save_name = self.save_loc + uid + self.ext
                     # Save using the save function
                     s(save_name, b)
                     # Insert into FS
@@ -161,7 +165,7 @@ class RunFunction:
                     fs_res = fs.insert_resource(self.spec, save_name,
                                                 self.resource_kwargs)
                     fs.insert_datum(fs_res, uid, self.datum_kwargs)
-                    returns.append(fs_res)
+                    returns.append(uid)
                 else:
                     if s is None:
                         returns.append(b)
