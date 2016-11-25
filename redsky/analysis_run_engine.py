@@ -55,18 +55,20 @@ class AnalysisRunEngine:
         # The function fails unless it runs to completion
         exit_md = {'exit_status': 'failure'}
 
-        data_names, data_keys = run_function.describe()
-        data_hdr = dict(run_start=run_start_uid,
-                        data_keys=data_keys,
-                        time=time.time(),
-                        uid=str(uuid4()))
-        descriptor = self.an_db.mds.insert_descriptor(**data_hdr)
+        descriptor = None
         if not hasattr(subscription, '__iter__') and subscription is not None:
             subscription = [subscription]
         event_streams = [self.an_db.get_events(hdr, fill=True) for hdr in hdrs]
         # run the analysis function
         try:
             rf = run_function(event_streams, *args, fs=self.an_db.fs, **kwargs)
+            if descriptor is None:
+                data_names, data_keys = run_function.describe()
+                data_hdr = dict(run_start=run_start_uid,
+                                data_keys=data_keys,
+                                time=time.time(),
+                                uid=str(uuid4()))
+                descriptor = self.an_db.mds.insert_descriptor(**data_hdr)
             for i, (res, data) in enumerate(rf):
                 self.an_db.mds.insert_event(
                     descriptor=descriptor,
