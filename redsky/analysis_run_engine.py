@@ -16,7 +16,7 @@ class AnalysisRunEngine:
         """
         self.an_db = analysis_db
 
-    def __call__(self, hdrs, run_function, *args, md=None,
+    def __call__(self, hdrs, run_function, *args, md={},
                  subscription=(), **kwargs):
         """Run the analysis
 
