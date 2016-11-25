@@ -131,7 +131,7 @@ class RunFunction:
         self.data_names = data_names
         self.data_sub_keys = descriptors
         if not hasattr(save_func, '__iter__'):
-            save_func = [save_func]
+            save_func = [save_func] * len(data_names)
         self.save_func = save_func
         self.save_loc = save_loc
         self.spec = spec
@@ -155,7 +155,6 @@ class RunFunction:
             else:
                 op = output
             for b, s in zip(op, self.save_func):
-                print(b.shape)
                 if self.save_to_filestore:
                     uid = str(uuid4())
                     # make save name
@@ -168,11 +167,10 @@ class RunFunction:
                                                 self.resource_kwargs)
                     fs.insert_datum(fs_res, uid, self.datum_kwargs)
                     returns.append(uid)
+                elif s:
+                    returns.append(s(b))
                 else:
-                    if s is None:
-                        returns.append(b)
-                    else:
-                        returns.append(s(b))
+                    returns = list(op)
             yield returns, output
 
     def _to_dict(self):
