@@ -172,8 +172,3 @@ class RunFunction:
                 else:
                     returns = list(op)
             yield returns, output
-
-    def _to_dict(self):
-        # TODO: Report needed inputs as a dict, such that we can rehydrate the
-        # object
-        pass
