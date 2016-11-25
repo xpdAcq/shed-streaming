@@ -49,7 +49,8 @@ class AnalysisRunEngine:
             provenance={'args': args,
                         'kwargs': kwargs,
                         'conda_env': str(subprocess.check_output(
-                            ['conda', 'list', '-e']).decode())})
+                            ['conda', 'list', '-e']).decode())},
+            **md)
 
         # The function fails unless it runs to completion
         exit_md = {'exit_status': 'failure'}
