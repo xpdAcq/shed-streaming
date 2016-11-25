@@ -29,6 +29,7 @@ def example_one_dim_sum(event_stream1, name):
     for e1 in event_stream1:
         yield np.sum(e1['data'][name], axis=1)
 
+
 subtract = RunFunction(example_run_func, ['img'],
                        [dict(source='testing',
                              external='FILESTORE:',
@@ -83,8 +84,9 @@ def test_analysis_run_engine_two_hdr(exp_db, tmp_dir, r_f, expect_func):
 
 @pytest.mark.parametrize("r_f, expect_func, name", [(two_times,
                                                      lambda x: x * 2, 'img'),
-                                              (flat, lambda x: list(
-                                                  np.sum(x, axis=1)), 'flat')])
+                                                    (flat, lambda x: list(
+                                                        np.sum(x, axis=1)),
+                                                     'flat')])
 def test_analysis_run_engine_one_hdr(exp_db, tmp_dir, r_f, expect_func, name):
     r_f.save_loc = tmp_dir
     are = AnalysisRunEngine(exp_db)
@@ -96,7 +98,7 @@ def test_analysis_run_engine_one_hdr(exp_db, tmp_dir, r_f, expect_func, name):
     assert len(list(exp_db.get_events(result_header))) == len(list(
         exp_db.get_events(run_hdrs)))
     for ev1, img2 in zip(exp_db.get_events(result_header, fill=True),
-                          exp_db.get_images(run_hdrs, 'pe1_image')):
+                         exp_db.get_images(run_hdrs, 'pe1_image')):
         img1 = ev1['data'][name]
         assert_array_equal(img1, expect_func(img2))
 
