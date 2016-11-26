@@ -104,7 +104,7 @@ class RunFunction:
     def __init__(self, function, data_names, descriptors, save_func=None,
                  save_loc=None, ext=None,
                  spec=None, resource_kwargs={}, datum_kwargs={},
-                 save_kwargs={}, save_to_filestore=True, fill=True):
+                 save_kwargs={}, save_to_filestore=True, fill=[True]):
         """Initialize a RunFunction
 
         Parameters
