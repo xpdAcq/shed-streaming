@@ -7,7 +7,7 @@ timestamp
 
 
 class CollectionGen(RunFunction):
-    def __init__(self, function, fill=(False)):
+    def __init__(self, function, fill=[False]):
         super().__init__(function, [None], [None], save_to_filestore=False,
                          fill=fill)
 
