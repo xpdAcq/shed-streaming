@@ -58,18 +58,19 @@ class AnalysisRunEngine:
         descriptor = None
         if not hasattr(subscription, '__iter__') and subscription is not None:
             subscription = [subscription]
-        event_streams = [self.an_db.get_events(hdr, fill=True) for hdr in hdrs]
+        event_streams = [self.an_db.get_events(hdr, fill=f) for hdr, f in zip(
+            hdrs, run_function.fill)]
         # run the analysis function
         try:
             rf = run_function(event_streams, *args, fs=self.an_db.fs, **kwargs)
-            if descriptor is None:
-                data_names, data_keys = run_function.describe()
-                data_hdr = dict(run_start=run_start_uid,
-                                data_keys=data_keys,
-                                time=time.time(),
-                                uid=str(uuid4()))
-                descriptor = self.an_db.mds.insert_descriptor(**data_hdr)
             for i, (res, data) in enumerate(rf):
+                if descriptor is None:
+                    data_names, data_keys = run_function.describe()
+                    data_hdr = dict(run_start=run_start_uid,
+                                    data_keys=data_keys,
+                                    time=time.time(),
+                                    uid=str(uuid4()))
+                    descriptor = self.an_db.mds.insert_descriptor(**data_hdr)
                 self.an_db.mds.insert_event(
                     descriptor=descriptor,
                     uid=str(uuid4()),
@@ -100,7 +101,7 @@ class RunFunction:
     def __init__(self, function, data_names, descriptors, save_func=None,
                  save_loc=None, ext=None,
                  spec=None, resource_kwargs={}, datum_kwargs={},
-                 save_kwargs={}, save_to_filestore=True):
+                 save_kwargs={}, save_to_filestore=True, fill=True):
         """Initialize a RunFunction
 
         Parameters
@@ -143,6 +144,7 @@ class RunFunction:
         self.save_kwargs = save_kwargs
         self.save_to_filestore = save_to_filestore
         self.__name__ = function.__name__
+        self.fill = fill
 
     def describe(self):
         data_keys = {k: v for k, v in zip(self.data_names, self.data_sub_keys)}

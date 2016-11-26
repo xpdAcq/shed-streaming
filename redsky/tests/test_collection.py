@@ -12,11 +12,20 @@ def evens(event_stream):
         if i % 2 == 0:
             yield event
 
+
 collect_even = CollectionGen(evens)
 
 
-@pytest.mark.parametrize("r_f, expect_func", [collect_even])
-def test_analysis_run_engine_one_hdr(exp_db, r_f):
+def upper_threshold(es1, es2, name, thresh):
+    for e1, e2 in zip(es1, es2):
+        if np.mean(e2['data'][name]) >= thresh:
+            yield e1
+
+collect_thresh = CollectionGen(upper_threshold, fill=[False, True])
+
+
+@pytest.mark.parametrize("r_f, r_g", [(collect_even, evens)])
+def test_collection_one_hdr(exp_db, r_f, r_g):
     are = AnalysisRunEngine(exp_db)
     run_hdrs = exp_db[-1]
 
@@ -26,5 +35,22 @@ def test_analysis_run_engine_one_hdr(exp_db, r_f):
     pprint(result_header)
     assert result_header['stop']['exit_status'] != 'failure'
     for ev1, ev2 in zip(exp_db.get_events(result_header),
-                         evens(exp_db.get_events(run_hdrs))):
+                        r_g(exp_db.get_events(run_hdrs))):
+        assert ev1['data'].items() == ev2['data'].items()
+
+
+@pytest.mark.parametrize("r_f, r_g", [(collect_thresh, upper_threshold)])
+def test_collection_two_hdr(exp_db, r_f, r_g):
+    are = AnalysisRunEngine(exp_db)
+    run_hdrs = [exp_db[-1]] * 2
+
+    uid = are(run_hdrs, r_f, 'pe1_image', .5)
+    result_header = exp_db[uid]
+
+    pprint(result_header)
+    assert result_header['stop']['exit_status'] != 'failure'
+    for ev1, ev2 in zip(exp_db.get_events(result_header),
+                        r_g(exp_db.get_events(run_hdrs),
+                            exp_db.get_events(run_hdrs, fill=True),
+                            'pe1_image', .5)):
         assert ev1['data'].items() == ev2['data'].items()
