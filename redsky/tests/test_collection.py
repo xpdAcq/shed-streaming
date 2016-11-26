@@ -20,6 +20,7 @@ def upper_threshold(es1, es2, name, thresh):
         if np.mean(e2['data'][name]) >= thresh:
             yield e1
 
+
 collect_thresh = CollectionGen(upper_threshold, fill=[False, True])
 
 
@@ -27,6 +28,7 @@ def combine(*event_stream_list):
     for event_stream in event_stream_list:
         for event in event_stream:
             yield event
+
 
 collect_combine = CollectionGen(combine, fill=[False])
 
