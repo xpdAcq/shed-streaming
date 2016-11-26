@@ -58,8 +58,11 @@ class AnalysisRunEngine:
         descriptor = None
         if not hasattr(subscription, '__iter__') and subscription is not None:
             subscription = [subscription]
+        fill = run_function.fill
+        if len(fill) != len(hdrs) and len(fill) == 1:
+            fill *= len(hdrs)
         event_streams = [self.an_db.get_events(hdr, fill=f) for hdr, f in zip(
-            hdrs, run_function.fill)]
+            hdrs, fill)]
         # run the analysis function
         try:
             rf = run_function(event_streams, *args, fs=self.an_db.fs, **kwargs)
