@@ -6,4 +6,4 @@ exclude =
     old,
     build,
     dist
-max-complexity = 10
+max-complexity = 12

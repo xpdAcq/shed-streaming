@@ -77,7 +77,7 @@ def test_collection(exp_db):
                          'kwargs': kwargs}  # More provenance to be defined
         yield 'start', new_start_doc
         _, descriptor = next(name_doc_stream_pair)
-        new_descriptor = {'data_keys':descriptor['data_keys']}
+        new_descriptor = {'data_keys': descriptor['data_keys']}
         yield 'descriptor', new_descriptor
         exit_md = None
         for i, (name, ev) in enumerate(name_doc_stream_pair):
