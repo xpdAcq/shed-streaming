@@ -3,11 +3,6 @@ from uuid import uuid4
 import os
 from time import time
 
-doc_name_save_func_mapping = {'start', 'insert_run_start',
-                              'descriptor', 'insert_descriptor',
-                              'event', 'insert_event',
-                              'stop', 'insert_run_stop'}
-
 
 def db_store(db, fs_data_name_save_map=None):
     if fs_data_name_save_map is None:
@@ -18,19 +13,18 @@ def db_store(db, fs_data_name_save_map=None):
             gen = f(*args, **kwargs)
             for name, doc in gen:
                 if name == 'start':
-                    doc.update(uid=str(uuid4()), time=time())
-                    run_start_uid = db.mds.insert_run_start(**doc)
+                    db.mds.insert_run_start(**doc)
                 elif name == 'descriptor':
+                    fs_doc = doc.copy()
                     # Mutate the doc here to handle filestore
                     for data_name in fs_data_name_save_map:
-                        doc['data_keys'][data_name].update(
+                        fs_doc['data_keys'][data_name].update(
                             external='FILESTORE:',
                             dtype='array')
-                    doc.update(uid=str(uuid4()), time=time(),
-                               run_start=run_start_uid)
-                    db.mds.insert_descriptor(**doc)
+                    db.mds.insert_descriptor(**fs_doc)
                 elif name == 'event':
                     fs_doc = doc.copy()
+                    # Mutate the doc here to handle filestore
                     for data_name, sub_dict in fs_data_name_save_map.items():
                         uid = str(uuid4())
                         # Save the data with the specified function in the
@@ -57,8 +51,6 @@ def db_store(db, fs_data_name_save_map=None):
                     doc.update(
                         filled={k: True for k in fs_data_name_save_map.keys()})
                 elif name == 'stop':
-                    doc.update(uid=str(uuid4()), time=time(),
-                               run_start=run_start_uid)
                     db.mds.insert_run_stop(**doc)
                 yield doc
 

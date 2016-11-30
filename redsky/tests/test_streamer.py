@@ -3,6 +3,8 @@ from ..streamer import db_store
 import numpy as np
 import traceback
 from pprint import pprint
+from time import time
+from uuid import uuid4
 
 
 def multiply_by_two(img):
@@ -25,13 +27,17 @@ def test_streaming(exp_db, tmp_dir):
     def sample_f(name_doc_stream_pair, **kwargs):
         process = multiply_by_two
         _, start = next(name_doc_stream_pair)
-        new_start_doc = {'parents': start['uid'],
-                         'function_name': process.__name__,
-                         'kwargs': kwargs}  # More provenance to be defined
+        run_start_uid = str(uuid4())
+        new_start_doc = dict(uid=run_start_uid, time=time(),
+                             parents=start['uid'],
+                             function_name=process.__name__,
+                             kwargs=kwargs)  # More provenance to be defined
         yield 'start', new_start_doc
 
         _, descriptor = next(name_doc_stream_pair)
-        new_descriptor = dict(data_keys={'img': dict(source='testing')})
+        new_descriptor = dict(uid=str(uuid4()), time=time(),
+                              run_start=run_start_uid,
+                              data_keys={'img': dict(source='testing')})
         yield 'descriptor', new_descriptor
 
         exit_md = None
@@ -53,14 +59,16 @@ def test_streaming(exp_db, tmp_dir):
                                traceback=traceback.format_exc())
                 break
 
-            new_event = dict(descriptor=new_descriptor,
+            new_event = dict(uid=str(uuid4()), time=time(),
+                             descriptor=new_descriptor,
                              data={'img': results},
                              seq_num=i)
             yield 'event', new_event
 
         if exit_md is None:
             exit_md = {'exit_status': 'success'}
-        new_stop = dict(**exit_md)
+        new_stop = dict(uid=str(uuid4()), time=time(),
+                        run_start=run_start_uid, **exit_md)
         yield 'stop', new_stop
 
     input_hdr = exp_db[-1]
