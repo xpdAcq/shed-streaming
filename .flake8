@@ -6,4 +6,4 @@ exclude =
     old,
     build,
     dist
-max-complexity = 15
+ignore = C901
