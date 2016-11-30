@@ -17,7 +17,6 @@ def db_store(db, fs_data_name_save_map=None):
         def wrapped_f(*args, **kwargs):
             gen = f(*args, **kwargs)
             for name, doc in gen:
-                print(name)
                 if name == 'start':
                     doc.update(uid=str(uuid4()), time=time())
                     run_start_uid = db.mds.insert_run_start(**doc)
@@ -52,6 +51,7 @@ def db_store(db, fs_data_name_save_map=None):
                         # 3. Replace the array in the doc with the uid
                         doc['data'][data_name] = uid
                     doc.update(uid=str(uuid4()), time=time(), timestamps={})
+                    print(doc)
                     db.mds.insert_event(**doc)
                 elif name == 'stop':
                     doc.update(uid=str(uuid4()), time=time(),
