@@ -1,5 +1,4 @@
 from numpy.testing import assert_array_equal
-from scipy.ndimage.filters import gaussian_filter
 from ..streamer import db_store
 import numpy as np
 import traceback
@@ -35,12 +34,12 @@ def test_streaming(exp_db, tmp_dir):
             args_mapping = [ev['data'][k] for k in ['pe1_image']]
             kwargs_mapping = {}
             kwargs_mapped = {k: ev[v] for k, v in kwargs_mapping.items()}
-            # try:
-            results = process(*args_mapping, **kwargs_mapped,
+            try:
+                results = process(*args_mapping, **kwargs_mapped,
                                   **kwargs)
-            # except Exception as e:
-            # exit_md = dict(exit_status='failure', reason=repr(e),
-            #                    traceback=traceback.format_exc())
+            except Exception as e:
+                exit_md = dict(exit_status='failure', reason=repr(e),
+                               traceback=traceback.format_exc())
             new_event = dict(descriptor=new_descriptor,
                              data={'img': results},
                              seq_num=i)
@@ -57,7 +56,6 @@ def test_streaming(exp_db, tmp_dir):
     for b in sample_f(a):
         pass
     pprint(exp_db[-1])
-    print(list(exp_db[-1].keys()))
     for ev1, ev2 in zip(exp_db.get_events(input_hdr, fill=True),
                         exp_db.get_events(exp_db[-1], fill=True)):
         assert_array_equal(ev1['data']['pe1_image'] * 2,

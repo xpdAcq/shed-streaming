@@ -1,17 +1,12 @@
 import numpy as np
 from uuid import uuid4
 import os
-import traceback
 from time import time
 
 doc_name_save_func_mapping = {'start', 'insert_run_start',
                               'descriptor', 'insert_descriptor',
                               'event', 'insert_event',
                               'stop', 'insert_run_stop'}
-
-dnsm = {'img': {'sf': np.save, 'folder': 'bla', 'spec': 'npy', 'ext': '.npy',
-                'args': (), 'kwargs': {},
-                'resource_kwargs': {}, 'datum_kwargs': {}}}
 
 
 def db_store(db, fs_data_name_save_map=None):
@@ -29,8 +24,9 @@ def db_store(db, fs_data_name_save_map=None):
                 elif name == 'descriptor':
                     # Mutate the doc here to handle filestore
                     for data_name in fs_data_name_save_map:
-                        doc['data_keys'][data_name]['external'] = 'FILESTORE'
-                        doc['data_keys'][data_name]['dtype'] = 'array'
+                        doc['data_keys'][data_name].update(
+                            external='FILESTORE',
+                            dtype='array')
                     doc.update(uid=str(uuid4()), time=time(),
                                run_start=run_start_uid)
                     db.mds.insert_descriptor(**doc)
@@ -68,34 +64,37 @@ def db_store(db, fs_data_name_save_map=None):
     return wrap
 
 
-def sample_f(name_stream_pair, **kwargs):
-    _, start = next(name_stream_pair)
-    new_start_uid = {'parents': start['uid'],
-                     'function_name': process.__name__,
-                     'kwargs': kwargs}  # More provenance to be defined
-    yield 'start', new_start_uid
-    _, descriptor = next(name_stream_pair)
-    new_descriptor = dict(run_start=new_start_uid, data_keys={})
-    yield 'descriptor', new_descriptor
-    exit_md = None
-    for i, (name, ev) in enumerate(name_stream_pair):
+"""
+    def sample_f(name_doc_stream_pair, **kwargs):
+        process = multiply_by_two
+        _, start = next(name_doc_stream_pair)
+        new_start_doc = {'parents': start['uid'],
+                         'function_name': process.__name__,
+                         'kwargs': kwargs}  # More provenance to be defined
+        yield 'start', new_start_doc
+        _, descriptor = next(name_doc_stream_pair)
+        new_descriptor = dict(data_keys={'img': dict(source='testing')})
+        yield 'descriptor', new_descriptor
+        exit_md = None
+        for i, (name, ev) in enumerate(name_doc_stream_pair):
+            if name == 'stop':
+                break
+            args_mapping = [ev['data'][k] for k in ['pe1_image']]
+            kwargs_mapping = {}
+            kwargs_mapped = {k: ev[v] for k, v in kwargs_mapping.items()}
+            # try:
+            results = process(*args_mapping, **kwargs_mapped,
+                                  **kwargs)
+            # except Exception as e:
+            # exit_md = dict(exit_status='failure', reason=repr(e),
+            #                    traceback=traceback.format_exc())
+            new_event = dict(descriptor=new_descriptor,
+                             data={'img': results},
+                             seq_num=i)
+            yield 'event', new_event
         if name == 'stop':
-            break
-        mapping = {'img': 'pe1_image'}
-        mapped = {k: ev[v] for k, v in mapping.keys()}
-        try:
-            results = process(**mapped, **kwargs)
-        except Exception as e:
-            exit_md['exit_status'] = 'failure'
-            exit_md['reason'] = repr(e)
-            exit_md['traceback'] = traceback.format_exc()
-        new_event = dict(descriptor=new_descriptor,
-                         data={'img': results},
-                         seq_num=i)
-        yield 'event', new_event
-    _, stop = next(name_stream_pair)
-    if exit_md is None:
-        exit_md = {'exit_status': 'success'}
-    new_stop = dict(run_start=new_start_uid,
-                    **exit_md)
-    yield 'stop', new_stop
+            if exit_md is None:
+                exit_md = {'exit_status': 'success'}
+            new_stop = dict(** exit_md)
+            yield 'stop', new_stop
+"""
