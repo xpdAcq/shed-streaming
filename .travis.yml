@@ -1,0 +1,79 @@
+language: python
+sudo: false
+env:
+  global:
+    BUILD_DOCS_BRANCH: master
+    DOCS_SUBDIR: doc/
+    TARGET_DEV_SUBDIR: bluesky/
+    HTML_SUBDIR: build/html
+    DOCS_CONDA_DEPS: "bluesky"
+    DOCS_PIP_DEPS: "tqdm"
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/.cache/matplotlib
+
+services:
+  - mongodb
+addons:
+  apt:
+    sources:
+    - mongodb-3.2-precise
+    packages:
+    - mongodb-org-server
+
+python:
+  - 3.5
+before_install:
+  - git clone https://github.com/NSLS-II/nsls2-ci --branch master --single-branch ~/ci_scripts
+  - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"
+  - "export DISPLAY=:99.0"
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - chmod +x miniconda.sh
+  - ./miniconda.sh -b -p ~/mc
+  - export PATH=~/mc/bin:$PATH
+  - conda update conda --yes
+  - export CONDARC=ci/condarc
+  - export MDS_HOST=localhost
+  - export MDS_DATABASE=test
+  - export MDS_TIMEZONE=US/Eastern
+  - mkdir -p /home/travis/.config/metadatastore
+  - 'echo ''port: 27017'' > /home/travis/.config/metadatastore/connection.yml'
+  - export FS_HOST=localhost
+  - export FS_DATABASE=test
+  - mkdir -p /home/travis/.config/filestore
+  - 'echo ''port: 27017'' > /home/travis/.config/filestore/connection.yml'
+
+
+install:
+  - export GIT_FULL_HASH=`git rev-parse HEAD`
+  - conda create --yes -n testenv numpy scipy nose python=$TRAVIS_PYTHON_VERSION scipy jsonschema traitlets pytest coverage pip databroker ophyd historydict boltons doct pyepics super_state_machine xray-vision lmfit jinja2 icu pyzmq mongoquery mock xlrd scikit-beam -c lightsource2 -c conda-forge -c soft-matter
+  - source activate testenv
+  - 'pip install python-coveralls'
+  - 'pip install https://github.com/NSLS-II/event-model/zipball/master#egg=event_model'
+#  - conda remove metadatastore databroker filestore --yes
+#  - 'pip install https://github.com/NSLS-II/databroker/zipball/master#egg=databroker'
+#  - 'pip install https://github.com/NSLS-II/filestore/zipball/master#egg=filestore'
+#  - 'pip install https://github.com/NSLS-II/metadatastore/zipball/master#egg=metadatastore'
+  - 'pip install https://github.com/NSLS-II/portable-mds/zipball/master#egg=portable_mds'
+  - 'pip install https://github.com/NSLS-II/portable-fs/zipball/master#egg=portable_fs'
+  - 'pip install https://github.com/NSLS-II/bluesky/zipball/master#egg=bluesky'
+  - python setup.py install
+  # Need to clean the python build directory (and other cruft) or pytest is
+  # going to find the build directory and get confused why there are two sets
+  # of every test file
+  - python -c "from filestore import utils, conf; utils.install_sentinels(conf.connection_config, 1)"
+  # make sure the sqlite file exists to avoid race conditions
+  - python -c "from bluesky.utils import get_history; get_history()"
+  - pip install codecov flake8 pyFAI pytest-env
+  - git clean -xfd
+
+script:
+  - coverage run run_tests.py
+  - coverage report -m
+  - flake8 .
+
+after_success:
+  - codecov
+  - coveralls

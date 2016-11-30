@@ -1,0 +1,3 @@
+python-targets:
+  - 3
+doc-warnings: true

@@ -1,0 +1,8 @@
+always_yes: true
+show_channel_urls: true
+channels:
+- conda-forge
+- defaults
+show_channel_urls: true
+track_features:
+- nomkl
