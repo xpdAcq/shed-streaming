@@ -24,7 +24,7 @@ def db_store(db, fs_data_name_save_map=None):
                     # Mutate the doc here to handle filestore
                     for data_name in fs_data_name_save_map:
                         doc['data_keys'][data_name].update(
-                            external='FILESTORE',
+                            external='FILESTORE:',
                             dtype='array')
                     doc.update(uid=str(uuid4()), time=time(),
                                run_start=run_start_uid)
