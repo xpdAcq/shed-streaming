@@ -90,15 +90,19 @@ def test_collection(exp_db):
         _, start = next(name_doc_stream_pair)
         if _ != 'start':
             raise Exception
-        new_start_doc = {'parents': start['uid'],
-                         'function_name': process.__name__,
-                         'kwargs': kwargs}  # More provenance to be defined
+        run_start_uid = str(uuid4())
+        new_start_doc = dict(uid=run_start_uid, time=time(),
+                             parents=start['uid'],
+                             function_name=process.__name__,
+                             kwargs=kwargs)  # More provenance to be defined
         yield 'start', new_start_doc
 
         _, descriptor = next(name_doc_stream_pair)
         if _ != 'descriptor':
             raise Exception
-        new_descriptor = {'data_keys': descriptor['data_keys']}
+        new_descriptor = dict(uid=str(uuid4()), time=time(),
+                              run_start=run_start_uid,
+                              data_keys=descriptor['data_keys'])
         yield 'descriptor', new_descriptor
 
         exit_md = None
@@ -114,14 +118,16 @@ def test_collection(exp_db):
                                traceback=traceback.format_exc())
                 break
             if results is not None:
-                new_event = dict(descriptor=new_descriptor,
+                new_event = dict(uid=str(uuid4()), time=time(),
+                                 descriptor=new_descriptor,
                                  data=results,
                                  seq_num=i)
                 yield 'event', new_event
 
         if exit_md is None:
             exit_md = {'exit_status': 'success'}
-        new_stop = dict(**exit_md)
+        new_stop = dict(uid=str(uuid4()), time=time(),
+                        run_start=run_start_uid, **exit_md)
         yield 'stop', new_stop
 
     input_hdr = exp_db[-1]
