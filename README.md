@@ -9,7 +9,7 @@ a data processing interface
 Currently there are three parts/layers to the redsky design.
 From inner most to outer most:
 
-1. Scientific function: A function which operates on arrays, and other basic
+ 1. Scientific function: A function which operates on arrays, and other basic
 python types (`ints`, `floats`, etc.). This function should return arrays and
 basic python types. These functions should handle most of the heavy lifting
 of the problem including how to parallelize the problem, how to access 
