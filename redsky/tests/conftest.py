@@ -45,6 +45,7 @@ def exp_db(db, tmp_dir, img_size):
     mds = db2.mds
     fs = db2.fs
     insert_imgs(mds, fs, 5, img_size, tmp_dir)
+    insert_imgs(mds, fs, 5, img_size, tmp_dir)
     yield db2
     print("DROPPING MDS")
     mds._connection.drop_database(mds.config['database'])

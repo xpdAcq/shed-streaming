@@ -16,6 +16,10 @@ def evens(event):
         return event['data']
 
 
+def pass_through(event):
+    return event['data']
+
+
 def test_streaming(exp_db, tmp_dir):
     dnsm = {
         'img': {'sf': np.save, 'folder': tmp_dir, 'spec': 'npy',
@@ -138,3 +142,75 @@ def test_collection(exp_db):
     pprint(exp_db[-1])
     for ev in exp_db.get_events(exp_db[-1]):
         print(ev)
+
+
+def test_combine(exp_db):
+    @db_store(exp_db)
+    def sample_f(*name_doc_stream_pairs, **kwargs):
+        process = pass_through
+        starts = []
+        for name_doc_stream_pair in name_doc_stream_pairs:
+            _, start = next(name_doc_stream_pair)
+            if _ != 'start':
+                raise Exception
+            starts.append(start)
+        run_start_uid = str(uuid4())
+        new_start_doc = dict(uid=run_start_uid, time=time(),
+                             parents=[start['uid'] for start in starts],
+                             function_name=process.__name__,
+                             kwargs=kwargs)  # More provenance to be defined
+        yield 'start', new_start_doc
+
+        descriptors = []
+        for name_doc_stream_pair in name_doc_stream_pairs:
+            _, descriptor = next(name_doc_stream_pair)
+            if _ != 'descriptor':
+                raise Exception
+            descriptors.append(descriptor)
+
+        # Data Bundles MUST have the same data keys
+        for descriptor1 in descriptors:
+            for descriptor2 in descriptors:
+                if descriptor1['data_keys'] != descriptor2['data_keys']:
+                    raise Exception
+        new_descriptor = dict(uid=str(uuid4()), time=time(),
+                              run_start=run_start_uid,
+                              data_keys=descriptor['data_keys'])
+        yield 'descriptor', new_descriptor
+
+        exit_md = None
+        for name_doc_stream_pair in name_doc_stream_pairs:
+            for i, (name, ev) in enumerate(name_doc_stream_pair):
+                if name == 'stop':
+                    break
+                if name != 'event':
+                    raise Exception
+                try:
+                    results = process(ev)
+                except Exception as e:
+                    exit_md = dict(exit_status='failure', reason=repr(e),
+                                   traceback=traceback.format_exc())
+                    break
+                if results is not None:
+                    new_event = dict(uid=str(uuid4()), time=time(),
+                                     descriptor=new_descriptor,
+                                     data=results,
+                                     seq_num=i)
+                    yield 'event', new_event
+
+        if exit_md is None:
+            exit_md = {'exit_status': 'success'}
+        new_stop = dict(uid=str(uuid4()), time=time(),
+                        run_start=run_start_uid, **exit_md)
+        yield 'stop', new_stop
+
+    ih1 = exp_db[-1]
+    ih2 = exp_db[-3]
+    a1 = exp_db.restream(ih1)
+    a2 = exp_db.restream(ih2)
+    for b in sample_f(a1, a2):
+        pass
+    pprint(exp_db[-1])
+
+    assert len(list(exp_db.get_events(exp_db[-1]))) == len(list(
+        exp_db.get_events(ih1))) + len(list(exp_db.get_events(ih2)))
