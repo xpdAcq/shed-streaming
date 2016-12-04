@@ -5,6 +5,7 @@ import traceback
 from pprint import pprint
 from time import time
 from uuid import uuid4
+from ..savers import np_saver
 
 
 def multiply_by_two(img):
@@ -21,11 +22,7 @@ def pass_through(event):
 
 
 def test_streaming(exp_db, tmp_dir, start_uid1):
-    dnsm = {
-        'img': {'sf': np.save, 'folder': tmp_dir, 'spec': 'npy',
-                'ext': '.npy',
-                'args': (), 'kwargs': {},
-                'resource_kwargs': {}, 'datum_kwargs': {}}}
+    dnsm = {'img': {'saver': np_saver, 'folder': tmp_dir}}
 
     @db_store(exp_db, dnsm)
     def sample_f(name_doc_stream_pair, **kwargs):
@@ -41,7 +38,9 @@ def test_streaming(exp_db, tmp_dir, start_uid1):
         _, descriptor = next(name_doc_stream_pair)
         new_descriptor = dict(uid=str(uuid4()), time=time(),
                               run_start=run_start_uid,
-                              data_keys={'img': dict(source='testing')})
+                              data_keys={'img': dict(source='testing',
+                                                     dtype='array'),
+                                         })  # TODO: include shape somehow
         yield 'descriptor', new_descriptor
 
         exit_md = None
@@ -91,11 +90,7 @@ def test_streaming(exp_db, tmp_dir, start_uid1):
 
 
 def test_double_streaming(exp_db, tmp_dir, start_uid1):
-    dnsm = {
-        'pe1_image': {'sf': np.save, 'folder': tmp_dir, 'spec': 'npy',
-                      'ext': '.npy',
-                      'args': (), 'kwargs': {},
-                      'resource_kwargs': {}, 'datum_kwargs': {}}}
+    dnsm = {'pe1_image': {'saver': np_saver, 'folder': tmp_dir}}
 
     @db_store(exp_db, dnsm)
     def sample_f(name_doc_stream_pair, **kwargs):
@@ -111,7 +106,9 @@ def test_double_streaming(exp_db, tmp_dir, start_uid1):
         _, descriptor = next(name_doc_stream_pair)
         new_descriptor = dict(uid=str(uuid4()), time=time(),
                               run_start=run_start_uid,
-                              data_keys={'pe1_image': dict(source='testing')})
+                              data_keys={'pe1_image': dict(source='testing',
+                                                           dtype='array'),
+                                         })
         yield 'descriptor', new_descriptor
 
         exit_md = None
