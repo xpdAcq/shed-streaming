@@ -30,7 +30,6 @@ def db_store(db, fs_data_name_save_map=None):
                                                    sub_dict['folder'], db.fs)
 
                 # Always stash the (potentially) filestore mutated doc
-                print(fs_doc)
                 db.mds.insert(name, fs_doc)
 
                 # Always yield the pristine doc
