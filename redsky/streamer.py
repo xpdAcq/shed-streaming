@@ -2,6 +2,7 @@ import numpy as np
 from uuid import uuid4
 import os
 from time import time
+from copy import deepcopy as dc
 
 
 def db_store(db, fs_data_name_save_map=None):
@@ -12,47 +13,46 @@ def db_store(db, fs_data_name_save_map=None):
         def wrapped_f(*args, **kwargs):
             gen = f(*args, **kwargs)
             for name, doc in gen:
-                if name == 'start':
-                    db.mds.insert_run_start(**doc)
-                elif name == 'descriptor':
-                    fs_doc = doc.copy()
+                fs_doc = dc(doc)
+
+                if name == 'descriptor':
                     # Mutate the doc here to handle filestore
                     for data_name in fs_data_name_save_map:
                         fs_doc['data_keys'][data_name].update(
                             external='FILESTORE:',
                             dtype='array')
-                    db.mds.insert_descriptor(**fs_doc)
+
                 elif name == 'event':
-                    fs_doc = doc.copy()
                     # Mutate the doc here to handle filestore
                     for data_name, sub_dict in fs_data_name_save_map.items():
-                        uid = str(uuid4())
                         # Save the data with the specified function in the
                         # specified location, with the specified spec
+                        fs_uid = str(uuid4())
 
-                        # 1. Save data on disk from relevant fields
+                        # 1. Save data on disk
                         save_name = os.path.join(sub_dict['folder'],
-                                                 uid + sub_dict['ext'])
-                        np.save(
-                            save_name,
-                            fs_doc['data'][data_name])
+                                                 fs_uid + sub_dict['ext'])
+
+                        sub_dict['sf'](save_name, fs_doc['data'][data_name])
+
                         # 2. Tell FS about it
                         fs_res = db.fs.insert_resource(
                             sub_dict['spec'],
                             save_name,
                             sub_dict['resource_kwargs'])
-                        db.fs.insert_datum(fs_res, uid,
+                        db.fs.insert_datum(fs_res, fs_uid,
                                            sub_dict['datum_kwargs'])
+
                         # 3. Replace the array in the fs_doc with the uid
-                        fs_doc['data'][data_name] = uid
-                    fs_doc.update(uid=str(uuid4()), time=time(), timestamps={})
-                    print(fs_doc)
-                    db.mds.insert_event(**fs_doc)
+                        print('before', doc['data'][data_name])
+                        fs_doc['data'][data_name] = fs_uid
+                        print('after', doc['data'][data_name])
                     doc.update(
                         filled={k: True for k in fs_data_name_save_map.keys()})
-                elif name == 'stop':
-                    db.mds.insert_run_stop(**doc)
-                yield doc
+                # Always stash the (potentially) filestore mutated doc
+                db.mds.insert(name, fs_doc)
+                # Always yield the pristine doc
+                yield name, doc
 
         return wrapped_f
 

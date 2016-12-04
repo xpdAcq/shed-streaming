@@ -20,7 +20,7 @@ def pass_through(event):
     return event['data']
 
 
-def test_streaming(exp_db, tmp_dir):
+def test_streaming(exp_db, tmp_dir, start_uid1):
     dnsm = {
         'img': {'sf': np.save, 'folder': tmp_dir, 'spec': 'npy',
                 'ext': '.npy',
@@ -63,7 +63,7 @@ def test_streaming(exp_db, tmp_dir):
                                traceback=traceback.format_exc())
                 break
 
-            new_event = dict(uid=str(uuid4()), time=time(),
+            new_event = dict(uid=str(uuid4()), time=time(), timestamps={},
                              descriptor=new_descriptor,
                              data={'img': results},
                              seq_num=i)
@@ -75,11 +75,14 @@ def test_streaming(exp_db, tmp_dir):
                         run_start=run_start_uid, **exit_md)
         yield 'stop', new_stop
 
-    input_hdr = exp_db[-1]
+    input_hdr = exp_db[start_uid1]
     pprint(input_hdr)
     a = exp_db.restream(input_hdr, fill=True)
-    for b in sample_f(a):
-        pass
+    for name, doc in sample_f(a):
+        if name == 'start':
+            assert doc['parents'] == input_hdr['start']['uid']
+        if name == 'event':
+            assert isinstance(doc['data']['img'], np.ndarray)
     pprint(exp_db[-1])
     for ev1, ev2 in zip(exp_db.get_events(input_hdr, fill=True),
                         exp_db.get_events(exp_db[-1], fill=True)):
@@ -87,7 +90,75 @@ def test_streaming(exp_db, tmp_dir):
                            ev2['data']['img'])
 
 
-def test_collection(exp_db):
+def test_double_streaming(exp_db, tmp_dir, start_uid1):
+    dnsm = {
+        'pe1_image': {'sf': np.save, 'folder': tmp_dir, 'spec': 'npy',
+                      'ext': '.npy',
+                      'args': (), 'kwargs': {},
+                      'resource_kwargs': {}, 'datum_kwargs': {}}}
+
+    @db_store(exp_db, dnsm)
+    def sample_f(name_doc_stream_pair, **kwargs):
+        process = multiply_by_two
+        _, start = next(name_doc_stream_pair)
+        run_start_uid = str(uuid4())
+        new_start_doc = dict(uid=run_start_uid, time=time(),
+                             parents=start['uid'],
+                             function_name=process.__name__,
+                             kwargs=kwargs)  # More provenance to be defined
+        yield 'start', new_start_doc
+
+        _, descriptor = next(name_doc_stream_pair)
+        new_descriptor = dict(uid=str(uuid4()), time=time(),
+                              run_start=run_start_uid,
+                              data_keys={'pe1_image': dict(source='testing')})
+        yield 'descriptor', new_descriptor
+
+        exit_md = None
+        for i, (name, ev) in enumerate(name_doc_stream_pair):
+            if name == 'stop':
+                break
+            if name != 'event':
+                raise Exception
+            args_mapping = [ev['data'][k] for k in ['pe1_image']]
+            kwargs_mapping = {}
+            kwargs_mapped = {k: ev['data'][
+                v] for k, v in kwargs_mapping.items()}
+
+            try:
+                results = process(*args_mapping, **kwargs_mapped,
+                                  **kwargs)
+            except Exception as e:
+                exit_md = dict(exit_status='failure', reason=repr(e),
+                               traceback=traceback.format_exc())
+                break
+
+            new_event = dict(uid=str(uuid4()), time=time(), timestamps={},
+                             descriptor=new_descriptor,
+                             data={'pe1_image': results},
+                             seq_num=i)
+            yield 'event', new_event
+
+        if exit_md is None:
+            exit_md = {'exit_status': 'success'}
+        new_stop = dict(uid=str(uuid4()), time=time(),
+                        run_start=run_start_uid, **exit_md)
+        yield 'stop', new_stop
+
+    input_hdr = exp_db[start_uid1]
+    pprint(input_hdr)
+    a = exp_db.restream(input_hdr, fill=True)
+    for name, doc in sample_f(sample_f(a)):
+        if name == 'event':
+            assert isinstance(doc['data']['pe1_image'], np.ndarray)
+    pprint(exp_db[-1])
+    for ev1, ev2 in zip(exp_db.get_events(input_hdr, fill=True),
+                        exp_db.get_events(exp_db[-1], fill=True)):
+        assert_array_equal(ev1['data']['pe1_image'] * 4,
+                           ev2['data']['pe1_image'])
+
+
+def test_collection(exp_db, start_uid1):
     @db_store(exp_db)
     def sample_f(name_doc_stream_pair, **kwargs):
         process = evens
@@ -122,7 +193,7 @@ def test_collection(exp_db):
                                traceback=traceback.format_exc())
                 break
             if results is not None:
-                new_event = dict(uid=str(uuid4()), time=time(),
+                new_event = dict(uid=str(uuid4()), time=time(), timestamps={},
                                  descriptor=new_descriptor,
                                  data=results,
                                  seq_num=i)
@@ -134,7 +205,7 @@ def test_collection(exp_db):
                         run_start=run_start_uid, **exit_md)
         yield 'stop', new_stop
 
-    input_hdr = exp_db[-1]
+    input_hdr = exp_db[start_uid1]
     pprint(input_hdr)
     a = exp_db.restream(input_hdr)
     for b in sample_f(a):
@@ -144,7 +215,7 @@ def test_collection(exp_db):
         print(ev)
 
 
-def test_combine(exp_db):
+def test_combine(exp_db, start_uid1, start_uid2):
     @db_store(exp_db)
     def sample_f(*name_doc_stream_pairs, **kwargs):
         process = pass_through
@@ -193,6 +264,7 @@ def test_combine(exp_db):
                     break
                 if results is not None:
                     new_event = dict(uid=str(uuid4()), time=time(),
+                                     timestamps={},
                                      descriptor=new_descriptor,
                                      data=results,
                                      seq_num=i)
@@ -204,8 +276,8 @@ def test_combine(exp_db):
                         run_start=run_start_uid, **exit_md)
         yield 'stop', new_stop
 
-    ih1 = exp_db[-1]
-    ih2 = exp_db[-3]
+    ih1 = exp_db[start_uid1]
+    ih2 = exp_db[start_uid2]
     a1 = exp_db.restream(ih1)
     a2 = exp_db.restream(ih2)
     for b in sample_f(a1, a2):

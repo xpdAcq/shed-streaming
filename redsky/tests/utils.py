@@ -38,7 +38,7 @@ def build_pymongo_backed_broker(request=None):
     return Broker(mds, fs)
 
 
-def insert_imgs(mds, fs, n, shape, save_dir=tempfile.mkdtemp()):
+def insert_imgs(mds, fs, n, shape, save_dir=tempfile.mkdtemp(), start_uid=None):
     """
     Insert images into mds and fs for testing
 
@@ -86,9 +86,14 @@ def insert_imgs(mds, fs, n, shape, save_dir=tempfile.mkdtemp()):
                         time=time.time())
 
     imgs = [np.ones(shape)] * n
-    run_start = mds.insert_run_start(uid=str(uuid4()), time=time.time(),
-                                     name='test',
-                                     sc_dk_field_uid=sc_dk_field_uid)
+    if start_uid:
+        run_start = mds.insert_run_start(uid=start_uid, time=time.time(),
+                                         name='test',
+                                         sc_dk_field_uid=sc_dk_field_uid)
+    else:
+        run_start = mds.insert_run_start(uid=str(uuid4()), time=time.time(),
+                                         name='test',
+                                         sc_dk_field_uid=sc_dk_field_uid)
     data_keys = {
         'pe1_image': dict(source='testing', external='FILESTORE:',
                           dtype='array')}
