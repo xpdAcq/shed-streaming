@@ -1,7 +1,5 @@
-import numpy as np
 from uuid import uuid4
 import os
-from time import time
 from copy import deepcopy as dc
 
 
@@ -17,7 +15,7 @@ def db_store(db, fs_data_name_save_map=None):
 
                 if name == 'descriptor':
                     # Mutate the doc here to handle filestore
-                    for data_name in fs_data_name_save_map:
+                    for data_name in fs_data_name_save_map.keys():
                         fs_doc['data_keys'][data_name].update(
                             external='FILESTORE:',
                             dtype='array')
@@ -37,9 +35,9 @@ def db_store(db, fs_data_name_save_map=None):
 
                         # 2. Tell FS about it
                         fs_res = db.fs.insert_resource(
-                            sub_dict['spec'],
-                            save_name,
+                            sub_dict['spec'], save_name,
                             sub_dict['resource_kwargs'])
+
                         db.fs.insert_datum(fs_res, fs_uid,
                                            sub_dict['datum_kwargs'])
 
@@ -47,8 +45,10 @@ def db_store(db, fs_data_name_save_map=None):
                         fs_doc['data'][data_name] = fs_uid
                     doc.update(
                         filled={k: True for k in fs_data_name_save_map.keys()})
+
                 # Always stash the (potentially) filestore mutated doc
                 db.mds.insert(name, fs_doc)
+
                 # Always yield the pristine doc
                 yield name, doc
 

@@ -38,7 +38,8 @@ def build_pymongo_backed_broker(request=None):
     return Broker(mds, fs)
 
 
-def insert_imgs(mds, fs, n, shape, save_dir=tempfile.mkdtemp(), start_uid=None):
+def insert_imgs(mds, fs, n, shape, save_dir=tempfile.mkdtemp(),
+                start_uid=None):
     """
     Insert images into mds and fs for testing
 
