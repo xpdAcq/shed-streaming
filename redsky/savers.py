@@ -40,3 +40,43 @@ def np_saver(data_name, fs_doc, folder, fs):
     # 3. Replace the array in the fs_doc with the uid
     fs_doc['data'][data_name] = fs_uid
     return fs_doc
+
+
+class NPYSaver:
+    """
+    Instantiating this class creates a new resource. Writing adds datums to that resource.
+    """
+    SPEC = 'npy'
+    EXT = '.npy'
+
+    def __init__(self, fs, root):
+        self._root = root
+        self._closed = False
+        self._fs = fs
+        self._fp = os.path.join(self._root, str(
+            uuid4()))  # generate filepath using self._root and random name generation
+        self._resource = self._fs.insert_resource(self.SPEC, self._fp,
+                                                  resource_kwargs={})
+        # Open and stash a file handle (e.g., h5py.File) if applicable.
+
+    def write(self, data):
+        "Save data to file, generate new datum_id, insert datum, return datum_id."
+        if self._closed:
+            raise RuntimeError('new_resource must be called first')
+        np.save(os.path.join(self._fp, str(uuid4() + self.EXT)), data)
+        # save the data to self._fp
+        datum_id = str(uuid4())
+        self._fs.insert_datum(resource=self._resource, datum_id=datum_id,
+                              datum_kwargs={})
+        return datum_id
+
+    def close(self):
+        # make it impossible to accidentally write more datums to this resource
+        self._closed = True
+        # close file handle, if applicable
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
