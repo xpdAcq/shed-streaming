@@ -1,11 +1,13 @@
-from numpy.testing import assert_array_equal
-import numpy as np
 import traceback
 from pprint import pprint
 from time import time
 from uuid import uuid4
+
+import numpy as np
+from numpy.testing import assert_array_equal
+
+from ..savers import NPYSaver
 from ..streamer import db_store_single_resource_single_file
-from ..savers import np_saver, NPYSaver
 
 
 def multiply_by_two(img):

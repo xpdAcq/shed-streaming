@@ -55,8 +55,8 @@ class NPYSaver:
         self._closed = False
         self._fs = fs
         self._fp = os.path.join(self._root, str(uuid4()))
-        self._resource = self._fs.insert_resource(self.SPEC, self._fp+self.EXT,
-                                                  resource_kwargs={})
+        self._resource = self._fs.insert_resource(self.SPEC, self._fp +
+                                                  self.EXT, resource_kwargs={})
         # Open and stash a file handle (e.g., h5py.File) if applicable.
 
     def write(self, data):
