@@ -1,9 +1,9 @@
 from copy import deepcopy as dc
 
 
-def db_store(db, fs_data_name_save_map=None):
+def db_store_single_resource_single_file(db, fs_data_name_save_map=None):
     if fs_data_name_save_map is None:
-        fs_data_name_save_map = {}
+        fs_data_name_save_map = {}  # {'name': (SaverClass, args, kwargs)}
 
     def wrap(f):
         def wrapped_f(*args, **kwargs):
@@ -25,9 +25,12 @@ def db_store(db, fs_data_name_save_map=None):
 
                 elif name == 'event':
                     # Mutate the doc here to handle filestore
-                    for data_name, sub_dict in fs_data_name_save_map.items():
-                        fs_doc = sub_dict['saver'](data_name, fs_doc,
-                                                   sub_dict['folder'], db.fs)
+                    for data_name, save_tuple in fs_data_name_save_map.items():
+                        # Create instance of Saver
+                        s = save_tuple[0](db.fs, *save_tuple[1],
+                                          **save_tuple[2])
+                        fs_uid = s.write(fs_doc['data'][data_name])
+                        fs_doc['data'][data_name] = fs_uid
 
                 # Always stash the (potentially) filestore mutated doc
                 db.mds.insert(name, fs_doc)

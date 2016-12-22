@@ -1,11 +1,11 @@
 from numpy.testing import assert_array_equal
-from ..streamer import db_store
 import numpy as np
 import traceback
 from pprint import pprint
 from time import time
 from uuid import uuid4
-from ..savers import np_saver
+from ..streamer import db_store_single_resource_single_file
+from ..savers import np_saver, NPYSaver
 
 
 def multiply_by_two(img):
@@ -22,9 +22,9 @@ def pass_through(event):
 
 
 def test_streaming(exp_db, tmp_dir, start_uid1):
-    dnsm = {'img': {'saver': np_saver, 'folder': tmp_dir}}
+    dnsm = {'img': (NPYSaver, (tmp_dir, ), {})}
 
-    @db_store(exp_db, dnsm)
+    @db_store_single_resource_single_file(exp_db, dnsm)
     def sample_f(name_doc_stream_pair, **kwargs):
         process = multiply_by_two
         _, start = next(name_doc_stream_pair)
@@ -90,9 +90,9 @@ def test_streaming(exp_db, tmp_dir, start_uid1):
 
 
 def test_double_streaming(exp_db, tmp_dir, start_uid1):
-    dnsm = {'pe1_image': {'saver': np_saver, 'folder': tmp_dir}}
+    dnsm = {'pe1_image': (NPYSaver, (tmp_dir,), {})}
 
-    @db_store(exp_db, dnsm)
+    @db_store_single_resource_single_file(exp_db, dnsm)
     def sample_f(name_doc_stream_pair, **kwargs):
         process = multiply_by_two
         _, start = next(name_doc_stream_pair)
@@ -156,7 +156,7 @@ def test_double_streaming(exp_db, tmp_dir, start_uid1):
 
 
 def test_collection(exp_db, start_uid1):
-    @db_store(exp_db)
+    @db_store_single_resource_single_file(exp_db)
     def sample_f(name_doc_stream_pair, **kwargs):
         process = evens
         _, start = next(name_doc_stream_pair)
@@ -213,7 +213,7 @@ def test_collection(exp_db, start_uid1):
 
 
 def test_combine(exp_db, start_uid1, start_uid2):
-    @db_store(exp_db)
+    @db_store_single_resource_single_file(exp_db)
     def sample_f(*name_doc_stream_pairs, **kwargs):
         process = pass_through
         starts = []

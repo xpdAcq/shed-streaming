@@ -44,7 +44,8 @@ def np_saver(data_name, fs_doc, folder, fs):
 
 class NPYSaver:
     """
-    Instantiating this class creates a new resource. Writing adds datums to that resource.
+    Instantiating this class creates a new resource. Writing adds datums to
+    that resource.
     """
     SPEC = 'npy'
     EXT = '.npy'
@@ -53,17 +54,17 @@ class NPYSaver:
         self._root = root
         self._closed = False
         self._fs = fs
-        self._fp = os.path.join(self._root, str(
-            uuid4()))  # generate filepath using self._root and random name generation
-        self._resource = self._fs.insert_resource(self.SPEC, self._fp,
+        self._fp = os.path.join(self._root, str(uuid4()))
+        self._resource = self._fs.insert_resource(self.SPEC, self._fp+self.EXT,
                                                   resource_kwargs={})
         # Open and stash a file handle (e.g., h5py.File) if applicable.
 
     def write(self, data):
-        "Save data to file, generate new datum_id, insert datum, return datum_id."
+        """Save data to file, generate new datum_id, insert datum,
+        return datum_id."""
         if self._closed:
             raise RuntimeError('new_resource must be called first')
-        np.save(os.path.join(self._fp, str(uuid4() + self.EXT)), data)
+        np.save(self._fp, data)
         # save the data to self._fp
         datum_id = str(uuid4())
         self._fs.insert_datum(resource=self._resource, datum_id=datum_id,
