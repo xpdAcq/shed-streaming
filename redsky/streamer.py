@@ -47,12 +47,6 @@ def db_store_single_resource_single_file(db, fs_data_name_save_map=None):
                     for data_name in fs_data_name_save_map.keys():
                         fs_doc['data_keys'][data_name].update(
                             external='FILESTORE:')
-                    fs_doc.update(
-                        filled={k: False for k in fs_data_name_save_map.keys()}
-                    )
-
-                    doc.update(
-                        filled={k: True for k in fs_data_name_save_map.keys()})
 
                 elif name == 'event':
                     # Mutate the doc here to handle filestore
@@ -63,6 +57,12 @@ def db_store_single_resource_single_file(db, fs_data_name_save_map=None):
                         fs_uid = s.write(fs_doc['data'][data_name])
                         fs_doc['data'][data_name] = fs_uid
                         s.close()
+
+                    fs_doc.update(
+                        filled={k: False for k in fs_data_name_save_map.keys()}
+                    )
+                    doc.update(
+                        filled={k: True for k in fs_data_name_save_map.keys()})
 
                 # Always stash the (potentially) filestore mutated doc
                 db.mds.insert(name, fs_doc)
