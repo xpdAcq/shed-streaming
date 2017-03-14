@@ -183,9 +183,9 @@ def event_map(input_info, output_info, provenance=None):
                                          provenance=provenance)
                     yield 'start', new_start_doc
 
-                elif (all([name == 'descriptor' for name in names])
-                      and all([doc.get('name') == input_info[k]['name']
-                               for k, doc in zip(stream_keys, docs)])):
+                elif (all([name == 'descriptor' for name in names]) and
+                      all([doc.get('name') == input_info[k]['name']
+                           for k, doc in zip(stream_keys, docs)])):
                     if run_start_uid is None:
                         raise RuntimeError("Received EventDescriptor before "
                                            "RunStart.")
