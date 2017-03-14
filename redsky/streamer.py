@@ -139,6 +139,7 @@ def event_map(input_info, output_info, provenance=None):
     >>>            })
     >>> def multiply_by_two(img):
     >>>     return img * 2
+    >>> output_stream = multiply_by_two(db[-1].restream(fill=True))
     """
     if provenance is None:
         provenance = {}
