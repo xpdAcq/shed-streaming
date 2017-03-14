@@ -369,6 +369,43 @@ def test_double_streaming(exp_db, tmp_dir, start_uid1):
                            ev2['data']['pe1_image'])
 
 
+def test_multi_stream(exp_db, tmp_dir, start_uid1):
+    dnsm = {'img': partial(NPYSaver, root=tmp_dir)}
+
+    @store_dec(exp_db, dnsm)
+    @event_map(
+        {'img1': {'name': 'primary', 'data_key': 'pe1_image'},
+         'img2': {'name': 'primary', 'data_key': 'pe1_image'}},
+        {'data_keys': {'img': {'dtype': 'array'}},
+         'name': 'primary',
+         'returns': ['img'],
+         }
+    )
+    def subtract(img1, img2):
+        return img1 - img2
+
+    input_hdr = exp_db[start_uid1]
+    a = exp_db.restream(input_hdr, fill=True)
+    b = exp_db.restream(input_hdr, fill=True)
+    s = False
+    for (name, doc), (_, odoc) in zip(subtract(img1=a, img2=b),
+                                      exp_db.restream(input_hdr, fill=True)):
+        if name == 'start':
+            assert doc['parents'][0] == input_hdr['start']['uid']
+            s = True
+        if name == 'event':
+            assert s is True
+            assert isinstance(doc['data']['img'], np.ndarray)
+            assert_array_equal(
+                doc['data']['img'],
+                odoc['data']['pe1_image'] - odoc['data']['pe1_image'])
+        if name == 'stop':
+            assert doc['exit_status'] == 'success'
+    for ev1, ev2 in zip(exp_db.get_events(input_hdr, fill=True),
+                        exp_db.get_events(exp_db[-1], fill=True)):
+        assert_array_equal(ev1['data']['pe1_image'] - ev1['data']['pe1_image'],
+                           ev2['data']['img'])
+
 # TODO: write more tests
 """
 1. Test multi-stream analysis
