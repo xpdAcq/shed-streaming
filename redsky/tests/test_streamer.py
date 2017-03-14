@@ -21,7 +21,16 @@ import numpy as np
 from numpy.testing import assert_array_equal
 
 from ..savers import NPYSaver
-from ..streamer import db_store_single_resource_single_file
+from ..streamer import event_map, store_dec
+from functools import partial
+
+
+class NpyHandler:
+    def __init__(self, fp):
+        self._fp = fp
+
+    def __call__(self):
+        return np.load(self._fp)
 
 
 def multiply_by_two(img):
@@ -36,9 +45,9 @@ def evens(event):
 def pass_through(event):
     return event['data']
 
-
+"""
 def test_streaming(exp_db, tmp_dir, start_uid1):
-    dnsm = {'img': (NPYSaver, (tmp_dir, ), {})}
+    dnsm = {'img': (NPYSaver, (tmp_dir,), {})}
 
     @db_store_single_resource_single_file(exp_db, dnsm)
     def sample_f(name_doc_stream_pair, **kwargs):
@@ -299,3 +308,70 @@ def test_combine(exp_db, start_uid1, start_uid2):
 
     assert len(list(exp_db.get_events(exp_db[-1]))) == len(list(
         exp_db.get_events(ih1))) + len(list(exp_db.get_events(ih2)))
+"""
+
+
+def test_streaming(exp_db, tmp_dir, start_uid1):
+    dnsm = {'img': partial(NPYSaver, root=tmp_dir)}
+
+    @store_dec(exp_db, dnsm)
+    @event_map({'img': {'name': 'primary', 'data_key': 'pe1_image'}},
+               {'data_keys': {'img': {'dtype': 'array'}},
+                'name': 'primary',
+                'returns': ['img'],
+                })
+    def multiply_by_two(img):
+        return img * 2
+
+    input_hdr = exp_db[start_uid1]
+    a = exp_db.restream(input_hdr, fill=True)
+    s = False
+    for (name, doc), (_, odoc) in zip(multiply_by_two(img=a),
+                                  exp_db.restream(input_hdr, fill=True)):
+        if name == 'start':
+            assert doc['parents'][0] == input_hdr['start']['uid']
+            s = True
+        if name == 'event':
+            assert s is True
+            assert isinstance(doc['data']['img'], np.ndarray)
+            assert_array_equal(doc['data']['img'], odoc['data']['pe1_image']*2)
+        if name == 'stop':
+            assert doc['exit_status'] == 'success'
+    pprint(exp_db[-1])
+    for ev1, ev2 in zip(exp_db.get_events(input_hdr, fill=True),
+                        exp_db.get_events(exp_db[-1], fill=True)):
+        assert_array_equal(ev1['data']['pe1_image'] * 2,
+                           ev2['data']['img'])
+
+
+def test_double_streaming(exp_db, tmp_dir, start_uid1):
+    dnsm = {'pe1_image': partial(NPYSaver, root=tmp_dir)}
+
+    @store_dec(exp_db, dnsm)
+    @event_map({'img': {'name': 'primary', 'data_key': 'pe1_image'}},
+               {'data_keys': {'pe1_image': {'dtype': 'array'}},
+                'name': 'primary',
+                'returns': ['pe1_image'],
+                })
+    def multiply_by_two(img):
+        return img * 2
+
+    input_hdr = exp_db[start_uid1]
+    pprint(input_hdr)
+    a = exp_db.restream(input_hdr, fill=True)
+    for name, doc in multiply_by_two(img=multiply_by_two(img=a)):
+        if name == 'event':
+            assert isinstance(doc['data']['pe1_image'], np.ndarray)
+    pprint(exp_db[-1])
+    for ev1, ev2 in zip(exp_db.get_events(input_hdr, fill=True),
+                        exp_db.get_events(exp_db[-1], fill=True)):
+        assert_array_equal(ev1['data']['pe1_image'] * 4,
+                           ev2['data']['pe1_image'])
+
+
+# TODO: write more tests
+"""
+1. Test multi-stream analysis
+2. Test subsampling
+3. Test stream combining
+"""
