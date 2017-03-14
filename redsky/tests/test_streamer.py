@@ -19,6 +19,7 @@ from numpy.testing import assert_array_equal
 
 from ..savers import NPYSaver
 from ..streamer import event_map, store_dec
+import pytest
 
 
 def test_streaming(exp_db, tmp_dir, start_uid1):
@@ -125,7 +126,7 @@ def test_multi_stream(exp_db, tmp_dir, start_uid1):
                            ev2['data']['img'])
 
 
-def test_mulit_output(exp_db, tmp_dir, start_uid1):
+def test_multi_output(exp_db, tmp_dir, start_uid1):
     dnsm = {'img1': partial(NPYSaver, root=tmp_dir),
             'img2': partial(NPYSaver, root=tmp_dir)}
 
@@ -162,6 +163,34 @@ def test_mulit_output(exp_db, tmp_dir, start_uid1):
         for x, y in zip([ev2['data'][k] for k in ['img1', 'img2']],
                         f(ev1['data']['pe1_image'])):
             assert_array_equal(x, y)
+
+
+@pytest.mark.xfail(strict=True, raises=RuntimeError)
+def test_known_fail(exp_db, tmp_dir, start_uid1):
+    dnsm = {'img': partial(NPYSaver, root=tmp_dir)}
+
+    def f(img):
+        raise RuntimeError('Known Fail')
+        return img * 2
+
+    dec_f = store_dec(exp_db, dnsm)(
+        event_map({'img': {'name': 'primary', 'data_key': 'pe1_image'}},
+                  {'data_keys': {'img': {'dtype': 'array'}},
+                   'name': 'primary',
+                   'returns': ['img'],
+                   })(f))
+
+    input_hdr = exp_db[start_uid1]
+    a = exp_db.restream(input_hdr, fill=True)
+    s = False
+    for (name, doc), (_, odoc) in zip(dec_f(img=a),
+                                      exp_db.restream(input_hdr, fill=True)):
+        if name == 'start':
+            assert doc['parents'][0] == input_hdr['start']['uid']
+            s = True
+        if name == 'stop':
+            assert doc['exit_status'] == 'failure'
+            assert doc['reason'] == repr(RuntimeError('Known Fail'))
 
 # TODO: write more tests
 """

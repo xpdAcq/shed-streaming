@@ -237,6 +237,7 @@ def event_map(input_info, output_info, provenance=None):
                         new_stop = dict(uid=str(uuid.uuid4()),
                                         time=time.time(),
                                         run_start=run_start_uid,
+                                        reason=repr(e),
                                         exit_status='failure')
                         yield 'stop', new_stop
                         raise
