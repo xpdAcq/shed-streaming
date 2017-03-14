@@ -132,7 +132,6 @@ def event_map(input_info, output_info, provenance=None):
 
     Examples
     ---------
-    >>> @store_dec(exp_db, dnsm)
     >>> @event_map({'img': {'name': 'primary', 'data_key': 'pe1_image'}},
     >>> {'data_keys': {'img': {'dtype': 'array'}},
     >>>            'name': 'primary',
@@ -140,7 +139,6 @@ def event_map(input_info, output_info, provenance=None):
     >>>            })
     >>> def multiply_by_two(img):
     >>>     return img * 2
-
     """
     if provenance is None:
         provenance = {}
@@ -149,8 +147,10 @@ def event_map(input_info, output_info, provenance=None):
 
     def outer(f):
         def inner(**kwargs):
-            if set(input_info.keys()).intersection(set(kwargs.keys())) != set(input_info.keys()):
-                raise RuntimeError("The input data keys were not in the function inputs")
+            if set(input_info.keys()).intersection(set(kwargs.keys())) != set(
+                    input_info.keys()):
+                raise RuntimeError(
+                    "The input data keys were not in the function inputs")
             # If any stream needs cleaning/remuxing do it here
             # We'll capture the relevant info into provenance
             # Note this remux is not saved as a bundle
@@ -200,9 +200,9 @@ def event_map(input_info, output_info, provenance=None):
                     yield 'descriptor', new_descriptor
 
                 elif (all([name == 'event' for name in names]) and
-                          all([doc_or_uid_to_uid(doc['descriptor']) ==
-                                   descriptor_uid for doc, descriptor_uid in
-                               zip(docs, inbound_descriptor_uids)])):
+                      all([doc_or_uid_to_uid(doc['descriptor']) ==
+                           descriptor_uid for doc, descriptor_uid in
+                           zip(docs, inbound_descriptor_uids)])):
                     if run_start_uid is None:
                         raise RuntimeError("Received Event before RunStart.")
                     try:
@@ -215,150 +215,15 @@ def event_map(input_info, output_info, provenance=None):
                                          seq_num=i)
                         # Update the function kwargs with the event data
                         kwargs_update = {
-                            stream_key: doc['data'][input_info[stream_key]['data_key']]
+                            stream_key: doc['data'][input_info[stream_key][
+                                'data_key']]
                             for stream_key, doc in
                             zip(stream_keys, docs)}
                         kwargs.update(kwargs_update)
                         outputs = f(**kwargs)
 
                         if len(output_info['returns']) == 1:
-                            outputs = (outputs, )
-                        # use the return positions list to properly map the
-                        # output data to the data keys
-                        for output_name, output in zip(
-                                output_info['returns'], outputs):
-                            new_event['data'][output_name] = output
-                        i += 1
-
-                        yield 'event', new_event
-                    except Exception as e:
-                        new_stop = dict(uid=str(uuid.uuid4()),
-                                        time=time.time(),
-                                        run_start=run_start_uid,
-                                        exit_status='failure')
-                        yield 'stop', new_stop
-                        raise
-
-                elif all([name == 'stop' for name in names]):
-                    if run_start_uid is None:
-                        raise RuntimeError("Received RunStop before RunStart.")
-                    new_stop = dict(uid=str(uuid.uuid4()),
-                                    time=time.time(),
-                                    run_start=run_start_uid,
-                                    exit_status='success')
-                    outbound_descriptor_uid = None
-                    run_start_uid = None
-                    yield 'stop', new_stop
-
-        return inner
-
-    return outer
-
-
-def event_conditional(input_info, output_info, provenance=None):
-    """
-    Map a function onto each event in a stream.
-
-    Parameters
-    ----------
-    input_info: dict
-        dictionary describing the incoming streams
-    output_info: dict
-        dictionary describing the resulting stream
-    provenance : dict, optional
-        metadata about this operation
-
-    Examples
-    ---------
-    >>> @store_dec(exp_db, dnsm)
-    >>> @event_map({'img': {'name': 'primary', 'data_key': 'pe1_image'}},
-    >>> {'data_keys': {'img': {'dtype': 'array'}},
-    >>>            'name': 'primary',
-    >>>            'returns': ['img'],
-    >>>            })
-    >>> def multiply_by_two(img):
-    >>>     return img * 2
-
-    """
-    if provenance is None:
-        provenance = {}
-
-    def outer(f):
-        def inner(**kwargs):
-            if set(input_info.keys()).intersection(set(kwargs.keys())) != set(input_info.keys()):
-                raise RuntimeError("The input data keys were not in the function inputs")
-            # If any stream needs cleaning/remuxing do it here
-            # We'll capture the relevant info into provenance
-            # Note this remux is not saved as a bundle
-            streams = {}  # Dict {'kwarg_key': generator}
-            for k in input_info.keys():
-                if input_info[k].get('remux', None):
-                    kwargs[k] = input_info[k]['remux'](kwargs[k])
-                streams[k] = kwargs[k]
-
-            # Need a reproducible handle in the generators
-            stream_keys = streams.keys()
-            stream_values = [streams[k] for k in stream_keys]
-
-            # Initialize counter and uids
-            run_start_uid = None
-            inbound_descriptor_uids = None
-            outbound_descriptor_uid = None
-            i = 0
-
-            for name_doc_pairs in zip(*stream_values):
-                # Useful lists
-                names, docs = zip(*name_doc_pairs)
-
-                if all([name == 'start' for name in names]):
-                    run_start_uid = str(uuid.uuid4())
-                    new_start_doc = dict(uid=run_start_uid,
-                                         time=time.time(),
-                                         parents=[doc['uid'] for doc in docs],
-                                         parent_keys=[k for k in stream_keys],
-                                         provenance=provenance)
-                    yield 'start', new_start_doc
-
-                elif (all([name == 'descriptor' for name in names])
-                      and all([doc.get('name') == input_info[k]['name']
-                               for k, doc in zip(stream_keys, docs)])):
-                    if run_start_uid is None:
-                        raise RuntimeError("Received EventDescriptor before "
-                                           "RunStart.")
-
-                    inbound_descriptor_uids = [doc_or_uid_to_uid(doc) for
-                                               doc in docs]
-                    outbound_descriptor_uid = str(uuid.uuid4())
-                    new_descriptor = dict(uid=outbound_descriptor_uid,
-                                          time=time.time(),
-                                          run_start=run_start_uid,
-                                          **output_info)
-                    yield 'descriptor', new_descriptor
-
-                elif (all([name == 'event' for name in names]) and
-                          all([doc_or_uid_to_uid(doc['descriptor']) ==
-                                   descriptor_uid for doc, descriptor_uid in
-                               zip(docs, inbound_descriptor_uids)])):
-                    if run_start_uid is None:
-                        raise RuntimeError("Received Event before RunStart.")
-                    try:
-                        # Make a new event with no data
-                        new_event = dict(uid=str(uuid.uuid4()),
-                                         time=time.time(),
-                                         timestamps={},
-                                         descriptor=outbound_descriptor_uid,
-                                         data={},
-                                         seq_num=i)
-                        # Update the function kwargs with the event data
-                        kwargs_update = {
-                            stream_key: doc['data'][input_info[stream_key]['data_key']]
-                            for stream_key, doc in
-                            zip(stream_keys, docs)}
-                        kwargs.update(kwargs_update)
-                        outputs = f(**kwargs)
-
-                        if len(output_info['returns']) == 1:
-                            outputs = (outputs, )
+                            outputs = (outputs,)
                         # use the return positions list to properly map the
                         # output data to the data keys
                         for output_name, output in zip(
