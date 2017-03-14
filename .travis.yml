@@ -48,7 +48,7 @@ before_install:
 
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
-  - conda create --yes -n testenv numpy scipy nose python=$TRAVIS_PYTHON_VERSION scipy jsonschema traitlets pytest coverage pip databroker ophyd historydict boltons doct pyepics super_state_machine xray-vision lmfit jinja2 icu pyzmq mongoquery mock xlrd scikit-beam -c lightsource2 -c conda-forge -c soft-matter
+  - conda create --yes -n testenv numpy scipy nose python=$TRAVIS_PYTHON_VERSION scipy jsonschema traitlets pytest coverage pip databroker ophyd historydict boltons doct pyepics super_state_machine xray-vision lmfit jinja2 icu pyzmq mongoquery mock xlrd scikit-beam pyFAI flake8 -c lightsource2 -c conda-forge -c soft-matter
   - source activate testenv
   - 'pip install python-coveralls'
   - 'pip install https://github.com/NSLS-II/event-model/zipball/master#egg=event_model'
@@ -66,7 +66,7 @@ install:
   - python -c "from filestore import utils, conf; utils.install_sentinels(conf.connection_config, 1)"
   # make sure the sqlite file exists to avoid race conditions
   - python -c "from bluesky.utils import get_history; get_history()"
-  - pip install codecov flake8 pyFAI pytest-env
+  - pip install codecov pytest-env
   - git clean -xfd
 
 script:
