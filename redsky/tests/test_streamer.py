@@ -131,7 +131,7 @@ def test_multi_output(exp_db, tmp_dir, start_uid1):
             'img2': partial(NPYSaver, root=tmp_dir)}
 
     def f(img):
-        return img * 2, img/2
+        return img * 2, img / 2
 
     dec_f = store_dec(exp_db, dnsm)(
         event_map({'img': {'name': 'primary', 'data_key': 'pe1_image'}},
@@ -189,8 +189,10 @@ def test_known_fail(exp_db, tmp_dir, start_uid1):
             assert doc['parents'][0] == input_hdr['start']['uid']
             s = True
         if name == 'stop':
+            assert s is True
             assert doc['exit_status'] == 'failure'
             assert doc['reason'] == repr(RuntimeError('Known Fail'))
+
 
 # TODO: write more tests
 """
