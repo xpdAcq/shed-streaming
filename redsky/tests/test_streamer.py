@@ -125,6 +125,44 @@ def test_multi_stream(exp_db, tmp_dir, start_uid1):
                            ev2['data']['img'])
 
 
+def test_mulit_output(exp_db, tmp_dir, start_uid1):
+    dnsm = {'img1': partial(NPYSaver, root=tmp_dir),
+            'img2': partial(NPYSaver, root=tmp_dir)}
+
+    def f(img):
+        return img * 2, img/2
+
+    dec_f = store_dec(exp_db, dnsm)(
+        event_map({'img': {'name': 'primary', 'data_key': 'pe1_image'}},
+                  {'data_keys': {'img1': {'dtype': 'array'},
+                                 'img2': {'dtype': 'array'}},
+                   'name': 'primary',
+                   'returns': ['img1', 'img2'],
+                   })(f))
+
+    input_hdr = exp_db[start_uid1]
+    a = exp_db.restream(input_hdr, fill=True)
+    s = False
+    for (name, doc), (_, odoc) in zip(dec_f(img=a),
+                                      exp_db.restream(input_hdr, fill=True)):
+        if name == 'start':
+            assert doc['parents'][0] == input_hdr['start']['uid']
+            s = True
+        if name == 'event':
+            assert s is True
+            for k in ['img1', 'img2']:
+                assert isinstance(doc['data'][k], np.ndarray)
+            for x, y in zip([doc['data'][k] for k in ['img1', 'img2']],
+                            f(odoc['data']['pe1_image'])):
+                assert_array_equal(x, y)
+        if name == 'stop':
+            assert doc['exit_status'] == 'success'
+    for ev1, ev2 in zip(exp_db.get_events(input_hdr, fill=True),
+                        exp_db.get_events(exp_db[-1], fill=True)):
+        for x, y in zip([ev2['data'][k] for k in ['img1', 'img2']],
+                        f(ev1['data']['pe1_image'])):
+            assert_array_equal(x, y)
+
 # TODO: write more tests
 """
 2. Test subsampling
