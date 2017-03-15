@@ -163,15 +163,13 @@ def event_map(input_info, output_info, provenance=None):
             # If any stream needs cleaning/remuxing do it here
             # We'll capture the relevant info into provenance
             # Note this remux is not saved as a bundle
-            streams = {}  # Dict {'kwarg_key': generator}
+            streams = {k: kwargs[k] for k in input_info.keys()}
             for k in input_info.keys():
                 if input_info[k].get('remux', None):
-                    remux_tuple = input_info[k]['remux']
-                    remux_streams = list(tee(kwargs[remux_tuple[1]], 2))
-                    streams[k] = remux_tuple[0](kwargs[k], remux_streams.pop())
-                    streams[remux_tuple[1]] = remux_streams.pop()
-                else:
-                    streams[k] = kwargs[k]
+                    remux_func, base_stream = input_info[k]['remux']
+                    remux_streams = list(tee(kwargs[base_stream], 2))
+                    streams[k] = remux_func(streams[k], remux_streams.pop())
+                    streams[base_stream] = remux_streams.pop()
 
             # Need a reproducible handle in the generators
             stream_keys = streams.keys()
