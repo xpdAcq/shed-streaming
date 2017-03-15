@@ -184,7 +184,6 @@ def event_map(input_info, output_info, provenance=None):
             for name_doc_pairs in zip(*stream_values):
                 # Useful lists
                 names, docs = zip(*name_doc_pairs)
-                print(names)
 
                 if all([name == 'start' for name in names]):
                     run_start_uid = str(uuid.uuid4())
