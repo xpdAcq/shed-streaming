@@ -15,8 +15,8 @@
 ##############################################################################
 import time
 import uuid
+
 import six
-from itertools import tee
 
 
 def doc_or_uid_to_uid(doc_or_uid):
