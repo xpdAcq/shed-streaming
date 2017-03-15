@@ -100,6 +100,7 @@ def insert_imgs(mds, fs, n, shape, save_dir=tempfile.mkdtemp(),
                           dtype='array')}
     data_hdr = dict(run_start=run_start,
                     data_keys=data_keys,
+                    name='primary',
                     time=time.time(), uid=str(uuid4()))
     descriptor = mds.insert_descriptor(**data_hdr)
     for i, img in enumerate(imgs):
