@@ -168,9 +168,10 @@ def event_map(input_info, output_info, provenance=None):
                 if input_info[k].get('remux', None):
                     remux_tuple = input_info[k]['remux']
                     remux_streams = list(tee(kwargs[remux_tuple[1]], 2))
-                    kwargs[k] = remux_tuple[0](kwargs[k], remux_streams.pop())
-                    kwargs[remux_tuple[1]] = remux_streams.pop()
-                streams[k] = kwargs[k]
+                    streams[k] = remux_tuple[0](kwargs[k], remux_streams.pop())
+                    streams[remux_tuple[1]] = remux_streams.pop()
+                else:
+                    streams[k] = kwargs[k]
 
             # Need a reproducible handle in the generators
             stream_keys = streams.keys()
@@ -185,6 +186,7 @@ def event_map(input_info, output_info, provenance=None):
             for name_doc_pairs in zip(*stream_values):
                 # Useful lists
                 names, docs = zip(*name_doc_pairs)
+                print(names)
 
                 if all([name == 'start' for name in names]):
                     run_start_uid = str(uuid.uuid4())

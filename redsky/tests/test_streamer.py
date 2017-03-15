@@ -171,8 +171,8 @@ def test_known_fail(exp_db, tmp_dir, start_uid1):
     dnsm = {'img': partial(NPYSaver, root=tmp_dir)}
 
     def f(img):
+        img * 2
         raise RuntimeError('Known Fail')
-        return img * 2
 
     dec_f = store_dec(exp_db, dnsm)(
         event_map({'img': {'name': 'primary', 'data_key': 'pe1_image'}},
@@ -193,14 +193,67 @@ def test_known_fail(exp_db, tmp_dir, start_uid1):
             assert s is True
             assert doc['exit_status'] == 'failure'
             assert doc['reason'] == repr(RuntimeError('Known Fail'))
-    return
+
+
+@pytest.mark.xfail(strict=True, raises=RuntimeError)
+def test_data_keys_fail(exp_db, tmp_dir, start_uid1):
+    dnsm = {'img': partial(NPYSaver, root=tmp_dir)}
+
+    def f(img):
+        return img * 2
+
+    dec_f = store_dec(exp_db, dnsm)(
+        event_map({'img': {'name': 'primary', 'data_key': 'pe1_image'}},
+                  {'data_keys': {'bad': {'dtype': 'array'}},
+                   'name': 'primary',
+                   'returns': ['img'],
+                   })(f))
+
+
+@pytest.mark.xfail(strict=True, raises=RuntimeError)
+def test_data_keys_fail(exp_db, tmp_dir, start_uid1):
+    dnsm = {'img': partial(NPYSaver, root=tmp_dir)}
+
+    def f(img):
+        return img * 2
+
+    dec_f = store_dec(exp_db, dnsm)(
+        event_map({'bad': {'name': 'primary', 'data_key': 'pe1_image'}},
+                  {'data_keys': {'bad': {'dtype': 'array'}},
+                   'name': 'primary',
+                   'returns': ['img'],
+                   })(f))
+
+    input_hdr = exp_db[start_uid1]
+    a = exp_db.restream(input_hdr, fill=True)
+    s = False
+    for (name, doc), (_, odoc) in zip(dec_f(img=a),
+                                      exp_db.restream(input_hdr, fill=True)):
+        if name == 'start':
+            assert doc['parents'][0] == input_hdr['start']['uid']
+            s = True
+        if name == 'event':
+            assert s is True
+            assert isinstance(doc['data']['img'], np.ndarray)
+            assert_array_equal(doc['data']['img'],
+                               f(odoc['data']['pe1_image']))
+        if name == 'stop':
+            assert doc['exit_status'] == 'success'
+    for ev1, ev2 in zip(exp_db.get_events(input_hdr, fill=True),
+                        exp_db.get_events(exp_db[-1], fill=True)):
+        assert_array_equal(f(ev1['data']['pe1_image']),
+                           ev2['data']['img'])
 
 
 def test_multi_stream_remux(exp_db, tmp_dir, start_uid1, start_uid2):
     def remux(s1, s2, n=0):
         s1_start, s2_start = [next(s) for s in [s1, s2]]
+        if s1_start[0] != 'start' or s2_start[0] != 'start':
+            raise RuntimeError()
         yield s1_start
         s1_desc, s2_desc = [next(s) for s in [s1, s2]]
+        if s1_desc[0] != 'descriptor' or s2_desc[0] != 'descriptor':
+            raise RuntimeError()
         yield s1_desc
 
         # This is the part where we fast forward s1 to n
@@ -234,6 +287,11 @@ def test_multi_stream_remux(exp_db, tmp_dir, start_uid1, start_uid2):
     a = exp_db.restream(input_hdr1, fill=True)
     b = exp_db.restream(input_hdr2, fill=True)
     s = False
+
+    # For testing purposes get the cannonical event
+    z = exp_db.restream(input_hdr1, fill=True)
+    ce = next(islice(z, 1+2, 1+3))[1]
+
     for (name, doc), (_, odoc) in zip(dec_f(img1=a, img2=b),
                                       exp_db.restream(input_hdr2, fill=True)):
         if name == 'start':
@@ -244,14 +302,15 @@ def test_multi_stream_remux(exp_db, tmp_dir, start_uid1, start_uid2):
             assert isinstance(doc['data']['img'], np.ndarray)
             assert_array_equal(
                 doc['data']['img'],
-                f(odoc['data']['pe1_image'], odoc['data']['pe1_image']))
+                f(odoc['data']['pe1_image'], ce['data']['pe1_image']))
         if name == 'stop':
             assert doc['exit_status'] == 'success'
     for ev1, ev2 in zip(exp_db.get_events(input_hdr2, fill=True),
                         exp_db.get_events(exp_db[-1], fill=True)):
         assert_array_equal(f(ev1['data']['pe1_image'],
-                             ev1['data']['pe1_image']),
+                             ce['data']['pe1_image']),
                            ev2['data']['img'])
+
 
 # TODO: write more tests
 """
