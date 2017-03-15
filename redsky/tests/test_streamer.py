@@ -20,6 +20,7 @@ from numpy.testing import assert_array_equal
 from ..savers import NPYSaver
 from ..streamer import event_map, store_dec
 import pytest
+from itertools import islice
 
 
 def test_streaming(exp_db, tmp_dir, start_uid1):
@@ -192,7 +193,65 @@ def test_known_fail(exp_db, tmp_dir, start_uid1):
             assert s is True
             assert doc['exit_status'] == 'failure'
             assert doc['reason'] == repr(RuntimeError('Known Fail'))
+    return
 
+
+def test_multi_stream_remux(exp_db, tmp_dir, start_uid1, start_uid2):
+    def remux(s1, s2, n=0):
+        s1_start, s2_start = [next(s) for s in [s1, s2]]
+        yield s1_start
+        s1_desc, s2_desc = [next(s) for s in [s1, s2]]
+        yield s1_desc
+
+        # This is the part where we fast forward s1 to n
+        cannonical_event = next(islice(s1, n, n + 1))
+        for name, doc in s2:
+            if name != 'event':
+                break
+            yield cannonical_event
+        # This is the part where we fast forward to the end
+        for name, doc in s1:
+            if name == 'stop':
+                yield name, doc
+
+    remux_func = partial(remux, n=1)
+    dnsm = {'img': partial(NPYSaver, root=tmp_dir)}
+
+    def f(img1, img2):
+        return img1 - img2
+
+    dec_f = store_dec(exp_db, dnsm)(
+        event_map({'img1': {'name': 'primary', 'data_key': 'pe1_image',
+                            'remux': (remux_func, 'img2')},
+                   'img2': {'name': 'primary', 'data_key': 'pe1_image'}},
+                  {'data_keys': {'img': {'dtype': 'array'}},
+                   'name': 'primary',
+                   'returns': ['img'],
+                   })(f))
+
+    input_hdr1 = exp_db[start_uid1]
+    input_hdr2 = exp_db[start_uid2]
+    a = exp_db.restream(input_hdr1, fill=True)
+    b = exp_db.restream(input_hdr2, fill=True)
+    s = False
+    for (name, doc), (_, odoc) in zip(dec_f(img1=a, img2=b),
+                                      exp_db.restream(input_hdr2, fill=True)):
+        if name == 'start':
+            assert input_hdr2['start']['uid'] in doc['parents']
+            s = True
+        if name == 'event':
+            assert s is True
+            assert isinstance(doc['data']['img'], np.ndarray)
+            assert_array_equal(
+                doc['data']['img'],
+                f(odoc['data']['pe1_image'], odoc['data']['pe1_image']))
+        if name == 'stop':
+            assert doc['exit_status'] == 'success'
+    for ev1, ev2 in zip(exp_db.get_events(input_hdr2, fill=True),
+                        exp_db.get_events(exp_db[-1], fill=True)):
+        assert_array_equal(f(ev1['data']['pe1_image'],
+                             ev1['data']['pe1_image']),
+                           ev2['data']['img'])
 
 # TODO: write more tests
 """

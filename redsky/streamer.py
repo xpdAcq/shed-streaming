@@ -15,8 +15,8 @@
 ##############################################################################
 import time
 import uuid
-
 import six
+from itertools import tee
 
 
 def doc_or_uid_to_uid(doc_or_uid):
@@ -135,7 +135,8 @@ def event_map(input_info, output_info, provenance=None):
     ------
     input_info = {'input_kwarg': {'name': 'stream_name',
                               'data_key': 'data_key',
-                              }}
+                              'remux': ('remux_function',
+                                        'input_kwarg_of_remuxed_to')}}
 
     Examples
     ---------
@@ -159,7 +160,17 @@ def event_map(input_info, output_info, provenance=None):
                     input_info.keys()):
                 raise RuntimeError(
                     "The input data keys were not in the function inputs")
-            streams = {k: kwargs[k] for k in input_info.keys()}
+            # If any stream needs cleaning/remuxing do it here
+            # We'll capture the relevant info into provenance
+            # Note this remux is not saved as a bundle
+            streams = {}  # Dict {'kwarg_key': generator}
+            for k in input_info.keys():
+                if input_info[k].get('remux', None):
+                    remux_tuple = input_info[k]['remux']
+                    remux_streams = list(tee(kwargs[remux_tuple[1]], 2))
+                    kwargs[k] = remux_tuple[0](kwargs[k], remux_streams.pop())
+                    kwargs[remux_tuple[1]] = remux_streams.pop()
+                streams[k] = kwargs[k]
 
             # Need a reproducible handle in the generators
             stream_keys = streams.keys()
