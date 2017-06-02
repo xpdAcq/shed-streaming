@@ -304,8 +304,10 @@ from ..streamer import db_store_single_resource_single_file, Doc
 def test_Doc(exp_db, start_uid1):
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1)
-    d = Doc(input_info=[('img', 'pe1_image')], output_info={'returns': ['img2']})
+    d = Doc(input_info=[('img', 'pe1_image')], output_info=[
+        ('img2', {'dtype': 'array', 'source': 'testing'})])
     for a in s:
+        print(a)
         if a[0] == 'event':
             doc = a[1]
             guts = d.event_guts(doc)['img']

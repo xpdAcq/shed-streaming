@@ -86,10 +86,10 @@ class Doc(object):
 
         Parameters
         ----------
-        input_info: list of tuple
-            dictionary describing the incoming streams
-        output_info: dict
-            dictionary describing the resulting stream
+        input_info: list of tuples
+            describs the incoming streams
+        output_info: list of tuples
+            describs the resulting stream
         provenance : dict, optional
             metadata about this operation
 
@@ -99,6 +99,10 @@ class Doc(object):
         It is critical for the internal data from the events to be returned,
         upon `event_guts`.
         input_info = [('input_kwarg', 'data_key')]
+
+        output_info is designed to take the output tuple and map it back into
+        data_keys.
+        output_info = [('data_key', {'dtype': 'array', 'source': 'testing'})]
         """
         if output_info is None:
             output_info = {}
@@ -165,7 +169,7 @@ class Doc(object):
             new_descriptor = dict(uid=self.outbound_descriptor_uid,
                                   time=time.time(),
                                   run_start=self.run_start_uid,
-                                  **self.output_info)
+                                  data_keys={k:v for k, v in self.output_info})
         # We are not actually going to change the data, maybe just filter it
         # no truly new data needed
         elif len(docs) == 1:
@@ -212,7 +216,7 @@ class Doc(object):
             return 'stop', new_stop
 
         # Make a new event with no data
-        if len(self.output_info['returns']) == 1:
+        if len(self.output_info) == 1:
             outputs = (outputs,)
         new_event = dict(uid=str(uuid.uuid4()),
                          time=time.time(),
@@ -222,7 +226,7 @@ class Doc(object):
                          # output data to the data keys
                          data={output_name: output
                                for output_name, output in
-                               zip(self.output_info['returns'], outputs)},
+                               zip(self.output_info[0], outputs)},
                          seq_num=self.i)
         self.i += 1
         return 'event', new_event
