@@ -113,7 +113,7 @@ class Doc(object):
         self.output_info = output_info
         self.i = 0
         self.outbound_descriptor_uid = None
-        self.provenence = None
+        self.provenence = {}
 
     def generate_provanance(self, func=None, **kwargs):
         d = dict(module=inspect.getmodule(func),
@@ -209,9 +209,6 @@ class Doc(object):
         -------
 
         """
-        # If handed a single doc
-        if isinstance(docs, dict):
-            docs = (docs, )
         return {input_kwarg: doc['data'][data_key] for
                 (input_kwarg, data_key), doc in zip(self.input_info, docs)}
 
@@ -247,10 +244,7 @@ class Doc(object):
     # XXX: this is dangerous, note that we are not issuing a name doc pair
     # but multiple docs without names
     def event(self, docs):
-        if len(docs) == 1:
-            return 'event', docs[0]
-        else:
-            return docs
+        return docs
 
     def stop(self, docs):
         if self.run_start_uid is None:

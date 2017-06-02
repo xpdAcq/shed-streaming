@@ -44,10 +44,10 @@ class Stream(StreamBase, Doc):
     """
 
     def __init__(self, child=None, children=None, output_info=None,
-                 input_info=None, stream_keys=None, **kwargs):
+                 input_info=None, **kwargs):
         # TODO: this needs something super maybe a Base Class
-        StreamBase.__init__(child, children)
-        Doc.__init__(output_info, input_info, stream_keys)
+        StreamBase.__init__(self, child, children)
+        Doc.__init__(self, output_info, input_info)
 
     def map(self, func, **kwargs):
         """ Apply a function to every element in the stream """
@@ -342,7 +342,7 @@ class map(Stream):
         else:
             result = self.func(x, **self.kwargs)
         # Now we must masage the raw return into a new event
-        result = self.generate_event(result)
+        result = self.issue_event(result)
         return self.emit(result)
 
 
@@ -598,12 +598,14 @@ class starmap(Stream):
 
 
 class dstarmap(Stream):
-    def __init__(self, func, child, raw=False, **kwargs):
+    def __init__(self, func, child, raw=False, output_info=None,
+                 input_info=None, **kwargs):
         self.func = func
         self.kwargs = kwargs
         self.raw = raw
 
-        Stream.__init__(self, child, **kwargs)
+        Stream.__init__(self, child, output_info=output_info,
+                        input_info=input_info, **kwargs)
 
     def update(self, x, who=None):
         # massage the pair(s)
@@ -620,7 +622,7 @@ class dstarmap(Stream):
             else:
                 result = self.func(**res, **self.kwargs)
             # Now we must massage the raw return into a new event
-            result = self.generate_event(result)
+            result = self.issue_event(result)
         except Exception as e:
-            result = self.generate_event(e)
+            result = self.issue_event(e)
         return self.emit(result)
