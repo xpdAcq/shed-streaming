@@ -42,6 +42,11 @@ class Stream(StreamBase, Doc):
     >>> L  # and the actions happen at the sinks
     ['1', '2', '3', '4', '5']
     """
+    def __init__(self, child=None, children=None, output_info=None,
+                 input_info=None, stream_keys=None, **kwargs):
+        # TODO: this needs something super maybe a Base Class
+        StreamBase.__init__(child, children)
+        Doc.__init__(output_info, input_info, stream_keys)
 
     def map(self, func, **kwargs):
         """ Apply a function to every element in the stream """
@@ -585,7 +590,8 @@ class starmap(Stream):
 
 
 class dstarmap(Stream):
-    def __init__(self, func, child, raw=False, **kwargs):
+    def __init__(self, func, child, raw=False, output_info=None,
+                 input_info=None, stream_keys=None, **kwargs):
         self.func = func
         self.kwargs = kwargs
         self.raw = raw
@@ -600,14 +606,13 @@ class dstarmap(Stream):
                                                  'stop']:
             return self.emit(res)
         # otherwise we have exposed the raw event data
-
         try:
             if not self.raw and hasattr(x, '__stream_map__'):
                 result = x.__stream_map__(self.func, **self.kwargs)
             else:
                 result = self.func(**x, **self.kwargs)
+            # Now we must massage the raw return into a new event
             result = self.generate_event(result)
         except Exception as e:
             result = self.generate_event(e)
-        # Now we must massage the raw return into a new event
         return self.emit(result)
