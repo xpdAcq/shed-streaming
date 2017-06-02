@@ -606,6 +606,7 @@ class dstarmap(Stream):
 
         Stream.__init__(self, child, output_info=output_info,
                         input_info=input_info, **kwargs)
+        ### TODO: update the provenence now that we have the func
 
     def update(self, x, who=None):
         # massage the pair(s)
