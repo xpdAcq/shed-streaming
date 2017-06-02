@@ -121,19 +121,31 @@ class Doc(object):
                  function_name=func.__name__, )
         return d
 
-    def dispatch(self, nds):
-        """Dispatch to methods expecting particular doc types."""
-        # If we get multiple streams
+    def curate_streams(self, nds):
+        # If we get multiple streams make (doc, doc, doc, ...)
         if isinstance(nds[0], tuple):
             names, docs = list(zip(*nds))
             if len(set(names)) > 1:
                 raise RuntimeError('Misaligned Streams')
             name = names[0]
+        # If only one stream then (doc, )
         else:
             names, docs = nds
             name = names
             docs = (docs,)
-        # if event expose raw event data
+        return name, docs
+
+    def dispatch(self, nds):
+        """
+        Dispatch to methods expecting particular doc types.
+
+        Notes
+        ------
+        This takes in a tuple ((name, document), (name, document)).
+        This then re-packages this as (document, document) and dispatches
+        to the corresponding method.
+        """
+        name, docs = self.curate_streams(nds)
         return getattr(self, name)(docs)
 
     def start(self, docs):
@@ -232,11 +244,13 @@ class Doc(object):
         return 'event', new_event
 
     # If we need to issue a new doc then just pass it through
+    # XXX: this is dangerous, note that we are not issuing a name doc pair
+    # but multiple docs without names
     def event(self, docs):
         if len(docs) == 1:
-            return docs[0]
+            return 'event', docs[0]
         else:
-            raise RuntimeError("I can't pass through multiple event docs")
+            return docs
 
     def stop(self, docs):
         if self.run_start_uid is None:

@@ -42,6 +42,7 @@ class Stream(StreamBase, Doc):
     >>> L  # and the actions happen at the sinks
     ['1', '2', '3', '4', '5']
     """
+
     def __init__(self, child=None, children=None, output_info=None,
                  input_info=None, stream_keys=None, **kwargs):
         # TODO: this needs something super maybe a Base Class
@@ -299,6 +300,7 @@ class Stream(StreamBase, Doc):
 
     def frequencies(self):
         """ Count occurrences of elements """
+
         def update_frequencies(last, x):
             return toolz.assoc(last, x, last.get(x, 0) + 1)
 
@@ -345,13 +347,19 @@ class map(Stream):
 
 
 class filter(Stream):
-    def __init__(self, predicate, child):
+    def __init__(self, predicate, child, **kwargs):
         self.predicate = predicate
 
-        Stream.__init__(self, child)
+        Stream.__init__(self, child, **kwargs)
 
     def update(self, x, who=None):
-        if self.predicate(x):
+        res = self.dispatch(x)
+        # We issue these new docs without filtering
+        if isinstance(res, tuple) and res[0] in ['start', 'descriptor',
+                                                 'stop']:
+            return self.emit(res)
+        res = self.event_guts(res)
+        if self.predicate(res):
             return self.emit(x)
 
 
@@ -590,23 +598,23 @@ class starmap(Stream):
 
 
 class dstarmap(Stream):
-    def __init__(self, func, child, raw=False, output_info=None,
-                 input_info=None, stream_keys=None, **kwargs):
+    def __init__(self, func, child, raw=False, **kwargs):
         self.func = func
         self.kwargs = kwargs
         self.raw = raw
 
-        Stream.__init__(self, child)
+        Stream.__init__(self, child, **kwargs)
 
     def update(self, x, who=None):
         # massage the pair(s)
         res = self.dispatch(x)
         # if we are giving back a new doc, just emit it
-        if isinstance(x, tuple) and res[0] in ['start', 'descriptor',
-                                               'stop']:
+        if isinstance(res, tuple) and res[0] in ['start', 'descriptor',
+                                                 'stop']:
             return self.emit(res)
-        # otherwise we have exposed the raw event data
         try:
+            # we need to expose the raw event data
+            res = self.event_guts(res)
             if not self.raw and hasattr(x, '__stream_map__'):
                 result = x.__stream_map__(self.func, **self.kwargs)
             else:
