@@ -602,15 +602,15 @@ class dstarmap(Stream):
         # massage the pair(s)
         res = self.dispatch(x)
         # if we are giving back a new doc, just emit it
-        if isinstance(res, tuple) and res[0] in ['start', 'descriptor',
-                                                 'stop']:
+        if isinstance(x, tuple) and res[0] in ['start', 'descriptor',
+                                               'stop']:
             return self.emit(res)
         # otherwise we have exposed the raw event data
         try:
             if not self.raw and hasattr(x, '__stream_map__'):
                 result = x.__stream_map__(self.func, **self.kwargs)
             else:
-                result = self.func(**x, **self.kwargs)
+                result = self.func(**res, **self.kwargs)
             # Now we must massage the raw return into a new event
             result = self.generate_event(result)
         except Exception as e:

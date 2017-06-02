@@ -156,12 +156,29 @@ class Doc(object):
         if self.run_start_uid is None:
             raise RuntimeError("Received EventDescriptor before "
                                "RunStart.")
-        inbound_descriptor_uids = [doc_or_uid_to_uid(doc) for doc in docs]
+        # If we had to describe the output information then we need an all new
+        # descriptor
         self.outbound_descriptor_uid = str(uuid.uuid4())
-        new_descriptor = dict(uid=self.outbound_descriptor_uid,
-                              time=time.time(),
-                              run_start=self.run_start_uid,
-                              **self.output_info)
+        if self.output_info:
+            inbound_descriptor_uids = [doc_or_uid_to_uid(doc) for doc in docs]
+            # TODO: add back data_keys
+            new_descriptor = dict(uid=self.outbound_descriptor_uid,
+                                  time=time.time(),
+                                  run_start=self.run_start_uid,
+                                  **self.output_info)
+        # We are not actually going to change the data, maybe just filter it
+        # no truly new data needed
+        elif len(docs) == 1:
+            new_descriptor = dict(uid=self.outbound_descriptor_uid,
+                                  time=time.time(),
+                                  run_start=self.run_start_uid,
+                                  data_keys=docs[0]['data_keys']
+                                  )
+        # I don't know how to filter multiple streams so fail
+        else:
+            raise RuntimeError("You can either put a new output against "
+                               "multiple streams, or you are filtering a "
+                               "single stream, pick one")
         return 'descriptor', new_descriptor
 
     def event_guts(self, docs):
@@ -209,6 +226,13 @@ class Doc(object):
                          seq_num=self.i)
         self.i += 1
         return 'event', new_event
+
+    # If we need to issue a new doc then just pass it through
+    def event(self, docs):
+        if len(docs) == 1:
+            return docs[0]
+        else:
+            raise RuntimeError("I can't pass through multiple event docs")
 
     def stop(self, docs):
         if self.run_start_uid is None:
