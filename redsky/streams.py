@@ -358,6 +358,7 @@ class filter(Stream):
         if isinstance(res, tuple) and res[0] in ['start', 'descriptor',
                                                  'stop']:
             return self.emit(res)
+        # TODO: potentially expose the entire event with flag in init
         res = self.event_guts(res)
         if self.predicate(res):
             return self.emit(x)
