@@ -497,16 +497,23 @@ class zip(Stream):
         self.maxsize = kwargs.pop('maxsize', 10)
         self.buffers = [deque() for _ in children]
         self.condition = Condition()
+        self.prior = ()
         Stream.__init__(self, children=children)
 
     def update(self, x, who=None):
         L = self.buffers[self.children.index(who)]
         L.append(x)
         if len(L) == 1 and all(self.buffers):
+            if self.prior:
+                for i in range(len(self.buffers)):
+                    # If the docs don't match, preempt with prior good result
+                    if self.buffers[i][0][0] != self.buffers[0][0][0]:
+                        self.buffers[i].appendleft(self.prior[i])
             tup = tuple(buf.popleft() for buf in self.buffers)
             self.condition.notify_all()
             if tup and hasattr(tup[0], '__stream_merge__'):
                 tup = tup[0].__stream_merge__(*tup[1:])
+            self.prior = tup
             return self.emit(tup)
         elif len(L) > self.maxsize:
             return self.condition.wait()
