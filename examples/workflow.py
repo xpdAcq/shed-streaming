@@ -17,20 +17,9 @@ def load_cal(**kwargs):
 hdr = db[-1]
 
 raw_data = hdr.restream(fill=True)
+dark_data = db[hdr['sc_dk_field_uid']]
 rds = Stream()
-
-dark_data_stream = rds.query_db(db=db,
-                                server_string='dark_server_uid',
-                                client_string='dark_client_uid')
-
-air_data_stream = rds.query_db(db=db,
-                               server_string='air_server_uid',
-                               client_string='air_client_uid')
-
-cal_stream = rds.query_db(db=db,
-                          server_string='detector_calibration_server_uid',
-                          client_sring='detector_calibration_client_uid'
-                          ).map(load_cal)
+dark_data_stream = Stream()
 
 img_stream = rds.zip(dark_data_stream
                      ).map(np.subtract
@@ -42,3 +31,4 @@ img_stream = rds.zip(dark_data_stream
 mask_stream = img_stream.zip(cal_stream).map(generate_mask)
 
 iq_stream = img_stream.zip(cal_stream, mask_stream).map(integrate)
+

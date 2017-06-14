@@ -589,19 +589,33 @@ class collect(Stream):
 
 
 class starmap(Stream):
-    def __init__(self, func, child, raw=False, **kwargs):
+    def __init__(self, func, child, raw=False, output_info=None,
+                 input_info=None, **kwargs):
         self.func = func
         self.kwargs = kwargs
         self.raw = raw
 
-        Stream.__init__(self, child)
+        Stream.__init__(self, child, output_info=output_info,
+                        input_info=input_info, **kwargs)
 
     def update(self, x, who=None):
-        if not self.raw and hasattr(x, '__stream_map__'):
-            result = x.__stream_map__(self.func, **self.kwargs)
-        else:
-            result = self.func(*x, **self.kwargs)
-
+        # massage the pair(s)
+        res = self.dispatch(x)
+        # if we are giving back a new doc, just emit it
+        if isinstance(res, tuple) and res[0] in ['start', 'descriptor',
+                                                 'stop']:
+            return self.emit(res)
+        try:
+            # we need to expose the raw event data
+            res = self.event_guts(res)
+            if not self.raw and hasattr(x, '__stream_map__'):
+                result = x.__stream_map__(self.func, **self.kwargs)
+            else:
+                result = self.func(*res, **self.kwargs)
+            # Now we must massage the raw return into a new event
+            result = self.issue_event(result)
+        except Exception as e:
+            result = self.issue_event(e)
         return self.emit(result)
 
 
@@ -626,6 +640,7 @@ class dstarmap(Stream):
         try:
             # we need to expose the raw event data
             res = self.event_guts(res)
+            print(res)
             if not self.raw and hasattr(x, '__stream_map__'):
                 result = x.__stream_map__(self.func, **self.kwargs)
             else:

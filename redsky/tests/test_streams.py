@@ -89,6 +89,7 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
                         stream.emit(next(s))
                     except StopIteration:
                         status[i] = False
+
     zip_emiter((s, s2), (source, source2))
     for l in L:
         print(list(zip(*l))[0])
@@ -112,3 +113,30 @@ def test_zip(exp_db, start_uid1, start_uid3):
     for l1, l2 in L:
         print(l1, l2)
         assert l1 != l2
+
+
+def test_workflow(exp_db, start_uid1):
+    def subs(x1, x2):
+        return x1 - x2
+    hdr = exp_db[start_uid1]
+
+    raw_data = hdr.stream(fill=True)
+    dark_data = exp_db[hdr['start']['sc_dk_field_uid']].stream(fill=True)
+    rds = Stream()
+    dark_data_stream = Stream()
+
+    img_stream = rds.zip(dark_data_stream).dstarmap(subs,
+                                                    input_info=[
+                                                        ('x1', 'pe1_image'),
+                                                        ('x2', 'pe1_image')],
+                                                    output_info=[('data_key', {
+                                                        'dtype': 'array',
+                                                        'source': 'testing'})])
+    L = img_stream.sink_to_list()
+
+    for d in dark_data:
+        dark_data_stream.emit(d)
+    for d in raw_data:
+        rds.emit(d)
+    for l in L:
+        print(l)
