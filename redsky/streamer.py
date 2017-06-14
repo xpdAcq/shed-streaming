@@ -256,3 +256,78 @@ class Doc(object):
         self.outbound_descriptor_uid = None
         self.run_start_uid = None
         return 'stop', new_stop
+
+
+class StoreSink(object):
+    """Decorate a generator of documents to save them to the databases.
+
+    The input stream of (name, document) pairs passes through unchanged.
+    As a side effect, documents are inserted into the databases and external
+    files may be written.
+
+    Parameters
+    ----------
+    db: ``databroker.Broker`` instance
+        The databroker to store the documents in, must have writeable
+        metadatastore and writeable filestore if ``external`` is not empty.
+    external_writers : dict
+        Maps data keys to a ``WriterClass``, which is responsible for writing
+        data to disk and creating a record in filestore. It will be
+        instantiated (possible multiple times) with the argument ``db.fs``.
+        If it requires additional arguments, use ``functools.partial`` to
+        produce a callable that requires only ``db.fs`` to instantiate the
+        ``WriterClass``.
+        """
+    def __init__(self, db, external_writers=None):
+        self.db = db
+        if external_writers is None:
+            self.external_writers = {}  # {'name': WriterClass}
+
+    def __call__(self, nd_pair):
+        name, doc = nd_pair
+        # doc will pass through unchanged; fs_doc may be modified to
+        # replace some values with references to filestore.
+        fs_doc = dict(doc)
+
+        if name == 'start':
+            # Make a fresh instance of any WriterClass classes.
+            writers = {data_key: cl(self.db.fs)
+                       for data_key, cl in self.external_writers.items()}
+
+        if name == 'descriptor':
+            # Mutate fs_doc here to mark data as external.
+            for data_name in self.external_writers.keys():
+                # data doesn't have to exist
+                if data_name in fs_doc['data_keys']:
+                    fs_doc['data_keys'][data_name].update(
+                        external='FILESTORE:')
+
+        elif name == 'event':
+            # We need a selectively deeper copy since we will mutate
+            # fs_doc['data'].
+            fs_doc['data'] = dict(fs_doc['data'])
+            # The writer writes data to an external file, creates a
+            # datum record in the filestore database, and return that
+            # datum_id. We modify fs_doc in place, replacing the data
+            # values with that datum_id.
+            for data_key, writer in writers.items():
+                # data doesn't have to exist
+                if data_key in fs_doc['data']:
+                    fs_uid = writer.write(fs_doc['data'][data_key])
+                    fs_doc['data'][data_key] = fs_uid
+
+            doc.update(
+                filled={k: False for k in self.external_writers.keys()})
+
+        elif name == 'stop':
+            for data_key, writer in list(writers.items()):
+                writer.close()
+                writers.pop(data_key)
+
+        # The mutated fs_doc is inserted into metadatastore.
+        fs_doc.pop('filled', None)
+        fs_doc.pop('_name', None)
+        self.db.mds.insert(name, fs_doc)
+
+        # The pristine doc is yielded.
+        yield name, doc
