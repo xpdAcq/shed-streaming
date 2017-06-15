@@ -1,6 +1,47 @@
 from ..streams import Stream
+from ..streamer import StoreSink
 from numpy.testing import assert_allclose
 import numpy as np
+import os
+import uuid
+from functools import partial
+
+
+class NpyWriter:
+    """
+    Each call to the ``write`` method saves a file and creates a new filestore
+    resource and datum record.
+    """
+
+    SPEC = 'npy'
+
+    def __init__(self, fs, root):
+        self._root = root
+        self._closed = False
+        self._fs = fs
+        # Open and stash a file handle (e.g., h5py.File) if applicable.
+
+    def write(self, data):
+        """
+        Save data to file, generate and insert new resource and datum.
+        """
+        if self._closed:
+            raise RuntimeError('This writer has been closed.')
+        fp = os.path.join(self._root, '{}.npy'.format(str(uuid.uuid4())))
+        np.save(fp, data)
+        resource = self._fs.insert_resource(self.SPEC, fp, resource_kwargs={})
+        datum_id = str(uuid.uuid4())
+        self._fs.insert_datum(resource=resource, datum_id=datum_id,
+                              datum_kwargs={})
+        return datum_id
+
+    def close(self):
+        self._closed = True
+
+    def __enter__(self): return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
 
 def test_map(exp_db, start_uid1):
@@ -115,9 +156,10 @@ def test_zip(exp_db, start_uid1, start_uid3):
         assert l1 != l2
 
 
-def test_workflow(exp_db, start_uid1):
+def test_workflow(exp_db, start_uid1, tmp_dir):
     def subs(x1, x2):
         return x1 - x2
+
     hdr = exp_db[start_uid1]
 
     raw_data = hdr.stream(fill=True)
@@ -125,13 +167,20 @@ def test_workflow(exp_db, start_uid1):
     rds = Stream()
     dark_data_stream = Stream()
 
-    img_stream = rds.zip(dark_data_stream).dstarmap(subs,
-                                                    input_info=[
-                                                        ('x1', 'pe1_image'),
-                                                        ('x2', 'pe1_image')],
-                                                    output_info=[('data_key', {
-                                                        'dtype': 'array',
-                                                        'source': 'testing'})])
+    store_sink = StoreSink(db=exp_db,
+                           external_writers={'image': partial(NpyWriter,
+                                                              root=tmp_dir)})
+
+    img_stream = rds.zip(dark_data_stream
+                         ).dstarmap(subs,
+                                    input_info=[
+                                        ('x1', 'pe1_image'),
+                                        ('x2', 'pe1_image')],
+                                    output_info=[('image', {
+                                        'dtype': 'array',
+                                        'source': 'testing'})]
+                                    )
+    img_stream.sink(store_sink)
     L = img_stream.sink_to_list()
 
     for d in dark_data:
@@ -140,3 +189,4 @@ def test_workflow(exp_db, start_uid1):
         rds.emit(d)
     for l in L:
         print(l)
+    print(exp_db[-1])
