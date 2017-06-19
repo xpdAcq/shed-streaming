@@ -19,6 +19,7 @@ import time
 from metadatastore.core import doc_or_uid_to_uid
 import inspect
 import uuid
+import subprocess
 
 
 def db_store_single_resource_single_file(db, fs_data_name_save_map=None):
@@ -115,10 +116,17 @@ class Doc(object):
         self.outbound_descriptor_uid = None
         self.provenence = {}
 
-    def generate_provanance(self, func=None, **kwargs):
-        d = dict(module=inspect.getmodule(func),
+    def generate_provenance(self, stream_class, func):
+        d = dict(function_module=inspect.getmodule(func),
                  # this line gets more complex with the integration class
-                 function_name=func.__name__, )
+                 function_name=func.__name__,
+                 stream_class=stream_class.__name__,
+                 stream_class_module=inspect.getmodule(stream_class),
+                 conda_list=subprocess.check_output(['conda', 'list',
+                                                     '-e']).decode(),
+                 output_info=self.output_info,
+                 input_info=self.input_info
+                 )
         return d
 
     def curate_streams(self, nds):

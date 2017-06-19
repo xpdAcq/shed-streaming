@@ -640,7 +640,6 @@ class dstarmap(Stream):
         try:
             # we need to expose the raw event data
             res = self.event_guts(res)
-            print(res)
             if not self.raw and hasattr(x, '__stream_map__'):
                 result = x.__stream_map__(self.func, **self.kwargs)
             else:
