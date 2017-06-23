@@ -43,7 +43,7 @@ class map(EventStream):
         self.raw = raw
 
         EventStream.__init__(self, child, output_info=output_info,
-                        input_info=input_info, **kwargs)
+                             input_info=input_info, **kwargs)
         # TODO: update the provenence now that we have the func
 
     def update(self, x, who=None):
@@ -72,7 +72,7 @@ class filter(EventStream):
         self.predicate = predicate
 
         EventStream.__init__(self, child, **kwargs)
-        self.full_event=full_event
+        self.full_event = full_event
 
     def update(self, x, who=None):
         res = self.dispatch(x)
@@ -254,6 +254,50 @@ class zip(EventStream):
             return self.condition.wait()
 
 
+class bundle(EventStream):
+    def __init__(self, *children, **kwargs):
+        self.maxsize = kwargs.pop('maxsize', 100)
+        self.buffers = [deque() for _ in children]
+        self.condition = Condition()
+        self.prior = ()
+        EventStream.__init__(self, children=children)
+
+    def update(self, x, who=None):
+        L = self.buffers[self.children.index(who)]
+        L.append(x)
+        if len(L) == 1 and all(self.buffers):
+            # if all the docs are of the same type and not an event, issue
+            # new documents which are combined
+            rvs = []
+            while all(self.buffers):
+                if all([b[0][0] == self.buffers[0][0][0]
+                         and b[0][0] != 'event'
+                         for b in self.buffers]):
+                    res = self.dispatch(
+                        tuple([b.popleft() for b in self.buffers]))
+                    rvs.append(self.emit(res))
+            # TODO: Issue new events
+                elif any([b[0][0] == 'event' for b in self.buffers]):
+                    for b in self.buffers:
+                        while b:
+                            nd_pair = b[0]
+                            # run the buffers down until no events are left
+                            if nd_pair[0] != 'event':
+                                break
+                            else:
+                                nd_pair = b.popleft()
+                                rvs.append(self.emit(nd_pair))
+
+                else:
+                    raise RuntimeError("There is a mismatch of docs, but none of"
+                                       "them are events so we have reached a "
+                                       "potential deadlock, so we raise this "
+                                       "error instead")
+
+            return rvs
+        elif len(L) > self.maxsize:
+            return self.condition.wait()
+
 # class combine_latest(EventStream):
 #     def __init__(self, *children):
 #         self.last = [None for _ in children]
@@ -272,7 +316,6 @@ class zip(EventStream):
 #             return self.emit(tup)
 
 
-# TODO: this will be a critical bundling tool
 # class concat(EventStream):
 #     def update(self, x, who=None):
 #         L = []
@@ -302,6 +345,7 @@ class zip(EventStream):
 #             return self.emit(x)
 
 
+# TODO: this will be a critical bundling tool
 # class union(EventStream):
 #     def update(self, x, who=None):
 #         return self.emit(x)

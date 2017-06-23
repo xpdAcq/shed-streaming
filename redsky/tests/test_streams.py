@@ -125,8 +125,8 @@ def test_zip(exp_db, start_uid1, start_uid3):
     L = es.zip(source, source2).sink_to_list()
     ih1 = exp_db[start_uid1]
     ih2 = exp_db[start_uid3]
-    s = exp_db.restream(ih1, fill=True)
-    s2 = exp_db.restream(ih2, fill=True)
+    s = exp_db.restream(ih1)
+    s2 = exp_db.restream(ih2)
     for b in s2:
         print(b[0])
         source2.emit(b)
@@ -174,3 +174,22 @@ def test_workflow(exp_db, start_uid1, tmp_dir):
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
     print(exp_db[-1])
+
+
+def test_bundle(exp_db, start_uid1, start_uid3):
+    source = Stream()
+    source2 = Stream()
+
+    s = es.bundle(source, source2)
+    L = s.sink_to_list()
+    s.sink(print)
+
+    ih1 = exp_db[start_uid1]
+    ih2 = exp_db[start_uid3]
+    s = list(exp_db.restream(ih1))
+    s2 = list(exp_db.restream(ih2))
+    for b in s2:
+        source2.emit(b)
+    for a in s:
+        source.emit(a)
+    assert len(L) == len(list(exp_db.get_events(ih1))) + len(list(exp_db.get_events(ih2))) + 3

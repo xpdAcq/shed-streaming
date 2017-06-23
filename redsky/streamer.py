@@ -191,8 +191,10 @@ class Doc(object):
                                   run_start=self.run_start_uid,
                                   data_keys={k:v for k, v in self.output_info})
         # We are not actually going to change the data, maybe just filter it
-        # no truly new data needed
-        elif len(docs) == 1:
+        # no truly new data needed or we are combining copies of the same
+        # descriptor
+        elif (len(docs) == 1
+              or all(d['data_keys'] == docs[0]['data_keys'] for d in docs)):
             new_descriptor = dict(uid=self.outbound_descriptor_uid,
                                   time=time.time(),
                                   run_start=self.run_start_uid,
@@ -200,9 +202,9 @@ class Doc(object):
                                   )
         # I don't know how to filter multiple streams so fail
         else:
-            raise RuntimeError("You can either put a new output against "
-                               "multiple streams, or you are filtering a "
-                               "single stream, pick one")
+            raise RuntimeError("Descriptor mismatch: "
+                               "you have tried to combine descriptors with "
+                               "different data keys")
         return 'descriptor', new_descriptor
 
     def event_guts(self, docs):
