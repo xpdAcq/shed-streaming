@@ -1,4 +1,6 @@
-from ..streams import Stream
+import redsky.event_streams as es
+from ..event_streams import dstar, star
+from streams.core import Stream
 from ..streamer import StoreSink
 from numpy.testing import assert_allclose
 import numpy as np
@@ -50,11 +52,12 @@ def test_map(exp_db, start_uid1):
     def add5(img):
         return img + 5
 
-    L = source.dstarmap(add5,
-                        input_info=[('img', 'pe1_image')],
-                        output_info=[('img',
-                                      {'dtype': 'array',
-                                       'source': 'testing'})]).sink_to_list()
+    L = es.map(dstar(add5),
+               source,
+               input_info=[('img', 'pe1_image')],
+               output_info=[('img',
+                             {'dtype': 'array',
+                              'source': 'testing'})]).sink_to_list()
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -62,6 +65,10 @@ def test_map(exp_db, start_uid1):
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
         if l[0] == 'event':
             assert_allclose(l[1]['data']['img'], s[1]['data']['pe1_image'] + 5)
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+        else:
+            assert l[1] != s[1]
 
 
 def test_double_map(exp_db, start_uid1):
@@ -71,13 +78,12 @@ def test_double_map(exp_db, start_uid1):
     def add_imgs(img1, img2):
         return img1 + img2
 
-    L = source.zip(source2).dstarmap(
-        add_imgs,
-        input_info=[('img1', 'pe1_image'), ('img2', 'pe1_image')],
-        output_info=[
-            ('img',
-             {'dtype': 'array',
-              'source': 'testing'})]).sink_to_list()
+    L = es.map(add_imgs, source.zip(source2),
+               input_info=[('img1', 'pe1_image'), ('img2', 'pe1_image')],
+               output_info=[
+                   ('img',
+                    {'dtype': 'array',
+                     'source': 'testing'})]).sink_to_list()
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -98,7 +104,7 @@ def test_filter(exp_db, start_uid1):
     def f(img1):
         return isinstance(img1, np.ndarray)
 
-    L = source.filter(f).sink_to_list()
+    L = es.filter(source, f).sink_to_list()
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -111,36 +117,11 @@ def test_filter(exp_db, start_uid1):
             assert l[1]['exit_status'] == 'success'
 
 
-def test_combine_latest(exp_db, start_uid1, start_uid3):
-    source = Stream()
-    source2 = Stream()
-
-    L = source.combine_latest(source2).sink_to_list()
-    ih1 = exp_db[start_uid1]
-    ih2 = exp_db[start_uid3]
-    s = exp_db.restream(ih1, fill=True)
-    s2 = exp_db.restream(ih2, fill=True)
-
-    def zip_emiter(sources, streams):
-        status = [True] * len(sources)
-        while all(status):
-            for i, (s, stream) in enumerate(zip(sources, streams)):
-                if status[i]:
-                    try:
-                        stream.emit(next(s))
-                    except StopIteration:
-                        status[i] = False
-
-    zip_emiter((s, s2), (source, source2))
-    for l in L:
-        print(list(zip(*l))[0])
-
-
 def test_zip(exp_db, start_uid1, start_uid3):
     source = Stream()
     source2 = Stream()
 
-    L = source.zip(source2).sink_to_list()
+    L = es.zip(source, source2).sink_to_list()
     ih1 = exp_db[start_uid1]
     ih2 = exp_db[start_uid3]
     s = exp_db.restream(ih1, fill=True)
@@ -171,15 +152,15 @@ def test_workflow(exp_db, start_uid1, tmp_dir):
                            external_writers={'image': partial(NpyWriter,
                                                               root=tmp_dir)})
 
-    img_stream = rds.zip(dark_data_stream
-                         ).dstarmap(subs,
-                                    input_info=[
-                                        ('x1', 'pe1_image'),
-                                        ('x2', 'pe1_image')],
-                                    output_info=[('image', {
-                                        'dtype': 'array',
-                                        'source': 'testing'})]
-                                    )
+    img_stream = es.map(dstar(subs),
+                        es.zip(rds, dark_data_stream),
+                        input_info=[
+                            ('x1', 'pe1_image'),
+                            ('x2', 'pe1_image')],
+                        output_info=[('image', {
+                            'dtype': 'array',
+                            'source': 'testing'})]
+                        )
     img_stream.sink(store_sink)
     L = img_stream.sink_to_list()
 
@@ -189,4 +170,6 @@ def test_workflow(exp_db, start_uid1, tmp_dir):
         rds.emit(d)
     for l in L:
         print(l)
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
     print(exp_db[-1])

@@ -1,4 +1,4 @@
-from redsky.streams import Stream
+from redsky.event_streams import Stream
 from databroker.databroker import Databroker as db
 import numpy as np
 from pyFAI.azimuthalIntegrator import AzimuthalIntegrator as AI
