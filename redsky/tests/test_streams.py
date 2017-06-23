@@ -78,7 +78,7 @@ def test_double_map(exp_db, start_uid1):
     def add_imgs(img1, img2):
         return img1 + img2
 
-    L = es.map(add_imgs, source.zip(source2),
+    L = es.map(dstar(add_imgs), source.zip(source2),
                input_info=[('img1', 'pe1_image'), ('img2', 'pe1_image')],
                output_info=[
                    ('img',
@@ -90,6 +90,7 @@ def test_double_map(exp_db, start_uid1):
         source.emit(a)
         source2.emit(a)
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        print(l)
         if l[0] == 'event':
             assert_allclose(l[1]['data']['img'],
                             add_imgs(s[1]['data']['pe1_image'],
@@ -104,7 +105,7 @@ def test_filter(exp_db, start_uid1):
     def f(img1):
         return isinstance(img1, np.ndarray)
 
-    L = es.filter(source, f).sink_to_list()
+    L = es.filter(f, source).sink_to_list()
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
