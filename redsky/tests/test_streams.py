@@ -131,9 +131,9 @@ def test_workflow(exp_db, start_uid1, tmp_dir):
     for d in raw_data:
         rds.emit(d)
     for (n, d), (nn, dd) in zip(L, exp_db.restream(exp_db[-1], fill=True)):
-        if n[0] == 'event':
-            assert d['data']['image'] == dd['data']['image']
-        if n[0] == 'stop':
+        if n == 'event':
+            assert_allclose(d['data']['image'], dd['data']['image'])
+        if n == 'stop':
             assert d['exit_status'] == 'success'
 
 
