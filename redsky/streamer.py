@@ -16,7 +16,6 @@
 from copy import deepcopy as dc
 
 import time
-from metadatastore.core import doc_or_uid_to_uid
 import inspect
 import uuid
 import subprocess

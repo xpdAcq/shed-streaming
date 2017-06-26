@@ -191,8 +191,8 @@ def test_bundle(exp_db, start_uid1, start_uid3):
         source2.emit(b)
     for a in s:
         source.emit(a)
-    assert len(L) == len(list(exp_db.get_events(ih1))) + \
-                     len(list(exp_db.get_events(ih2))) + 3
+    assert len(L) == len(list(exp_db.get_events(ih1))) + len(
+        list(exp_db.get_events(ih2))) + 3
 
     for l in L:
         assert l[1]['uid'] not in uids
