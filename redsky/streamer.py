@@ -3,7 +3,7 @@
 #
 # redsky            by Billinge Group
 #                   Simon J. L. Billinge sb2896@columbia.edu
-#                   (c) 2016 trustees of Columbia University in the City of
+#                   (c) 2017 trustees of Columbia University in the City of
 #                        New York.
 #                   All rights reserved
 #
@@ -13,12 +13,11 @@
 # See LICENSE.txt for license information.
 #
 ##############################################################################
-from copy import deepcopy as dc
 
-import time
 import inspect
-import uuid
 import subprocess
+import time
+import uuid
 
 
 class Doc(object):
