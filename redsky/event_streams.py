@@ -282,14 +282,13 @@ class bundle(EventStream):
                             else:
                                 nd_pair = b.popleft()
                                 new_nd_pair = self.issue_event(nd_pair[1])
-                                print(new_nd_pair)
                                 rvs.append(self.emit(new_nd_pair))
 
                 else:
                     raise RuntimeError("There is a mismatch of docs, but none "
-                                       "ofthem are events so we have reached a "
-                                       "potential deadlock, so we raise this "
-                                       "error instead")
+                                       "of them are events so we have reached "
+                                       "a potential deadlock, so we raise "
+                                       "this error instead")
 
             return rvs
         elif len(L) > self.maxsize:

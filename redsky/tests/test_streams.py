@@ -66,6 +66,8 @@ def test_map(exp_db, start_uid1):
         if l[0] == 'event':
             assert_allclose(l[1]['data']['img'], s[1]['data']['pe1_image'] + 5)
         if l[0] == 'stop':
+            if l[1]['exit_status'] == 'failure':
+                print(l[1]['reason'])
             assert l[1]['exit_status'] == 'success'
         else:
             assert l[1] != s[1]
@@ -90,7 +92,6 @@ def test_double_map(exp_db, start_uid1):
         source.emit(a)
         source2.emit(a)
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
-        print(l)
         if l[0] == 'event':
             assert_allclose(l[1]['data']['img'],
                             add_imgs(s[1]['data']['pe1_image'],
@@ -114,7 +115,6 @@ def test_filter(exp_db, start_uid1):
         if l[0] == 'event':
             assert_allclose(l[1]['data']['img'], s[1]['data']['pe1_image'])
         if l[0] == 'stop':
-            print(l)
             assert l[1]['exit_status'] == 'success'
 
 
@@ -128,13 +128,10 @@ def test_zip(exp_db, start_uid1, start_uid3):
     s = exp_db.restream(ih1)
     s2 = exp_db.restream(ih2)
     for b in s2:
-        print(b[0])
         source2.emit(b)
     for a in s:
-        print(a[0])
         source.emit(a)
     for l1, l2 in L:
-        print(l1, l2)
         assert l1 != l2
 
 
@@ -169,11 +166,11 @@ def test_workflow(exp_db, start_uid1, tmp_dir):
         dark_data_stream.emit(d)
     for d in raw_data:
         rds.emit(d)
-    for l in L:
-        print(l)
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-    print(exp_db[-1])
+    for (n, d), (nn, dd) in zip(L, exp_db.restream(exp_db[-1], fill=True)):
+        if n[0] == 'event':
+            assert d['data']['image'] == dd['data']['image']
+        if n[0] == 'stop':
+            assert d['exit_status'] == 'success'
 
 
 def test_bundle(exp_db, start_uid1, start_uid3):
@@ -182,7 +179,6 @@ def test_bundle(exp_db, start_uid1, start_uid3):
 
     s = es.bundle(source, source2)
     L = s.sink_to_list()
-    s.sink(print)
 
     ih1 = exp_db[start_uid1]
     ih2 = exp_db[start_uid3]

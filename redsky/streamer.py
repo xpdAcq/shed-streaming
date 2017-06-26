@@ -212,8 +212,6 @@ class Doc(object):
         -------
 
         """
-        if len(self.input_info) == 1:
-            docs = (docs,)
         return {input_kwarg: doc['data'][data_key] for
                 (input_kwarg, data_key), doc in zip(self.input_info, docs)}
 
