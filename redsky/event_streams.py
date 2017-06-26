@@ -1,14 +1,10 @@
-from collections import deque
-from time import time
-
-import toolz
-from tornado import gen
-from tornado.locks import Condition
-from tornado.ioloop import IOLoop
-from tornado.queues import Queue
-from streams.core import Stream, no_default, identity
-from .streamer import Doc
 import functools as ft
+from collections import deque
+
+from streams.core import Stream, no_default
+from tornado.locks import Condition
+
+from .streamer import Doc
 
 
 def star(f):
@@ -346,7 +342,6 @@ class bundle(EventStream):
 #             return self.emit(x)
 
 
-# TODO: this will be a critical bundling tool
 # class union(EventStream):
 #     def update(self, x, who=None):
 #         return self.emit(x)
