@@ -188,7 +188,8 @@ class Doc(object):
                               run_start=self.run_start_uid)
         if self.output_info:
             inbound_descriptor_uids = [doc_or_uid_to_uid(doc) for doc in docs]
-            new_descriptor.update(data_keys={k:v for k, v in self.output_info})
+            new_descriptor.update(
+                data_keys={k: v for k, v in self.output_info})
 
         # no truly new data needed
         elif all(d['data_keys'] == docs[0]['data_keys'] for d in docs):
@@ -249,8 +250,8 @@ class Doc(object):
 
         if self.output_info:
             new_event.update(data={output_name: output
-                               for (output_name, desc), output in
-                               zip(self.output_info, outputs)})
+                                   for (output_name, desc), output in
+                                   zip(self.output_info, outputs)})
         else:
             new_event.update(data=outputs['data'])
         self.i += 1
@@ -294,6 +295,7 @@ class StoreSink(object):
         produce a callable that requires only ``db.fs`` to instantiate the
         ``WriterClass``.
         """
+
     def __init__(self, db, external_writers=None):
         self.db = db
         if external_writers is None:
@@ -341,13 +343,13 @@ class StoreSink(object):
                 fs_doc['data_keys'][data_name].update(
                     external='FILESTORE:')
         return 'descriptor', doc, fs_doc
-        
+
     def start(self, doc):
         # Make a fresh instance of any WriterClass classes.
         self.writers = {data_key: cl(self.db.fs)
-                   for data_key, cl in self.external_writers.items()}
+                        for data_key, cl in self.external_writers.items()}
         return 'start', doc, doc
-    
+
     def stop(self, doc):
         for data_key, writer in list(self.writers.items()):
             writer.close()

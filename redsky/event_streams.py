@@ -266,9 +266,8 @@ class bundle(EventStream):
             # new documents which are combined
             rvs = []
             while all(self.buffers):
-                if all([b[0][0] == self.buffers[0][0][0]
-                         and b[0][0] != 'event'
-                         for b in self.buffers]):
+                if all([b[0][0] == self.buffers[0][0][0] and b[0][0] != 'event'
+                        for b in self.buffers]):
                     res = self.dispatch(
                         tuple([b.popleft() for b in self.buffers]))
                     rvs.append(self.emit(res))
