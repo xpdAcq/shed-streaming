@@ -101,7 +101,7 @@ class scan(EventStream):
         if self.state is no_default:
             self.state = x
         # in case we need a bit more flexibility eg lambda x: np.empty(x.shape)
-        elif isinstance(self.state, function):
+        elif hasattr(self.state, '__call__'):
             self.state = self.state(x)
             return self.emit(self.state)
         else:

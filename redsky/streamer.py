@@ -187,7 +187,6 @@ class Doc(object):
                               time=time.time(),
                               run_start=self.run_start_uid)
         if self.output_info:
-            inbound_descriptor_uids = [doc_or_uid_to_uid(doc) for doc in docs]
             new_descriptor.update(
                 data_keys={k: v for k, v in self.output_info})
 

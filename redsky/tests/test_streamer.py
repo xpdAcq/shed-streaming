@@ -24,7 +24,7 @@ def test_Doc(exp_db, start_uid1):
     for a in s:
         print(a)
         if a[0] == 'event':
-            doc = a[1]
+            doc = d.dispatch(a)
             guts = d.event_guts(doc)['img']
             print(d.issue_event(guts))
         else:

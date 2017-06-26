@@ -1,5 +1,5 @@
 import redsky.event_streams as es
-from ..event_streams import dstar, star
+from ..event_streams import dstar
 from streams.core import Stream
 from ..streamer import StoreSink
 from numpy.testing import assert_allclose
@@ -40,7 +40,8 @@ class NpyWriter:
     def close(self):
         self._closed = True
 
-    def __enter__(self): return self
+    def __enter__(self):
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
