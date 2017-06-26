@@ -188,8 +188,12 @@ def test_bundle(exp_db, start_uid1, start_uid3):
     ih2 = exp_db[start_uid3]
     s = list(exp_db.restream(ih1))
     s2 = list(exp_db.restream(ih2))
+    uids = set([doc['uid'] for name, doc in s] + [doc['uid'] for name, doc in s2])
     for b in s2:
         source2.emit(b)
     for a in s:
         source.emit(a)
     assert len(L) == len(list(exp_db.get_events(ih1))) + len(list(exp_db.get_events(ih2))) + 3
+
+    for l in L:
+        assert l[1]['uid'] not in uids

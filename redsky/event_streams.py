@@ -276,7 +276,6 @@ class bundle(EventStream):
                     res = self.dispatch(
                         tuple([b.popleft() for b in self.buffers]))
                     rvs.append(self.emit(res))
-            # TODO: Issue new events
                 elif any([b[0][0] == 'event' for b in self.buffers]):
                     for b in self.buffers:
                         while b:
@@ -286,11 +285,13 @@ class bundle(EventStream):
                                 break
                             else:
                                 nd_pair = b.popleft()
-                                rvs.append(self.emit(nd_pair))
+                                new_nd_pair = self.issue_event(nd_pair[1])
+                                print(new_nd_pair)
+                                rvs.append(self.emit(new_nd_pair))
 
                 else:
-                    raise RuntimeError("There is a mismatch of docs, but none of"
-                                       "them are events so we have reached a "
+                    raise RuntimeError("There is a mismatch of docs, but none "
+                                       "ofthem are events so we have reached a "
                                        "potential deadlock, so we raise this "
                                        "error instead")
 

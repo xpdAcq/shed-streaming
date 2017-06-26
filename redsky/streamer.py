@@ -183,24 +183,17 @@ class Doc(object):
         # If we had to describe the output information then we need an all new
         # descriptor
         self.outbound_descriptor_uid = str(uuid.uuid4())
+        new_descriptor = dict(uid=self.outbound_descriptor_uid,
+                              time=time.time(),
+                              run_start=self.run_start_uid)
         if self.output_info:
             inbound_descriptor_uids = [doc_or_uid_to_uid(doc) for doc in docs]
-            # TODO: add back data_keys
-            new_descriptor = dict(uid=self.outbound_descriptor_uid,
-                                  time=time.time(),
-                                  run_start=self.run_start_uid,
-                                  data_keys={k:v for k, v in self.output_info})
-        # We are not actually going to change the data, maybe just filter it
-        # no truly new data needed or we are combining copies of the same
-        # descriptor
-        elif (len(docs) == 1
-              or all(d['data_keys'] == docs[0]['data_keys'] for d in docs)):
-            new_descriptor = dict(uid=self.outbound_descriptor_uid,
-                                  time=time.time(),
-                                  run_start=self.run_start_uid,
-                                  data_keys=docs[0]['data_keys']
-                                  )
-        # I don't know how to filter multiple streams so fail
+            new_descriptor.update(data_keys={k:v for k, v in self.output_info})
+
+        # no truly new data needed
+        elif all(d['data_keys'] == docs[0]['data_keys'] for d in docs):
+            new_descriptor.update(data_keys=docs[0]['data_keys'])
+
         else:
             raise RuntimeError("Descriptor mismatch: "
                                "you have tried to combine descriptors with "
@@ -223,6 +216,16 @@ class Doc(object):
                 (input_kwarg, data_key), doc in zip(self.input_info, docs)}
 
     def issue_event(self, outputs):
+        """Issue a new event
+
+        Parameters
+        ----------
+        outputs: tuple, dict, or other
+
+        Returns
+        -------
+
+        """
         if self.run_start_uid is None:
             raise RuntimeError("Received Event before RunStart.")
         # TODO: figure out a way to halt the stream if we issue an error stop
@@ -237,16 +240,19 @@ class Doc(object):
         # Make a new event with no data
         if len(self.output_info) == 1:
             outputs = (outputs,)
+
         new_event = dict(uid=str(uuid.uuid4()),
                          time=time.time(),
                          timestamps={},
                          descriptor=self.outbound_descriptor_uid,
-                         # use the return positions list to properly map the
-                         # output data to the data keys
-                         data={output_name: output
-                               for output_name, output in
-                               zip(self.output_info[0], outputs)},
                          seq_num=self.i)
+
+        if self.output_info:
+            new_event.update(data={output_name: output
+                               for (output_name, desc), output in
+                               zip(self.output_info, outputs)})
+        else:
+            new_event.update(data=outputs['data'])
         self.i += 1
         return 'event', new_event
 
