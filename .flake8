@@ -5,6 +5,6 @@ exclude =
     doc/conf.py,
     old,
     build,
-    dist
-    examples/*
+    dist,
+    examples
 ignore = C901
