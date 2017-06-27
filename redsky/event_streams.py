@@ -83,8 +83,10 @@ class filter(EventStream):
 
 
 class scan(EventStream):
-    def __init__(self, func, child, start=no_default, output_info=None,
+    def __init__(self, func, child, start=no_default, state_key=None,
+                 output_info=None,
                  input_info=None):
+        self.state_key = state_key
         self.func = func
         self.state = start
         EventStream.__init__(self, child, input_info=input_info,
@@ -103,14 +105,14 @@ class scan(EventStream):
         # in case we need a bit more flexibility eg lambda x: np.empty(x.shape)
         elif hasattr(self.state, '__call__'):
             self.state = self.state(x)
-            return self.emit(self.state)
         else:
             if hasattr(x, '__stream_reduce__'):
                 result = x.__stream_reduce__(self.func, self.state)
             else:
-                result = self.func(self.state, x)
+                x[self.state_key] = self.state
+                result = self.func(x)
             self.state = result
-            return self.emit(self.state)
+        return self.emit(self.issue_event(self.state))
 
 
 # class partition(EventStream):

@@ -178,3 +178,34 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
         assert l1 != l2
         if l1[0] == 'event':
             assert l2[1]['seq_num'] == 1
+
+
+def test_scan(exp_db, start_uid1):
+    source = Stream()
+
+    def add(img1, img2):
+        return img1 + img2
+
+    def make_empty_array(img2):
+        return np.empty(img2.shape)
+
+    L = es.scan(dstar(add), source, start=dstar(make_empty_array),
+                state_key='img1',
+                input_info=[('img2', 'pe1_image')],
+                output_info=[('img', {
+                            'dtype': 'array',
+                            'source': 'testing'})]).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+    state = None
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        if l[0] == 'event':
+            if state is None:
+                state = o[1]['data']['pe1_image']
+            else:
+                state += o[1]['data']['pe1_image']
+            assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
