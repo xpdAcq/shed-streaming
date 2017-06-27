@@ -175,7 +175,6 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
     for a in s:
         source.emit(a)
     for l1, l2 in L:
-        print(l1[0], l2[0])
         assert l1 != l2
         if l1[0] == 'event':
             assert l2[1]['seq_num'] == 1
