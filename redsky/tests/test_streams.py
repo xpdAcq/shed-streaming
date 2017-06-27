@@ -70,7 +70,7 @@ def test_filter(exp_db, start_uid1):
     def f(img1):
         return isinstance(img1, np.ndarray)
 
-    L = es.filter(f, source).sink_to_list()
+    L = es.filter(f, source, input_info=[('img1', 'pe1_image')]).sink_to_list()
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
