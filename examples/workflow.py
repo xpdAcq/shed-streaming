@@ -36,6 +36,20 @@ def generate_binner(geo, mask):
     qbin = np.cumsum(qbin_sizes)
     return BinnedStatistic1D(q.flatten, bins=qbin, mask=mask.flatten())
 
+
+def z_score_image(img, binner):
+    xy = binner.xy
+    for i in np.unique(xy):
+        tv = (xy == i)
+        img[tv] -= np.mean(img[tv])
+        img[tv] /= np.std(img[tv])
+    return img
+
+
+def integrate(img, binner):
+    return binner(img)
+
+
 # Get all the relevent headers
 bg_uids = []
 fg_uids = []
@@ -104,8 +118,28 @@ mask_stream = es.map(dstar(pbetter_mask_img),
                      input_info=[('img', 'img'),
                                  ('geo', 'geo')],
                      output_info=[('mask', {'dtype': 'array',
-                                           'source': 'testing'})])
-
+                                            'source': 'testing'})])
 
 # generate binner stream
-binner_stream = es.map(dstar(generate_binner), es.zip(mask_stream, ))
+binner_stream = es.map(dstar(generate_binner),
+                       es.combine_latest(mask_stream, cal_stream,
+                                         emit_on=mask_stream),
+                       input_info=[('mask', 'mask'),
+                                   ('geo', 'geo')],
+                       output_info=[('binner', {'dtype': 'function',
+                                                'source': 'testing'})])
+
+# z-score the data
+z_score_stream = es.map(dstar(z_score_image),
+                        es.zip(fg_sub_bg, binner_stream),
+                        input_info=[('img', 'img'),
+                                    ('binner', 'binner')],
+                        output_info=[('z_score_img', {'dtype': 'array',
+                                                      'source': 'testing'})])
+
+iq_stream = es.map(dstar(integrate),
+                   es.zip(fg_sub_bg, binner_stream),
+                   input_info=[('img', 'img'),
+                               ('binner', 'binner')],
+                   output_info=[('iq', {'dtype': 'array',
+                                        'source': 'testing'})])
