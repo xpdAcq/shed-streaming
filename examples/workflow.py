@@ -50,6 +50,10 @@ def integrate(img, binner):
     return binner(img)
 
 
+def polarization_correction(img, geo, polarization_factor=.99):
+    return img/geo.polarization(img.shape, polarization_factor)
+
+
 # Get all the relevent headers
 bg_uids = []
 fg_uids = []
@@ -96,7 +100,7 @@ summed_bg = es.scan(dstar(add), bg_bundle, start=dstar(make_empty_array),
                         'source': 'testing'})])
 
 # combine the fg with the summed_bg
-fg_bg = es.combine_latest(dark_sub_fg, dark_sub_bg, emit_on=dark_sub_fg)
+fg_bg = es.combine_latest(dark_sub_fg, summed_bg, emit_on=dark_sub_fg)
 
 # subtract the background images
 fg_sub_bg = es.map(dstar(subs),
@@ -109,11 +113,22 @@ fg_sub_bg = es.map(dstar(subs),
 # make/get calibration stream
 cal_stream = Stream()
 
+# polarization correction
+pfactor=.87
+ppolarization_correction = partial(polarization_correction,
+                                   polarization_factor=pfactor)
+p_corrected_stream = es.map(ppolarization_correction,
+                            es.zip(fg_sub_bg, cal_stream),
+                            input_info=[('img', 'img'),
+                                        ('geo', 'geo')],
+                            output_info=[('img', {'dtype': 'array',
+                                                  'source': 'testing'})])
+
 # generate masks
 mask_kwargs = {}
 pbetter_mask_img = partial(better_mask_img, **mask_kwargs)
 mask_stream = es.map(dstar(pbetter_mask_img),
-                     es.combine_latest(fg_sub_bg, cal_stream,
+                     es.combine_latest(p_corrected_stream, cal_stream,
                                        emit_on=fg_sub_bg),
                      input_info=[('img', 'img'),
                                  ('geo', 'geo')],
@@ -131,14 +146,14 @@ binner_stream = es.map(dstar(generate_binner),
 
 # z-score the data
 z_score_stream = es.map(dstar(z_score_image),
-                        es.zip(fg_sub_bg, binner_stream),
+                        es.zip(p_corrected_stream, binner_stream),
                         input_info=[('img', 'img'),
                                     ('binner', 'binner')],
                         output_info=[('z_score_img', {'dtype': 'array',
                                                       'source': 'testing'})])
 
 iq_stream = es.map(dstar(integrate),
-                   es.zip(fg_sub_bg, binner_stream),
+                   es.zip(p_corrected_stream, binner_stream),
                    input_info=[('img', 'img'),
                                ('binner', 'binner')],
                    output_info=[('iq', {'dtype': 'array',
