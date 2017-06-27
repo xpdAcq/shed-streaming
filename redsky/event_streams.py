@@ -293,22 +293,49 @@ class bundle(EventStream):
         elif len(L) > self.maxsize:
             return self.condition.wait()
 
-# class combine_latest(EventStream):
-#     def __init__(self, *children):
-#         self.last = [None for _ in children]
-#         self.missing = set(children)
-#         EventStream.__init__(self, children=children)
-#
-#     def update(self, x, who=None):
-#         if self.missing and who in self.missing:
-#             self.missing.remove(who)
-#
-#         self.last[self.children.index(who)] = x
-#         if not self.missing:
-#             tup = tuple(self.last)
-#             if tup and hasattr(tup[0], '__stream_merge__'):
-#                 tup = tup[0].__stream_merge__(*tup[1:])
-#             return self.emit(tup)
+
+class combine_latest(EventStream):
+    def __init__(self, *children, emit_on=None):
+        self.last = [None for _ in children]
+        self.special_docs_names = ['start', 'descriptor', 'stop']
+        self.special_docs = {k: [None for _ in children] for k in
+                             self.special_docs_names}
+        self.missing = set(children)
+        self.special_missing = {k: set(children) for k in
+                                self.special_docs_names}
+        if emit_on is not None:
+            if not hasattr(emit_on, '__iter__'):
+                emit_on = (emit_on, )
+            self.emit_on = emit_on
+        else:
+            self.emit_on = children
+        Stream.__init__(self, children=children)
+
+    def update(self, x, who=None):
+        name, doc = x
+        if name in self.special_docs_names:
+            idx = self.children.index(who)
+            self.special_docs[name][idx] = x
+            if self.special_missing[name] and \
+                            who in self.special_missing[name]:
+                self.special_missing[name].remove(who)
+
+            self.special_docs[name][self.children.index(who)] = x
+            if not self.special_missing[name] and who in self.emit_on:
+                tup = tuple(self.special_docs[name])
+                if tup and hasattr(tup[0], '__stream_merge__'):
+                    tup = tup[0].__stream_merge__(*tup[1:])
+                return self.emit(tup)
+        else:
+            if self.missing and who in self.missing:
+                self.missing.remove(who)
+
+            self.last[self.children.index(who)] = x
+            if not self.missing and who in self.emit_on:
+                tup = tuple(self.last)
+                if tup and hasattr(tup[0], '__stream_merge__'):
+                    tup = tup[0].__stream_merge__(*tup[1:])
+                return self.emit(tup)
 
 
 # class concat(EventStream):

@@ -159,3 +159,23 @@ def test_bundle(exp_db, start_uid1, start_uid3):
 
     for l in L:
         assert l[1]['uid'] not in uids
+
+
+def test_combine_latest(exp_db, start_uid1, start_uid3):
+    source = Stream()
+    source2 = Stream()
+
+    L = es.combine_latest(source, source2, emit_on=source).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    ih2 = exp_db[start_uid3]
+    s = exp_db.restream(ih1)
+    s2 = exp_db.restream(ih2)
+    for b in s2:
+        source2.emit(b)
+    for a in s:
+        source.emit(a)
+    for l1, l2 in L:
+        print(l1[0], l2[0])
+        assert l1 != l2
+        if l1[0] == 'event':
+            assert l2[1]['seq_num'] == 1
