@@ -1,12 +1,14 @@
 """Example for Max's Alginate data"""
 import redsky.event_streams as es
-from redsky.event_streams import dstar
+from redsky.event_streams import dstar, star
 from streams.core import Stream
 import numpy as np
 from skbeam.core.accumulators.binned_statistic import BinnedStatistic1D
 from functools import partial
-from xpdan.tools import better_mask_img
+# from xpdan.tools import better_mask_img
 from databroker.databroker import DataBroker as db
+from bluesky.callbacks.broker import LiveImage
+from pprint import pprint
 
 
 def subs(img1, img2):
@@ -19,6 +21,13 @@ def add(img1, img2):
 
 def pull_array(img2):
     return img2
+
+
+def print_shape(name, doc):
+    if name == 'event':
+        for k, v in doc['data'].items():
+            if hasattr(v, 'shape'):
+                print(v.shape)
 
 
 def generate_binner(geo, mask):
@@ -56,15 +65,19 @@ def polarization_correction(img, geo, polarization_factor=.99):
 
 
 db.add_filter(bt_piLast='Billinge')
-hdrs = db(start_time='2017-06-01')
+hdrs = db(start_time=1496855060.5545955 - 10000)
 
 # Get all the relevant headers
-bg_uids = [h['start']['uid'] for h in hdrs if 'Kapton_film' in h['start']['sample_name']]
-fg_uids = [h['start']['uid'] for h in hdrs if 'Alginate' in h['start']['sample_name']]
+bg_uids = [h['start']['uid'] for h in hdrs if
+           h['start']['sample_name'] == 'kapton_film_bkgd']
+fg_uids = [h['start']['uid'] for h in hdrs if
+           'Alginate' in h['start']['sample_name']]
 
 # And the darks
-bg_dark_uids = [db[db[uid]['sp_dark_uid']] for uid in bg_uids]
-fg_dark_uids = [db[db[uid]['sp_dark_uid']] for uid in fg_uids]
+bg_dark_uids = [db[db[uid]['start']['sc_dk_field_uid']]['start']['uid'] for uid
+                in bg_uids if 'sc_dk_field_uid' in db[uid]['start']]
+fg_dark_uids = [db[db[uid]['start']['sc_dk_field_uid']]['start']['uid'] for uid
+                in fg_uids if 'sc_dk_field_uid' in db[uid]['start']]
 
 # Create streams for all the data sets
 bg_streams = [Stream() for uid in bg_uids]
@@ -72,31 +85,33 @@ bg_dark_streams = [Stream() for uid in bg_dark_uids]
 
 # Perform dark subtraction on everything
 dark_sub_bg = [es.map(dstar(subs),
-                      es.zip(bg_stream,
-                             bg_dark_stream,
-                             input_info=[('img1', 'pe1_image'),
-                                         ('img2', 'pe1_image')],
-                             output_info=[('img', {'dtype': 'array',
-                                                   'source': 'testing'})]))
+                      es.zip(bg_stream, bg_dark_stream),
+                      input_info=[('img1', 'pe1_image'),
+                                  ('img2', 'pe1_image')],
+                      output_info=[('img', {'dtype': 'array',
+                                            'source': 'testing'})])
                for bg_stream,
                    bg_dark_stream in zip(bg_streams, bg_dark_streams)]
-
 # bundle the backgrounds into one stream
 bg_bundle = es.bundle(*dark_sub_bg)
 
 # sum the backgrounds
 summed_bg = es.scan(dstar(add), bg_bundle, start=dstar(pull_array),
                     state_key='img1',
-                    input_info=[('img2', 'pe1_image')],
+                    input_info=[('img2', 'img')],
                     output_info=[('img', {
                         'dtype': 'array',
                         'source': 'testing'})])
 
+# summed_bg.sink(pprint)
+summed_bg.sink(star(print_shape))
+# summed_bg.sink(star(LiveImage('img')))
 # Actually run on the background data (which is common to all)
-for s, h in zip(bg_streams + bg_dark_streams, bg_uids + bg_dark_uids):
-    for nd in db.restream(h, fill=True):
+for s, u in zip(bg_streams + bg_dark_streams, bg_uids + bg_dark_uids):
+    for nd in db.restream(db[u], fill=True):
+        # pprint(nd)
         s.emit(nd)
-
+"""
 # Create the foreground half
 fg_stream = Stream()
 fg_dark_stream = Stream()
@@ -161,6 +176,8 @@ z_score_stream = es.map(dstar(z_score_image),
                         output_info=[('z_score_img', {'dtype': 'array',
                                                       'source': 'testing'})])
 
+z_score_stream.sink(LiveImage('z_score_img'))
+
 iq_stream = es.map(dstar(integrate),
                    es.zip(p_corrected_stream, binner_stream),
                    input_info=[('img', 'img'),
@@ -169,7 +186,8 @@ iq_stream = es.map(dstar(integrate),
                                         'source': 'testing'})])
 
 for fg_uid, fg_dark_uid in zip(fg_uids, fg_dark_uids):
-    for h, s in zip([db[uid] for uid in [fg_uid, fg_dark_uid]],
+    for u, s in zip([db[uid] for uid in [fg_uid, fg_dark_uid]],
                     [fg_stream, fg_dark_stream]):
-        for nd in db.restream(h, fill=True):
+        for nd in db.restream(u, fill=True):
             s.emit(nd)
+"""
