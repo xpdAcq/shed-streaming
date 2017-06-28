@@ -173,7 +173,6 @@ class Doc(object):
         if not self.event_failed:
             if self.run_start_uid is None:
                 raise RuntimeError("Received Event before RunStart.")
-            # TODO: figure out a way to halt the stream if we issue an error stop
             if isinstance(outputs, Exception):
                 return self.stop(outputs)
 
