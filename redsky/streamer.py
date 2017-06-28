@@ -56,7 +56,7 @@ class Doc(object):
         self.run_start_uid = None
         self.input_info = input_info
         self.output_info = output_info
-        self.i = 0
+        self.i = None
         self.outbound_descriptor_uid = None
         self.provenence = {}
 
@@ -142,6 +142,7 @@ class Doc(object):
             raise RuntimeError("Descriptor mismatch: "
                                "you have tried to combine descriptors with "
                                "different data keys")
+        self.i = 0
         return 'descriptor', new_descriptor
 
     def event_guts(self, docs):
