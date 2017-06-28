@@ -194,8 +194,8 @@ def test_scan(exp_db, start_uid1):
                 state_key='img1',
                 input_info=[('img2', 'pe1_image')],
                 output_info=[('img', {
-                            'dtype': 'array',
-                            'source': 'testing'})]).sink_to_list()
+                    'dtype': 'array',
+                    'source': 'testing'})]).sink_to_list()
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:

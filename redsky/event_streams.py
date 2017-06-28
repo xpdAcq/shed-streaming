@@ -309,7 +309,7 @@ class combine_latest(EventStream):
                                 self.special_docs_names}
         if emit_on is not None:
             if not hasattr(emit_on, '__iter__'):
-                emit_on = (emit_on, )
+                emit_on = (emit_on,)
             self.emit_on = emit_on
         else:
             self.emit_on = children
@@ -320,8 +320,8 @@ class combine_latest(EventStream):
         if name in self.special_docs_names:
             idx = self.children.index(who)
             self.special_docs[name][idx] = x
-            if self.special_missing[name] and \
-                            who in self.special_missing[name]:
+            if self.special_missing[name] and who in \
+                    self.special_missing[name]:
                 self.special_missing[name].remove(who)
 
             self.special_docs[name][self.children.index(who)] = x
@@ -340,7 +340,6 @@ class combine_latest(EventStream):
                 if tup and hasattr(tup[0], '__stream_merge__'):
                     tup = tup[0].__stream_merge__(*tup[1:])
                 return self.emit(tup)
-
 
 # class concat(EventStream):
 #     def update(self, x, who=None):
