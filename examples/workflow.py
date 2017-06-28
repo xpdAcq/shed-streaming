@@ -6,6 +6,7 @@ import numpy as np
 from skbeam.core.accumulators.binned_statistic import BinnedStatistic1D
 from functools import partial
 from xpdan.tools import better_mask_img
+from databroker.databroker import DataBroker as db
 
 
 def subs(img1, img2):
@@ -16,8 +17,8 @@ def add(img1, img2):
     return img1 + img2
 
 
-def make_empty_array(img2):
-    return np.empty(img2.shape)
+def pull_array(img2):
+    return img2
 
 
 def generate_binner(geo, mask):
@@ -59,15 +60,13 @@ bg_uids = []
 fg_uids = []
 
 # And the darks
-bg_dark_uids = []
-fg_dark_uids = []
+bg_dark_uids = [db[db[uid]['sp_dark_uid']] for uid in bg_uids]
+fg_dark_uids = [db[db[uid]['sp_dark_uid']] for uid in fg_uids]
 
 # Create streams for all the data sets
 bg_streams = [Stream() for uid in bg_uids]
-fg_stream = Stream()
-
 bg_dark_streams = [Stream() for uid in bg_dark_uids]
-fg_dark_stream = Stream()
+
 
 # Perform dark subtraction on everything
 dark_sub_bg = [es.map(dstar(subs),
@@ -80,6 +79,26 @@ dark_sub_bg = [es.map(dstar(subs),
                for bg_stream,
                    bg_dark_stream in zip(bg_streams, bg_dark_streams)]
 
+# bundle the backgrounds into one stream
+bg_bundle = es.bundle(*dark_sub_bg)
+
+# sum the backgrounds
+summed_bg = es.scan(dstar(add), bg_bundle, start=dstar(pull_array),
+                    state_key='img1',
+                    input_info=[('img2', 'pe1_image')],
+                    output_info=[('img', {
+                        'dtype': 'array',
+                        'source': 'testing'})])
+
+# Actually run on the background data (which is common to all)
+for s, h in zip(bg_streams + bg_dark_streams, bg_uids + bg_dark_uids):
+    for nd in db.restream(h, fill=True):
+        s.emit(nd)
+
+# Create the foreground half
+fg_stream = Stream()
+fg_dark_stream = Stream()
+
 dark_sub_fg = es.map(dstar(subs),
                      es.zip(fg_stream,
                             fg_dark_stream,
@@ -87,18 +106,6 @@ dark_sub_fg = es.map(dstar(subs),
                                         ('img2', 'pe1_image')],
                             output_info=[('img', {'dtype': 'array',
                                                   'source': 'testing'})]))
-
-# bundle the backgrounds into one stream
-bg_bundle = es.bundle(*dark_sub_bg)
-
-# sum the backgrounds
-summed_bg = es.scan(dstar(add), bg_bundle, start=dstar(make_empty_array),
-                    state_key='img1',
-                    input_info=[('img2', 'pe1_image')],
-                    output_info=[('img', {
-                        'dtype': 'array',
-                        'source': 'testing'})])
-
 # combine the fg with the summed_bg
 fg_bg = es.combine_latest(dark_sub_fg, summed_bg, emit_on=dark_sub_fg)
 
@@ -158,3 +165,9 @@ iq_stream = es.map(dstar(integrate),
                                ('binner', 'binner')],
                    output_info=[('iq', {'dtype': 'array',
                                         'source': 'testing'})])
+
+for fg_uid, fg_dark_uid in zip(fg_uids, fg_dark_uids):
+    for h, s in zip([db[uid] for uid in [fg_uid, fg_dark_uid]],
+                    [fg_stream, fg_dark_stream]):
+        for nd in db.restream(h, fill=True):
+            s.emit(nd)
