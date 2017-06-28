@@ -100,6 +100,8 @@ class scan(EventStream):
             return self.emit(res)
 
         x = self.event_guts(res)
+        # TODO: this handling of the initial state is a bit clunky
+        # I need to decide if state is going to be the array or the dict
         if self.state is no_default:
             self.state = x
         # in case we need a bit more flexibility eg lambda x: np.empty(x.shape)
