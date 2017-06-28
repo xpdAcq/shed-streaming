@@ -185,6 +185,7 @@ class Doc(object):
                              time=time.time(),
                              timestamps={},
                              descriptor=self.outbound_descriptor_uid,
+                             filled={k[0]: True for k in self.output_info},
                              seq_num=self.i)
 
             if self.output_info:
