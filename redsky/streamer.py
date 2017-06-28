@@ -18,6 +18,7 @@ import inspect
 import subprocess
 import time
 import uuid
+import traceback
 
 
 class Doc(object):
@@ -47,6 +48,7 @@ class Doc(object):
         data_keys.
         output_info = [('data_key', {'dtype': 'array', 'source': 'testing'})]
         """
+        self.event_failed = False
         if output_info is None:
             output_info = {}
         if input_info is None:
@@ -168,35 +170,31 @@ class Doc(object):
         -------
 
         """
-        if self.run_start_uid is None:
-            raise RuntimeError("Received Event before RunStart.")
-        # TODO: figure out a way to halt the stream if we issue an error stop
-        if isinstance(outputs, Exception):
-            new_stop = dict(uid=str(uuid.uuid4()),
-                            time=time.time(),
-                            run_start=self.run_start_uid,
-                            reason=repr(outputs),
-                            exit_status='failure')
-            return 'stop', new_stop
+        if not self.event_failed:
+            if self.run_start_uid is None:
+                raise RuntimeError("Received Event before RunStart.")
+            # TODO: figure out a way to halt the stream if we issue an error stop
+            if isinstance(outputs, Exception):
+                return self.stop(outputs)
 
-        # Make a new event with no data
-        if len(self.output_info) == 1:
-            outputs = (outputs,)
+            # Make a new event with no data
+            if len(self.output_info) == 1:
+                outputs = (outputs,)
 
-        new_event = dict(uid=str(uuid.uuid4()),
-                         time=time.time(),
-                         timestamps={},
-                         descriptor=self.outbound_descriptor_uid,
-                         seq_num=self.i)
+            new_event = dict(uid=str(uuid.uuid4()),
+                             time=time.time(),
+                             timestamps={},
+                             descriptor=self.outbound_descriptor_uid,
+                             seq_num=self.i)
 
-        if self.output_info:
-            new_event.update(data={output_name: output
-                                   for (output_name, desc), output in
-                                   zip(self.output_info, outputs)})
-        else:
-            new_event.update(data=outputs['data'])
-        self.i += 1
-        return 'event', new_event
+            if self.output_info:
+                new_event.update(data={output_name: output
+                                       for (output_name, desc), output in
+                                       zip(self.output_info, outputs)})
+            else:
+                new_event.update(data=outputs['data'])
+            self.i += 1
+            return 'event', new_event
 
     # If we need to issue a new doc then just pass it through
     # XXX: this is dangerous, note that we are not issuing a name doc pair
@@ -205,15 +203,25 @@ class Doc(object):
         return docs
 
     def stop(self, docs):
-        if self.run_start_uid is None:
-            raise RuntimeError("Received RunStop before RunStart.")
-        new_stop = dict(uid=str(uuid.uuid4()),
-                        time=time.time(),
-                        run_start=self.run_start_uid,
-                        exit_status='success')
-        self.outbound_descriptor_uid = None
-        self.run_start_uid = None
-        return 'stop', new_stop
+        if not self.event_failed:
+            if self.run_start_uid is None:
+                raise RuntimeError("Received RunStop before RunStart.")
+            if isinstance(docs, Exception):
+                self.event_failed = True
+                new_stop = dict(uid=str(uuid.uuid4()),
+                                time=time.time(),
+                                run_start=self.run_start_uid,
+                                reason=repr(docs),
+                                trace=traceback.format_exc(),
+                                exit_status='failure')
+            if not self.event_failed:
+                new_stop = dict(uid=str(uuid.uuid4()),
+                                time=time.time(),
+                                run_start=self.run_start_uid,
+                                exit_status='success')
+            self.outbound_descriptor_uid = None
+            self.run_start_uid = None
+            return 'stop', new_stop
 
 
 class StoreSink(object):

@@ -30,6 +30,22 @@ class EventStream(Stream, Doc):
         Stream.__init__(self, child, children)
         Doc.__init__(self, output_info, input_info)
 
+    def emit(self, x):
+        """ Push data into the stream at this point
+
+        This is typically done only at source Streams but can theortically be
+        done at any point
+        """
+        if x is not None:
+            result = []
+            for parent in self.parents:
+                r = parent.update(x, who=self)
+                if type(r) is list:
+                    result.extend(r)
+                else:
+                    result.append(r)
+            return [element for element in result if element is not None]
+
 
 class map(EventStream):
     def __init__(self, func, child, raw=False, output_info=None,
