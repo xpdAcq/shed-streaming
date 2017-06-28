@@ -189,5 +189,4 @@ for fg_uid, fg_dark_uid in zip(fg_uids, fg_dark_uids):
     for u, s in zip([db[uid] for uid in [fg_uid, fg_dark_uid]],
                     [fg_stream, fg_dark_stream]):
         for nd in db.restream(u, fill=True):
-            s.emit(nd)
-"""
+            s.emit(nd) """
