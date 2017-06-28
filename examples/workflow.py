@@ -52,12 +52,15 @@ def integrate(img, binner):
 
 
 def polarization_correction(img, geo, polarization_factor=.99):
-    return img/geo.polarization(img.shape, polarization_factor)
+    return img / geo.polarization(img.shape, polarization_factor)
 
 
-# Get all the relevent headers
-bg_uids = []
-fg_uids = []
+db.add_filter(bt_piLast='Billinge')
+hdrs = db(start_time='2017-06-01')
+
+# Get all the relevant headers
+bg_uids = [h['start']['uid'] for h in hdrs if 'Kapton_film' in h['start']['sample_name']]
+fg_uids = [h['start']['uid'] for h in hdrs if 'Alginate' in h['start']['sample_name']]
 
 # And the darks
 bg_dark_uids = [db[db[uid]['sp_dark_uid']] for uid in bg_uids]
@@ -66,7 +69,6 @@ fg_dark_uids = [db[db[uid]['sp_dark_uid']] for uid in fg_uids]
 # Create streams for all the data sets
 bg_streams = [Stream() for uid in bg_uids]
 bg_dark_streams = [Stream() for uid in bg_dark_uids]
-
 
 # Perform dark subtraction on everything
 dark_sub_bg = [es.map(dstar(subs),
@@ -121,7 +123,7 @@ fg_sub_bg = es.map(dstar(subs),
 cal_stream = Stream()
 
 # polarization correction
-pfactor=.87
+pfactor = .87
 ppolarization_correction = partial(polarization_correction,
                                    polarization_factor=pfactor)
 p_corrected_stream = es.map(ppolarization_correction,
