@@ -300,7 +300,7 @@ class bundle(EventStream):
                                 break
                             else:
                                 nd_pair = b.popleft()
-                                new_nd_pair = self.issue_event(nd_pair[1])
+                                new_nd_pair = self.refresh_event(nd_pair[1])
                                 rvs.append(self.emit(new_nd_pair))
 
                 else:

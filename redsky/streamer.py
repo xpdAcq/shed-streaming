@@ -197,6 +197,32 @@ class Doc(object):
             self.i += 1
             return 'event', new_event
 
+    def refresh_event(self, event):
+        """Issue a new event
+
+        Parameters
+        ----------
+        event: tuple, dict, or other
+
+        Returns
+        -------
+
+        """
+        if not self.event_failed:
+            if self.run_start_uid is None:
+                raise RuntimeError("Received Event before RunStart.")
+            if isinstance(event, Exception):
+                return self.stop(event)
+
+            new_event = dict(event)
+            new_event.update(dict(uid=str(uuid.uuid4()),
+                             time=time.time(),
+                             timestamps={},
+                             seq_num=self.i))
+
+            self.i += 1
+            return 'event', new_event
+
     # If we need to issue a new doc then just pass it through
     # XXX: this is dangerous, note that we are not issuing a name doc pair
     # but multiple docs without names
