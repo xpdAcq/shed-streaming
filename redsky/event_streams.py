@@ -17,8 +17,9 @@ def star(f):
 
 def dstar(f):
     @ft.wraps(f)
-    def wraps(kwargs):
-        return f(**kwargs)
+    def wraps(kwargs1, **kwargs2):
+        kwargs1.update(kwargs2)
+        return f(**kwargs1)
 
     return wraps
 
