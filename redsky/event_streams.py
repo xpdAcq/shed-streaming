@@ -407,3 +407,22 @@ class combine_latest(EventStream):
 #         out = tuple(self.cache)
 #         self.emit(out)
 #         self.cache.clear()
+
+
+class eventify(EventStream):
+    """Generate events from data in starts"""
+    def __init__(self, child, start_key, **kwargs):
+        self.start_key = start_key
+        self.val = None
+
+        EventStream.__init__(self, child, **kwargs)
+
+    def update(self, x, who=None):
+        res = self.dispatch(x)
+        # We issue these new docs without filtering
+        if isinstance(res, tuple) and res[0] in ['start', 'descriptor',
+                                                 'stop']:
+            if res[0] == 'start':
+                self.val = x[1][self.start_key]
+            return self.emit(res)
+        return self.emit(self.issue_event(self.val))

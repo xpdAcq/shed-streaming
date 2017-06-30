@@ -236,3 +236,21 @@ def test_scan(exp_db, start_uid1):
             assert_allclose(state, l[1]['data']['img'])
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+
+
+def test_eventify(exp_db, start_uid1):
+    source = Stream()
+
+    L = es.eventify(source, 'name',
+                    output_info=[('name', {
+                    'dtype': 'str',
+                    'source': 'testing'})]).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+    for l in L:
+        if l[0] == 'event':
+            assert l[1]['data']['name'] == 'test'
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
