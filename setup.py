@@ -6,5 +6,5 @@ setup(
     packages=find_packages(),
     # description='data processing module',
     zip_safe=False,
-    url='http:/github.com/xpdAcq/redsky'
+    url='http:/github.com/xpdAcq/redsky', install_requires=['matplotlib']
 )
