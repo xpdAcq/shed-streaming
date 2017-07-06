@@ -7,8 +7,9 @@ from skbeam.core.accumulators.binned_statistic import BinnedStatistic1D
 from functools import partial
 # from xpdan.tools import better_mask_img
 from databroker.databroker import DataBroker as db
-from bluesky.callbacks.broker import LiveImage
+from bluesky.callbacks.broker import LiveImage, LiveSliderImage
 from pprint import pprint
+from matplotlib.colors import LogNorm
 
 
 def subs(img1, img2):
@@ -21,13 +22,6 @@ def add(img1, img2):
 
 def pull_array(img2):
     return img2
-
-
-def print_shape(name, doc):
-    if name == 'event':
-        for k, v in doc['data'].items():
-            if hasattr(v, 'shape'):
-                print(v.shape)
 
 
 def generate_binner(geo, mask):
@@ -64,14 +58,21 @@ def polarization_correction(img, geo, polarization_factor=.99):
     return img / geo.polarization(img.shape, polarization_factor)
 
 
+def div(img, count):
+    return img / count
+
+
 db.add_filter(bt_piLast='Billinge')
 hdrs = db(start_time=1496855060.5545955 - 10000)
 
 # Get all the relevant headers
 bg_uids = [h['start']['uid'] for h in hdrs if
-           h['start']['sample_name'] == 'kapton_film_bkgd']
+           h['start'][
+               'sample_name'] == 'kapton_film_bkgd' and 'sc_dk_field_uid' in h[
+               'start'].keys()]
 fg_uids = [h['start']['uid'] for h in hdrs if
-           'Alginate' in h['start']['sample_name']]
+           h['start']['sample_name'].startswith(
+               'Alginate') and 'sc_dk_field_uid' in h['start'].keys()][0:1]
 
 # And the darks
 bg_dark_uids = [db[db[uid]['start']['sc_dk_field_uid']]['start']['uid'] for uid
@@ -84,16 +85,25 @@ bg_streams = [Stream() for uid in bg_uids]
 bg_dark_streams = [Stream() for uid in bg_dark_uids]
 
 # Perform dark subtraction on everything
-dark_sub_bg = [es.map(dstar(subs),
-                      es.zip(bg_stream, bg_dark_stream),
-                      input_info=[('img1', 'pe1_image'),
-                                  ('img2', 'pe1_image')],
+dark_sub_bg = [es.map(dstar(div), es.map(dstar(subs),
+                                         es.zip(bg_stream, bg_dark_stream),
+                                         input_info=[('img1', 'pe1_image'),
+                                                     ('img2', 'pe1_image')],
+                                         output_info=[
+                                             ('img', {'dtype': 'array',
+                                                      'source': 'testing'})]),
+                      input_info=[('img', 'img')],
                       output_info=[('img', {'dtype': 'array',
-                                            'source': 'testing'})])
-               for bg_stream,
-                   bg_dark_stream in zip(bg_streams, bg_dark_streams)]
+                                            'source': 'testing'})],
+                      count=db[bg_uid]['start']['sp_computed_exposure']
+                      )
+               for bg_stream, bg_dark_stream, bg_uid
+               in zip(bg_streams, bg_dark_streams, bg_uids)]
+# [d.sink(pprint) for d in dark_sub_bg]
 # bundle the backgrounds into one stream
 bg_bundle = es.bundle(*dark_sub_bg)
+# bg_bundle.sink(pprint)
+# bg_bundle.sink(star(LiveSliderImage('img', cmap='viridis')))
 
 # sum the backgrounds
 summed_bg = es.scan(dstar(add), bg_bundle, start=dstar(pull_array),
@@ -103,14 +113,20 @@ summed_bg = es.scan(dstar(add), bg_bundle, start=dstar(pull_array),
                         'dtype': 'array',
                         'source': 'testing'})])
 
-# summed_bg.sink(pprint)
-summed_bg.sink(star(print_shape))
-# summed_bg.sink(star(LiveImage('img')))
-# Actually run on the background data (which is common to all)
-for s, u in zip(bg_streams + bg_dark_streams, bg_uids + bg_dark_uids):
-    for nd in db.restream(db[u], fill=True):
-        # pprint(nd)
-        s.emit(nd)
+count_bg = es.scan(lambda x: x['count'] + 1, bg_bundle, start=1,
+                   state_key='count',
+                   output_info=[('count', {
+                       'dtype': 'int',
+                       'source': 'testing'})])
+
+ave_bg = es.map(dstar(div), es.zip(summed_bg, count_bg),
+                input_info=[('img', 'img'), ('count', 'count')],
+                output_info=[('img', {
+                    'dtype': 'array',
+                    'source': 'testing'})])
+ave_bg.sink(pprint)
+
+summed_bg.sink(star(LiveSliderImage('img')))
 """
 # Create the foreground half
 fg_stream = Stream()
@@ -118,14 +134,25 @@ fg_dark_stream = Stream()
 
 dark_sub_fg = es.map(dstar(subs),
                      es.zip(fg_stream,
-                            fg_dark_stream,
-                            input_info=[('img1', 'pe1_image'),
-                                        ('img2', 'pe1_image')],
-                            output_info=[('img', {'dtype': 'array',
-                                                  'source': 'testing'})]))
+                            fg_dark_stream),
+                     input_info=[('img1', 'pe1_image'),
+                                 ('img2', 'pe1_image')],
+                     output_info=[('img', {'dtype': 'array',
+                                           'source': 'testing'})])
+exp_stream = es.eventify(fg_stream, 'sp_computed_exposure',
+                         output_info=[('sp_computed_exposure', {'dtype': 'float',
+                                                 'source': 'testing'})])
+norm_dark_sub_fg = es.map(dstar(div), 
+                          es.combine_latest(dark_sub_fg, 
+                                            exp_stream, emit_on=dark_sub_fg), 
+                          input_info=[('img', 'img'), 
+                                      ('count', 'sp_computed_exposure')],
+                          output_info=[('img', {'dtype': 'array',
+                                                'source': 'testing'})])
+# norm_dark_sub_fg.sink(pprint)
 # combine the fg with the summed_bg
-fg_bg = es.combine_latest(dark_sub_fg, summed_bg, emit_on=dark_sub_fg)
-
+fg_bg = es.combine_latest(norm_dark_sub_fg, ave_bg, emit_on=norm_dark_sub_fg)
+# fg_bg.sink(pprint)
 # subtract the background images
 fg_sub_bg = es.map(dstar(subs),
                    fg_bg,
@@ -133,7 +160,11 @@ fg_sub_bg = es.map(dstar(subs),
                                ('img2', 'img')],
                    output_info=[('img', {'dtype': 'array',
                                          'source': 'testing'})])
-
+fg_sub_bg.sink(pprint)
+# fg_sub_bg.sink(star(LiveSliderImage('img')))
+"""
+# """
+"""
 # make/get calibration stream
 cal_stream = Stream()
 
@@ -184,9 +215,16 @@ iq_stream = es.map(dstar(integrate),
                                ('binner', 'binner')],
                    output_info=[('iq', {'dtype': 'array',
                                         'source': 'testing'})])
-
+"""
+# Actually run on the background data (which is common to all)
+for s, u in zip(bg_streams + bg_dark_streams, bg_uids + bg_dark_uids):
+    for nd in db.restream(db[u], fill=True):
+        # pprint(nd)
+        s.emit(nd)
+"""
 for fg_uid, fg_dark_uid in zip(fg_uids, fg_dark_uids):
     for u, s in zip([db[uid] for uid in [fg_uid, fg_dark_uid]],
                     [fg_stream, fg_dark_stream]):
         for nd in db.restream(u, fill=True):
-            s.emit(nd) """
+            s.emit(nd)
+# """
