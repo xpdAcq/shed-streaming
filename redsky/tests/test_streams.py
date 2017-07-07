@@ -7,7 +7,7 @@ from streams.core import Stream
 import redsky.event_streams as es
 from ..event_streams import dstar
 from ..savers import NpyWriter
-from ..streamer import StoreSink
+from ..sinks import StoreSink
 
 
 def test_map(exp_db, start_uid1):
