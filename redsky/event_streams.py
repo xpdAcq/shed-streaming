@@ -34,7 +34,7 @@ class EventStream(Stream, Doc):
     def emit(self, x):
         """ Push data into the stream at this point
 
-        This is typically done only at source Streams but can theortically be
+        This is typically done only at source Streams but can theoretically be
         done at any point
         """
         if x is not None:
@@ -57,7 +57,7 @@ class map(EventStream):
 
         EventStream.__init__(self, child, output_info=output_info,
                              input_info=input_info, **kwargs)
-        # TODO: update the provenence now that we have the func
+        self.generate_provenance(func)
 
     def update(self, x, who=None):
         # massage the pair(s)

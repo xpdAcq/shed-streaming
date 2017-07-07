@@ -14,11 +14,9 @@
 #
 ##############################################################################
 
-import inspect
-import subprocess
 import time
-import uuid
 import traceback
+import uuid
 
 
 class Doc(object):
@@ -48,30 +46,36 @@ class Doc(object):
         data_keys.
         output_info = [('data_key', {'dtype': 'array', 'source': 'testing'})]
         """
-        self.event_failed = False
         if output_info is None:
             output_info = {}
         if input_info is None:
             input_info = {}
+
+        self.event_failed = False
         self.run_start_uid = None
         self.input_info = input_info
         self.output_info = output_info
         self.i = None
         self.outbound_descriptor_uid = None
-        self.provenence = {}
+        self.provenance = {}
 
-    def generate_provenance(self, stream_class, func):
-        d = dict(function_module=inspect.getmodule(func),
-                 # this line gets more complex with the integration class
-                 function_name=func.__name__,
-                 stream_class=stream_class.__name__,
-                 stream_class_module=inspect.getmodule(stream_class),
-                 conda_list=subprocess.check_output(['conda', 'list',
-                                                     '-e']).decode(),
-                 output_info=self.output_info,
-                 input_info=self.input_info
-                 )
-        return d
+    def generate_provenance(self, func=None):
+        d = dict(
+            stream_class=self.__class__.__name__,
+            stream_class_module=self.__class__.__module__,
+            # TODO: Need to support pip and other sources at some point
+            # conda_list=subprocess.check_output(['conda', 'list',
+            #                                     '-e']).decode()
+        )
+        if self.input_info:
+            d.update(input_info=self.input_info)
+        if self.output_info:
+            d.update(output_info=self.output_info)
+        if func:
+            d.update(function_module=func.__module__,
+                     # this line gets more complex with classes
+                     function_name=func.__name__, )
+        self.provenance = d
 
     def curate_streams(self, nds):
         # If we get multiple streams make (doc, doc, doc, ...)
@@ -117,7 +121,7 @@ class Doc(object):
                              time=time.time(),
                              parents=[doc['uid'] for doc in docs],
                              # parent_keys=[k for k in stream_keys],
-                             provenance=self.provenence)
+                             provenance=self.provenance)
         return 'start', new_start_doc
 
     def descriptor(self, docs):
@@ -216,9 +220,9 @@ class Doc(object):
 
             new_event = dict(event)
             new_event.update(dict(uid=str(uuid.uuid4()),
-                             time=time.time(),
-                             timestamps={},
-                             seq_num=self.i))
+                                  time=time.time(),
+                                  timestamps={},
+                                  seq_num=self.i))
 
             self.i += 1
             return 'event', new_event
