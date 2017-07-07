@@ -429,7 +429,7 @@ class combine_latest(EventStream):
             self.emit_on = emit_on
         else:
             self.emit_on = children
-        Stream.__init__(self, children=children)
+        EventStream.__init__(self, children=children)
 
     def update(self, x, who=None):
         name, doc = x
