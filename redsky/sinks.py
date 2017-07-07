@@ -54,7 +54,7 @@ class StoreSink(object):
         fs_doc.pop('_name', None)
         self.db.mds.insert(name, fs_doc)
 
-        # The pristine doc is yielded.
+        # The pristine doc is returned.
         return name, doc
 
     def event(self, doc):
