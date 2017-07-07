@@ -115,6 +115,38 @@ def test_filter(exp_db, start_uid1):
             assert l[1]['exit_status'] == 'success'
 
 
+def test_scan(exp_db, start_uid1):
+    source = Stream()
+
+    def add(img1, img2):
+        return img1 + img2
+
+    def get_array(img2):
+        return img2
+
+    L = es.scan(dstar(add), source,
+                start=dstar(get_array),
+                state_key='img1',
+                input_info=[('img2', 'pe1_image')],
+                output_info=[('img', {
+                    'dtype': 'array',
+                    'source': 'testing'})]).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+    state = None
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        if l[0] == 'event':
+            if state is None:
+                state = o[1]['data']['pe1_image']
+            else:
+                state += o[1]['data']['pe1_image']
+            assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+
+
 def test_zip(exp_db, start_uid1, start_uid3):
     source = Stream()
     source2 = Stream()
@@ -130,44 +162,6 @@ def test_zip(exp_db, start_uid1, start_uid3):
         source.emit(a)
     for l1, l2 in L:
         assert l1 != l2
-
-
-def test_workflow(exp_db, start_uid1, tmp_dir):
-    def subs(x1, x2):
-        return x1 - x2
-
-    hdr = exp_db[start_uid1]
-
-    raw_data = hdr.stream(fill=True)
-    dark_data = exp_db[hdr['start']['sc_dk_field_uid']].stream(fill=True)
-    rds = Stream()
-    dark_data_stream = Stream()
-
-    store_sink = StoreSink(db=exp_db,
-                           external_writers={'image': partial(NpyWriter,
-                                                              root=tmp_dir)})
-
-    img_stream = es.map(dstar(subs),
-                        es.zip(rds, dark_data_stream),
-                        input_info=[
-                            ('x1', 'pe1_image'),
-                            ('x2', 'pe1_image')],
-                        output_info=[('image', {
-                            'dtype': 'array',
-                            'source': 'testing'})]
-                        )
-    img_stream.sink(store_sink)
-    L = img_stream.sink_to_list()
-
-    for d in dark_data:
-        dark_data_stream.emit(d)
-    for d in raw_data:
-        rds.emit(d)
-    for (n, d), (nn, dd) in zip(L, exp_db.restream(exp_db[-1], fill=True)):
-        if n == 'event':
-            assert_allclose(d['data']['image'], dd['data']['image'])
-        if n == 'stop':
-            assert d['exit_status'] == 'success'
 
 
 def test_bundle(exp_db, start_uid1, start_uid3):
@@ -213,38 +207,6 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
             assert l2[1]['seq_num'] == 1
 
 
-def test_scan(exp_db, start_uid1):
-    source = Stream()
-
-    def add(img1, img2):
-        return img1 + img2
-
-    def get_array(img2):
-        return img2
-
-    L = es.scan(dstar(add), source,
-                start=dstar(get_array),
-                state_key='img1',
-                input_info=[('img2', 'pe1_image')],
-                output_info=[('img', {
-                    'dtype': 'array',
-                    'source': 'testing'})]).sink_to_list()
-    ih1 = exp_db[start_uid1]
-    s = exp_db.restream(ih1, fill=True)
-    for a in s:
-        source.emit(a)
-    state = None
-    for o, l in zip(exp_db.restream(ih1, fill=True), L):
-        if l[0] == 'event':
-            if state is None:
-                state = o[1]['data']['pe1_image']
-            else:
-                state += o[1]['data']['pe1_image']
-            assert_allclose(state, l[1]['data']['img'])
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-
-
 def test_eventify(exp_db, start_uid1):
     source = Stream()
 
@@ -261,3 +223,41 @@ def test_eventify(exp_db, start_uid1):
             assert l[1]['data']['name'] == 'test'
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+
+
+def test_workflow(exp_db, start_uid1, tmp_dir):
+    def subs(x1, x2):
+        return x1 - x2
+
+    hdr = exp_db[start_uid1]
+
+    raw_data = hdr.stream(fill=True)
+    dark_data = exp_db[hdr['start']['sc_dk_field_uid']].stream(fill=True)
+    rds = Stream()
+    dark_data_stream = Stream()
+
+    store_sink = StoreSink(db=exp_db,
+                           external_writers={'image': partial(NpyWriter,
+                                                              root=tmp_dir)})
+
+    img_stream = es.map(dstar(subs),
+                        es.zip(rds, dark_data_stream),
+                        input_info=[
+                            ('x1', 'pe1_image'),
+                            ('x2', 'pe1_image')],
+                        output_info=[('image', {
+                            'dtype': 'array',
+                            'source': 'testing'})]
+                        )
+    img_stream.sink(store_sink)
+    L = img_stream.sink_to_list()
+
+    for d in dark_data:
+        dark_data_stream.emit(d)
+    for d in raw_data:
+        rds.emit(d)
+    for (n, d), (nn, dd) in zip(L, exp_db.restream(exp_db[-1], fill=True)):
+        if n == 'event':
+            assert_allclose(d['data']['image'], dd['data']['image'])
+        if n == 'stop':
+            assert d['exit_status'] == 'success'

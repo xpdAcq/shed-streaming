@@ -86,10 +86,13 @@ class EventStream(Stream):
                     result.append(r)
             return [element for element in result if element is not None]
 
-    def update(self, x, who=None):
-        name, docs = self.curate_streams(x)
+    def dispatch(self, nds):
+        name, docs = self.curate_streams(nds)
         if name in self.allowed_names:
-            return self.emit(getattr(self, name)(docs))
+            return getattr(self, name)(docs)
+
+    def update(self, x, who=None):
+            return self.emit(self.dispatch(x))
 
     def curate_streams(self, nds):
         # If we get multiple streams make (doc, doc, doc, ...)
@@ -317,26 +320,20 @@ class scan(EventStream):
                              output_info=output_info)
         self.generate_provenance(func)
 
-    def event(self, x, who=None):
-        res = self.dispatch(x)
-        # We issue these new docs without doing anything
-        if isinstance(res, tuple) and res[0] in ['start', 'descriptor',
-                                                 'stop']:
-            return self.emit(res)
-
-        x = self.event_guts(res)
+    def event(self, doc):
+        doc = self.event_guts(doc)
         # TODO: this handling of the initial state is a bit clunky
         # I need to decide if state is going to be the array or the dict
         if self.state is no_default:
-            self.state = x
+            self.state = doc
         # in case we need a bit more flexibility eg lambda x: np.empty(x.shape)
         elif hasattr(self.state, '__call__'):
-            self.state = self.state(x)
+            self.state = self.state(doc)
         else:
-            x[self.state_key] = self.state
-            result = self.func(x)
+            doc[self.state_key] = self.state
+            result = self.func(doc)
             self.state = result
-        return self.emit(self.issue_event(self.state))
+        return self.issue_event(self.state)
 
 
 # class partition(EventStream):
@@ -468,8 +465,6 @@ class zip(EventStream):
                         self.buffers[i].appendleft(self.prior[i])
             tup = tuple(buf.popleft() for buf in self.buffers)
             self.condition.notify_all()
-            if tup and hasattr(tup[0], '__stream_merge__'):
-                tup = tup[0].__stream_merge__(*tup[1:])
             self.prior = tup
             return self.emit(tup)
         elif len(L) > self.maxsize:
@@ -483,6 +478,7 @@ class bundle(EventStream):
         self.condition = Condition()
         self.prior = ()
         EventStream.__init__(self, children=children)
+        self.generate_provenance()
 
     def update(self, x, who=None):
         L = self.buffers[self.children.index(who)]
@@ -559,8 +555,6 @@ class combine_latest(EventStream):
             self.last[self.children.index(who)] = x
             if not self.missing and who in self.emit_on:
                 tup = tuple(self.last)
-                if tup and hasattr(tup[0], '__stream_merge__'):
-                    tup = tup[0].__stream_merge__(*tup[1:])
                 return self.emit(tup)
 
 
@@ -624,12 +618,9 @@ class eventify(EventStream):
 
         EventStream.__init__(self, child, **kwargs)
 
-    def update(self, x, who=None):
-        res = self.dispatch(x)
-        # We issue these new docs without filtering
-        if isinstance(res, tuple) and res[0] in ['start', 'descriptor',
-                                                 'stop']:
-            if res[0] == 'start':
-                self.val = x[1][self.start_key]
-            return self.emit(res)
-        return self.emit(self.issue_event(self.val))
+    def start(self, docs):
+        self.val = docs[0][self.start_key]
+        super().start(docs)
+
+    def event(self, docs):
+        return self.issue_event(self.val)
