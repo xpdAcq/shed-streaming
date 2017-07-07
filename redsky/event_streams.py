@@ -49,7 +49,8 @@ class EventStream(Stream):
         input_info is designed to map keys in streams to kwargs in functions.
         It is critical for the internal data from the events to be returned,
         upon `event_guts`.
-        input_info = [('input_kwarg', 'data_key')]
+        input_info = {'input_kwarg': ('data_key', stream_number)}
+        Note that the stream number is assumed to be zero if not specified
 
         output_info is designed to take the output tuple and map it back into
         data_keys.
@@ -68,6 +69,12 @@ class EventStream(Stream):
         self.run_start_uid = None
         self.provenance = {}
         self.event_failed = False
+
+        # If the stream number is not specified its zero
+        for k, v in input_info.items():
+            if len(v) < 2 or isinstance(v, str):
+                input_info[k] = (v, 0)
+        print(input_info)
         self.input_info = input_info
 
     def emit(self, x):
@@ -92,7 +99,7 @@ class EventStream(Stream):
             return getattr(self, name)(docs)
 
     def update(self, x, who=None):
-            return self.emit(self.dispatch(x))
+        return self.emit(self.dispatch(x))
 
     def curate_streams(self, nds):
         # If we get multiple streams make (doc, doc, doc, ...)
@@ -204,8 +211,8 @@ class EventStream(Stream):
         -------
 
         """
-        return {input_kwarg: doc['data'][data_key] for
-                (input_kwarg, data_key), doc in zzip(self.input_info, docs)}
+        return {input_kwarg: docs[position]['data'][data_key] for
+                input_kwarg, (data_key, position) in self.input_info.items()}
 
     def issue_event(self, outputs):
         """Issue a new event

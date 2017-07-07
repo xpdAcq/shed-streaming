@@ -16,7 +16,7 @@ def test_map(exp_db, start_uid1):
     def add5(img):
         return img + 5
 
-    ii = [('img', 'pe1_image')]
+    ii = {'img': 'pe1_image'}
     oi = [('img', {'dtype': 'array', 'source': 'testing'})]
     L = es.map(dstar(add5),
                source,
@@ -26,10 +26,12 @@ def test_map(exp_db, start_uid1):
     s = exp_db.restream(ih1, fill=True)
     for a in s:
         source.emit(a)
+
     prov = dict(stream_class='map', function_name=add5.__name__,
                 function_module=add5.__module__,
                 stream_class_module=es.map.__module__,
                 input_info=ii, output_info=oi)
+
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
         if l[0] == 'start':
             assert l[1]['provenance'] == prov
@@ -52,7 +54,7 @@ def test_double_map(exp_db, start_uid1):
         return img1 + img2
 
     L = es.map(dstar(add_imgs), es.zip(source, source2),
-               input_info=[('img1', 'pe1_image'), ('img2', 'pe1_image')],
+               input_info={'img1': ('pe1_image', 0), 'img2': ('pe1_image', 1)},
                output_info=[
                    ('img',
                     {'dtype': 'array',
@@ -71,6 +73,30 @@ def test_double_map(exp_db, start_uid1):
             assert l[1]['exit_status'] == 'success'
 
 
+def test_double_internal_map(exp_db, start_uid1):
+    source = Stream()
+
+    def div(img1, ct):
+        return img1 / ct
+
+    L = es.map(dstar(div), source,
+               input_info={'img1': 'pe1_image', 'ct': 'I0'},
+               output_info=[
+                   ('img',
+                    {'dtype': 'array',
+                     'source': 'testing'})]).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        if l[0] == 'event':
+            assert_allclose(l[1]['data']['img'], div(s[1]['data']['pe1_image'],
+                                                     s[1]['data']['I0']))
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+
+
 def test_double_map_error(exp_db, start_uid1):
     source = Stream()
     source2 = Stream()
@@ -79,8 +105,8 @@ def test_double_map_error(exp_db, start_uid1):
         return img1 + img3
 
     pipeline = es.map(dstar(add_imgs), es.zip(source, source2),
-                      input_info=[('img1', 'pe1_image'),
-                                  ('img2', 'pe1_image')],
+                      input_info={'img1': ('pe1_image', 0),
+                                  'img2': ('pe1_image', 1)},
                       output_info=[
                           ('img',
                            {'dtype': 'array',
@@ -103,7 +129,8 @@ def test_filter(exp_db, start_uid1):
     def f(img1):
         return isinstance(img1, np.ndarray)
 
-    L = es.filter(f, source, input_info=[('img1', 'pe1_image')]).sink_to_list()
+    L = es.filter(f, source,
+                  input_info={'img1': 'pe1_image'}).sink_to_list()
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -127,7 +154,7 @@ def test_scan(exp_db, start_uid1):
     L = es.scan(dstar(add), source,
                 start=dstar(get_array),
                 state_key='img1',
-                input_info=[('img2', 'pe1_image')],
+                input_info={'img2': 'pe1_image'},
                 output_info=[('img', {
                     'dtype': 'array',
                     'source': 'testing'})]).sink_to_list()
@@ -239,12 +266,11 @@ def test_workflow(exp_db, start_uid1, tmp_dir):
     store_sink = StoreSink(db=exp_db,
                            external_writers={'image': partial(NpyWriter,
                                                               root=tmp_dir)})
-
+    z = es.zip(rds, dark_data_stream)
     img_stream = es.map(dstar(subs),
-                        es.zip(rds, dark_data_stream),
-                        input_info=[
-                            ('x1', 'pe1_image'),
-                            ('x2', 'pe1_image')],
+                        z,
+                        input_info={'x1': 'pe1_image',
+                                    'x2': 'pe1_image'},
                         output_info=[('image', {
                             'dtype': 'array',
                             'source': 'testing'})]
