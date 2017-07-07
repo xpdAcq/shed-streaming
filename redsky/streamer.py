@@ -58,6 +58,7 @@ class Doc(object):
         self.i = None
         self.outbound_descriptor_uid = None
         self.provenance = {}
+        self.allowed_names = ['start', 'descriptor', 'event', 'stop']
 
     def generate_provenance(self, func=None):
         d = dict(
@@ -102,7 +103,8 @@ class Doc(object):
         to the corresponding method.
         """
         name, docs = self.curate_streams(nds)
-        return getattr(self, name)(docs)
+        if name in self.allowed_names:
+            return getattr(self, name)(docs)
 
     def start(self, docs):
         """
