@@ -76,7 +76,6 @@ class EventStream(Stream):
                 input_info[k] = (v, 0)
             if isinstance(v[1], Stream):
                 input_info[k] = (v[0], self.children.index(v[1]))
-        print(input_info)
         self.input_info = input_info
 
     def emit(self, x):

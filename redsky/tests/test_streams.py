@@ -46,6 +46,42 @@ def test_map(exp_db, start_uid1):
             assert l[1] != s[1]
 
 
+def test_map_stream_input(exp_db, start_uid1):
+    source = Stream()
+
+    def add5(img):
+        return img + 5
+
+    ii = {'img': ('pe1_image', source)}
+    oi = [('img', {'dtype': 'array', 'source': 'testing'})]
+    L = es.map(dstar(add5),
+               source,
+               input_info=ii,
+               output_info=oi).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    prov = dict(stream_class='map', function_name=add5.__name__,
+                function_module=add5.__module__,
+                stream_class_module=es.map.__module__,
+                input_info=ii, output_info=oi)
+
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        if l[0] == 'start':
+            assert l[1]['provenance'] == prov
+        if l[0] == 'event':
+            assert_allclose(l[1]['data']['img'], s[1]['data']['pe1_image'] + 5)
+        if l[0] == 'stop':
+            if l[1]['exit_status'] == 'failure':
+                print(l[1]['trace'])
+                print(l[1]['reason'])
+            assert l[1]['exit_status'] == 'success'
+        else:
+            assert l[1] != s[1]
+
+
 def test_double_map(exp_db, start_uid1):
     source = Stream()
     source2 = Stream()
@@ -55,34 +91,6 @@ def test_double_map(exp_db, start_uid1):
 
     L = es.map(dstar(add_imgs), es.zip(source, source2),
                input_info={'img1': ('pe1_image', 0), 'img2': ('pe1_image', 1)},
-               output_info=[
-                   ('img',
-                    {'dtype': 'array',
-                     'source': 'testing'})]).sink_to_list()
-    ih1 = exp_db[start_uid1]
-    s = exp_db.restream(ih1, fill=True)
-    for a in s:
-        source.emit(a)
-        source2.emit(a)
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
-        if l[0] == 'event':
-            assert_allclose(l[1]['data']['img'],
-                            add_imgs(s[1]['data']['pe1_image'],
-                                     s[1]['data']['pe1_image']))
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-
-
-def test_double_map_stream_input(exp_db, start_uid1):
-    source = Stream()
-    source2 = Stream()
-
-    def add_imgs(img1, img2):
-        return img1 + img2
-
-    L = es.map(dstar(add_imgs), es.zip(source, source2),
-               input_info={'img1': ('pe1_image', source),
-                           'img2': ('pe1_image', source2)},
                output_info=[
                    ('img',
                     {'dtype': 'array',
