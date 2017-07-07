@@ -37,6 +37,7 @@ def test_map(exp_db, start_uid1):
             assert_allclose(l[1]['data']['img'], s[1]['data']['pe1_image'] + 5)
         if l[0] == 'stop':
             if l[1]['exit_status'] == 'failure':
+                print(l[1]['trace'])
                 print(l[1]['reason'])
             assert l[1]['exit_status'] == 'success'
         else:

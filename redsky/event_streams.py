@@ -1,10 +1,12 @@
 import functools as ft
+import time
+import traceback
+import uuid
 from collections import deque
 
 from streams.core import Stream, no_default
 from tornado.locks import Condition
-
-from .streamer import Doc
+from builtins import zip as zzip
 
 
 def star(f):
@@ -24,12 +26,49 @@ def dstar(f):
     return wraps
 
 
-class EventStream(Stream, Doc):
-    def __init__(self, child=None, children=None, output_info=None,
-                 input_info=None, **kwargs):
+class EventStream(Stream):
+    def __init__(self, child=None, children=None,
+                 output_info=None, input_info=None,
+                 **kwargs):
+        """
+        Serve up documents and their internals as requested.
+        The main way that this works is by a) ingesting documents, b) issuing
+        documents, c) returning the internals of documents upon request.
+
+        Parameters
+        ----------
+        input_info: list of tuples
+            describs the incoming streams
+        output_info: list of tuples
+            describs the resulting stream
+        provenance : dict, optional
+            metadata about this operation
+
+        Notes
+        ------
+        input_info is designed to map keys in streams to kwargs in functions.
+        It is critical for the internal data from the events to be returned,
+        upon `event_guts`.
+        input_info = [('input_kwarg', 'data_key')]
+
+        output_info is designed to take the output tuple and map it back into
+        data_keys.
+        output_info = [('data_key', {'dtype': 'array', 'source': 'testing'})]
+        """
         # TODO: this needs something super maybe a Base Class
         Stream.__init__(self, child, children)
-        Doc.__init__(self, output_info, input_info)
+        if output_info is None:
+            output_info = {}
+        if input_info is None:
+            input_info = {}
+        self.outbound_descriptor_uid = None
+        self.output_info = output_info
+        self.allowed_names = ['start', 'descriptor', 'event', 'stop']
+        self.i = None
+        self.run_start_uid = None
+        self.provenance = {}
+        self.event_failed = False
+        self.input_info = input_info
 
     def emit(self, x):
         """ Push data into the stream at this point
@@ -47,6 +86,187 @@ class EventStream(Stream, Doc):
                     result.append(r)
             return [element for element in result if element is not None]
 
+    def update(self, x, who=None):
+        name, docs = self.curate_streams(x)
+        if name in self.allowed_names:
+            return self.emit(getattr(self, name)(docs))
+
+    def curate_streams(self, nds):
+        # If we get multiple streams make (doc, doc, doc, ...)
+        if isinstance(nds[0], tuple):
+            names, docs = list(zzip(*nds))
+            if len(set(names)) > 1:
+                raise RuntimeError('Misaligned Streams')
+            name = names[0]
+        # If only one stream then (doc, )
+        else:
+            names, docs = nds
+            name = names
+            docs = (docs,)
+        return name, docs
+
+    def generate_provenance(self, func=None):
+        d = dict(
+            stream_class=self.__class__.__name__,
+            stream_class_module=self.__class__.__module__,
+            # TODO: Need to support pip and other sources at some point
+            # conda_list=subprocess.check_output(['conda', 'list',
+            #                                     '-e']).decode()
+        )
+        if self.input_info:
+            d.update(input_info=self.input_info)
+        if self.output_info:
+            d.update(output_info=self.output_info)
+        if func:
+            d.update(function_module=func.__module__,
+                     # this line gets more complex with classes
+                     function_name=func.__name__, )
+        self.provenance = d
+
+    def start(self, docs):
+        """
+        Issue new start document for input documents
+
+        Parameters
+        ----------
+        docs: tuple of dicts or dict
+
+        Returns
+        -------
+
+        """
+        self.run_start_uid = str(uuid.uuid4())
+        new_start_doc = dict(uid=self.run_start_uid,
+                             time=time.time(),
+                             parents=[doc['uid'] for doc in docs],
+                             # parent_keys=[k for k in stream_keys],
+                             provenance=self.provenance)
+        return 'start', new_start_doc
+
+    def descriptor(self, docs):
+        if self.run_start_uid is None:
+            raise RuntimeError("Received EventDescriptor before "
+                               "RunStart.")
+        # If we had to describe the output information then we need an all new
+        # descriptor
+        self.outbound_descriptor_uid = str(uuid.uuid4())
+        new_descriptor = dict(uid=self.outbound_descriptor_uid,
+                              time=time.time(),
+                              run_start=self.run_start_uid)
+        if self.output_info:
+            new_descriptor.update(
+                data_keys={k: v for k, v in self.output_info})
+
+        # no truly new data needed
+        elif all(d['data_keys'] == docs[0]['data_keys'] for d in docs):
+            new_descriptor.update(data_keys=docs[0]['data_keys'])
+
+        else:
+            raise RuntimeError("Descriptor mismatch: "
+                               "you have tried to combine descriptors with "
+                               "different data keys")
+        self.i = 0
+        return 'descriptor', new_descriptor
+
+    def event(self, docs):
+        return docs
+
+    def stop(self, docs):
+        if not self.event_failed:
+            if self.run_start_uid is None:
+                raise RuntimeError("Received RunStop before RunStart.")
+            new_stop = dict(uid=str(uuid.uuid4()),
+                            time=time.time(),
+                            run_start=self.run_start_uid)
+            if isinstance(docs, Exception):
+                self.event_failed = True
+                new_stop.update(reason=repr(docs),
+                                trace=traceback.format_exc(),
+                                exit_status='failure')
+            if not self.event_failed:
+                new_stop.update(exit_status='success')
+            self.outbound_descriptor_uid = None
+            self.run_start_uid = None
+            return 'stop', new_stop
+
+    def event_guts(self, docs):
+        """
+        Provide some of the event data as a dict, which may be used as kwargs
+
+        Parameters
+        ----------
+        docs
+
+        Returns
+        -------
+
+        """
+        return {input_kwarg: doc['data'][data_key] for
+                (input_kwarg, data_key), doc in zzip(self.input_info, docs)}
+
+    def issue_event(self, outputs):
+        """Issue a new event
+
+        Parameters
+        ----------
+        outputs: tuple, dict, or other
+
+        Returns
+        -------
+
+        """
+        if not self.event_failed:
+            if self.run_start_uid is None:
+                raise RuntimeError("Received Event before RunStart.")
+            if isinstance(outputs, Exception):
+                return self.stop(outputs)
+
+            # Make a new event with no data
+            if len(self.output_info) == 1:
+                outputs = (outputs,)
+
+            new_event = dict(uid=str(uuid.uuid4()),
+                             time=time.time(),
+                             timestamps={},
+                             descriptor=self.outbound_descriptor_uid,
+                             filled={k[0]: True for k in self.output_info},
+                             seq_num=self.i)
+
+            if self.output_info:
+                new_event.update(data={output_name: output
+                                       for (output_name, desc), output in
+                                       zzip(self.output_info, outputs)})
+            else:
+                new_event.update(data=outputs['data'])
+            self.i += 1
+            return 'event', new_event
+
+    def refresh_event(self, event):
+        """Issue a new event
+
+        Parameters
+        ----------
+        event: tuple, dict, or other
+
+        Returns
+        -------
+
+        """
+        if not self.event_failed:
+            if self.run_start_uid is None:
+                raise RuntimeError("Received Event before RunStart.")
+            if isinstance(event, Exception):
+                return self.stop(event)
+
+            new_event = dict(event)
+            new_event.update(dict(uid=str(uuid.uuid4()),
+                                  time=time.time(),
+                                  timestamps={},
+                                  seq_num=self.i))
+
+            self.i += 1
+            return 'event', new_event
+
 
 class map(EventStream):
     def __init__(self, func, child, raw=False, output_info=None,
@@ -59,25 +279,16 @@ class map(EventStream):
                              input_info=input_info, **kwargs)
         self.generate_provenance(func)
 
-    def update(self, x, who=None):
-        # massage the pair(s)
-        res = self.dispatch(x)
-        # if we are giving back a new doc, just emit it
-        if isinstance(res, tuple) and res[0] in ['start', 'descriptor',
-                                                 'stop']:
-            return self.emit(res)
+    def event(self, docs):
         try:
             # we need to expose the raw event data
-            res = self.event_guts(res)
-            if not self.raw and hasattr(x, '__stream_map__'):
-                result = x.__stream_map__(self.func, **self.kwargs)
-            else:
-                result = self.func(res, **self.kwargs)
+            res = self.event_guts(docs)
+            result = self.func(res, **self.kwargs)
             # Now we must massage the raw return into a new event
             result = self.issue_event(result)
         except Exception as e:
             result = self.issue_event(e)
-        return self.emit(result)
+        return result
 
 
 class filter(EventStream):
@@ -86,17 +297,13 @@ class filter(EventStream):
 
         EventStream.__init__(self, child, **kwargs)
         self.full_event = full_event
+        self.generate_provenance(predicate)
 
-    def update(self, x, who=None):
-        res = self.dispatch(x)
-        # We issue these new docs without filtering
-        if isinstance(res, tuple) and res[0] in ['start', 'descriptor',
-                                                 'stop']:
-            return self.emit(res)
+    def event(self, doc):
         if not self.full_event:
-            res = self.event_guts(res)
-        if self.predicate(res):
-            return self.emit(x)
+            doc = self.event_guts(doc)
+        if self.predicate(doc):
+            return doc
 
 
 class scan(EventStream):
@@ -108,8 +315,9 @@ class scan(EventStream):
         self.state = start
         EventStream.__init__(self, child, input_info=input_info,
                              output_info=output_info)
+        self.generate_provenance(func)
 
-    def update(self, x, who=None):
+    def event(self, x, who=None):
         res = self.dispatch(x)
         # We issue these new docs without doing anything
         if isinstance(res, tuple) and res[0] in ['start', 'descriptor',
@@ -125,11 +333,8 @@ class scan(EventStream):
         elif hasattr(self.state, '__call__'):
             self.state = self.state(x)
         else:
-            if hasattr(x, '__stream_reduce__'):
-                result = x.__stream_reduce__(self.func, self.state)
-            else:
-                x[self.state_key] = self.state
-                result = self.func(x)
+            x[self.state_key] = self.state
+            result = self.func(x)
             self.state = result
         return self.emit(self.issue_event(self.state))
 
@@ -358,6 +563,7 @@ class combine_latest(EventStream):
                     tup = tup[0].__stream_merge__(*tup[1:])
                 return self.emit(tup)
 
+
 # class concat(EventStream):
 #     def update(self, x, who=None):
 #         L = []
@@ -411,6 +617,7 @@ class combine_latest(EventStream):
 
 class eventify(EventStream):
     """Generate events from data in starts"""
+
     def __init__(self, child, start_key, **kwargs):
         self.start_key = start_key
         self.val = None
