@@ -106,16 +106,16 @@ bg_bundle = es.bundle(*dark_sub_bg)
 # bg_bundle.sink(star(LiveSliderImage('img', cmap='viridis')))
 
 # sum the backgrounds
-summed_bg = es.scan(dstar(add), bg_bundle, start=dstar(pull_array),
-                    state_key='img1',
-                    input_info=[('img2', 'img')],
-                    output_info=[('img', {
+summed_bg = es.accumulate(dstar(add), bg_bundle, start=dstar(pull_array),
+                          state_key='img1',
+                          input_info=[('img2', 'img')],
+                          output_info=[('img', {
                         'dtype': 'array',
                         'source': 'testing'})])
 
-count_bg = es.scan(lambda x: x['count'] + 1, bg_bundle, start=1,
-                   state_key='count',
-                   output_info=[('count', {
+count_bg = es.accumulate(lambda x: x['count'] + 1, bg_bundle, start=1,
+                         state_key='count',
+                         output_info=[('count', {
                        'dtype': 'int',
                        'source': 'testing'})])
 

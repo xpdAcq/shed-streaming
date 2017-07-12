@@ -184,11 +184,11 @@ def test_scan(exp_db, start_uid1):
     def get_array(img2):
         return img2
 
-    L = es.scan(dstar(add), source,
-                start=dstar(get_array),
-                state_key='img1',
-                input_info={'img2': 'pe1_image'},
-                output_info=[('img', {
+    L = es.accumulate(dstar(add), source,
+                      start=dstar(get_array),
+                      state_key='img1',
+                      input_info={'img2': 'pe1_image'},
+                      output_info=[('img', {
                     'dtype': 'array',
                     'source': 'testing'})]).sink_to_list()
     ih1 = exp_db[start_uid1]
