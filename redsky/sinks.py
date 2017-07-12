@@ -71,16 +71,18 @@ class StoreSink(object):
                 fs_uid = writer.write(fs_doc['data'][data_key])
                 fs_doc['data'][data_key] = fs_uid
 
-        doc.update(
+        fs_doc.update(
             filled={k: False for k in self.external_writers.keys()})
         return 'event', doc, fs_doc
 
     def descriptor(self, doc):
         fs_doc = dict(doc)
+        fs_doc['data_keys'] = dict(doc['data_keys'])
         # Mutate fs_doc here to mark data as external.
         for data_name in self.external_writers.keys():
             # data doesn't have to exist
             if data_name in fs_doc['data_keys']:
+                fs_doc['data_keys'][data_name] = dict(doc['data_keys'][data_name])
                 fs_doc['data_keys'][data_name].update(
                     external='FILESTORE:')
         return 'descriptor', doc, fs_doc
@@ -96,3 +98,27 @@ class StoreSink(object):
             writer.close()
             self.writers.pop(data_key)
         return 'stop', doc, doc
+
+
+class StubStoreSink(object):
+    """Sink some of documents to save them to the databases.
+
+    The input stream of (name, document) pairs passes through unchanged.
+    As a side effect, documents are inserted into the databases and external
+    files may be written.
+
+    Parameters
+    ----------
+    db: ``databroker.Broker`` instance
+        The databroker to store the documents in, must have writeable
+        metadatastore and writeable filestore if ``external`` is not empty.
+    """
+    doc_names = ['start', 'stop']
+
+    def __init__(self, db):
+        self.db = db
+
+    def __call__(self, name, doc):
+        if name in self.doc_names:
+            self.db.mds.insert(name, doc)
+        return name, doc
