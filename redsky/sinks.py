@@ -46,8 +46,7 @@ class StoreSink(object):
             self.external_writers = external_writers
         self.writers = None
 
-    def __call__(self, nd_pair):
-        name, doc = nd_pair
+    def __call__(self, name, doc):
         name, doc, fs_doc = getattr(self, name)(doc)
         # The mutated fs_doc is inserted into metadatastore.
         fs_doc.pop('filled', None)
@@ -72,16 +71,18 @@ class StoreSink(object):
                 fs_uid = writer.write(fs_doc['data'][data_key])
                 fs_doc['data'][data_key] = fs_uid
 
-        doc.update(
+        fs_doc.update(
             filled={k: False for k in self.external_writers.keys()})
         return 'event', doc, fs_doc
 
     def descriptor(self, doc):
         fs_doc = dict(doc)
+        fs_doc['data_keys'] = dict(doc['data_keys'])
         # Mutate fs_doc here to mark data as external.
         for data_name in self.external_writers.keys():
             # data doesn't have to exist
             if data_name in fs_doc['data_keys']:
+                fs_doc['data_keys'][data_name] = dict(doc['data_keys'][data_name])
                 fs_doc['data_keys'][data_name].update(
                     external='FILESTORE:')
         return 'descriptor', doc, fs_doc

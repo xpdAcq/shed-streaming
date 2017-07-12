@@ -21,6 +21,7 @@ import pytest
 from .utils import build_pymongo_backed_broker, insert_imgs
 import tempfile
 from uuid import uuid4
+from databroker.core import register_builtin_handlers
 
 
 @pytest.fixture(scope='module')
