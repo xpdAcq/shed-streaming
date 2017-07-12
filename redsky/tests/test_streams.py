@@ -6,8 +6,6 @@ from streams.core import Stream
 
 import redsky.event_streams as es
 from ..event_streams import dstar
-from ..savers import NpyWriter
-from ..sinks import StoreSink
 
 
 def test_map(exp_db, start_uid1):
@@ -17,7 +15,7 @@ def test_map(exp_db, start_uid1):
         return img + 5
 
     ii = {'img': 'pe1_image'}
-    oi = [('img', {'dtype': 'array', 'source': 'testing'})]
+    oi = [('image', {'dtype': 'array', 'source': 'testing'})]
     L = es.map(dstar(add5),
                source,
                input_info=ii,
@@ -36,14 +34,13 @@ def test_map(exp_db, start_uid1):
         if l[0] == 'start':
             assert l[1]['provenance'] == prov
         if l[0] == 'event':
-            assert_allclose(l[1]['data']['img'], s[1]['data']['pe1_image'] + 5)
+            assert_allclose(l[1]['data']['image'], s[1]['data']['pe1_image'] + 5)
         if l[0] == 'stop':
             if l[1]['exit_status'] == 'failure':
                 print(l[1]['trace'])
                 print(l[1]['reason'])
             assert l[1]['exit_status'] == 'success'
-        else:
-            assert l[1] != s[1]
+        assert l[1] != s[1]
 
 
 def test_map_stream_input(exp_db, start_uid1):
@@ -288,21 +285,18 @@ def test_eventify(exp_db, start_uid1):
             assert l[1]['exit_status'] == 'success'
 
 
-def test_workflow(exp_db, start_uid1, tmp_dir):
+def test_workflow(exp_db, start_uid1):
     def subs(x1, x2):
         return x1 - x2
 
     hdr = exp_db[start_uid1]
 
-    raw_data = hdr.stream(fill=True)
-    dark_data = exp_db[hdr['start']['sc_dk_field_uid']].stream(fill=True)
+    raw_data = list(hdr.stream(fill=True))
+    dark_data = list(exp_db[hdr['start']['sc_dk_field_uid']].stream(fill=True))
     rds = Stream()
     dark_data_stream = Stream()
 
-    store_sink = StoreSink(db=exp_db,
-                           external_writers={'image': partial(NpyWriter,
-                                                              root=tmp_dir)})
-    z = es.zip(rds, dark_data_stream)
+    z = es.combine_latest(rds, dark_data_stream, emit_on=rds)
     img_stream = es.map(dstar(subs),
                         z,
                         input_info={'x1': 'pe1_image',
@@ -311,15 +305,14 @@ def test_workflow(exp_db, start_uid1, tmp_dir):
                             'dtype': 'array',
                             'source': 'testing'})]
                         )
-    img_stream.sink(store_sink)
     L = img_stream.sink_to_list()
 
     for d in dark_data:
         dark_data_stream.emit(d)
     for d in raw_data:
         rds.emit(d)
-    for (n, d), (nn, dd) in zip(L, exp_db.restream(exp_db[-1], fill=True)):
-        if n == 'event':
-            assert_allclose(d['data']['image'], dd['data']['image'])
+    for (n, d) in L:
+        # just a smoke test for now
         if n == 'stop':
             assert d['exit_status'] == 'success'
+        assert d
