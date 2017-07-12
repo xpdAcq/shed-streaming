@@ -75,8 +75,7 @@ def test_map_stream_input(exp_db, start_uid1):
                 print(l[1]['trace'])
                 print(l[1]['reason'])
             assert l[1]['exit_status'] == 'success'
-        else:
-            assert l[1] != s[1]
+        assert l[1] != s[1]
 
 
 def test_double_map(exp_db, start_uid1):
