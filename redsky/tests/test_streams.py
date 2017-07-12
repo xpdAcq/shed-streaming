@@ -159,7 +159,7 @@ def test_filter(exp_db, start_uid1):
     source = Stream()
 
     def f(img1):
-        return isinstance(img1, np.ndarray)
+        return img1 is not None
 
     L = es.filter(f, source,
                   input_info={'img1': 'pe1_image'}).sink_to_list()
@@ -168,8 +168,9 @@ def test_filter(exp_db, start_uid1):
     for a in s:
         source.emit(a)
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        print(l)
         if l[0] == 'event':
-            assert_allclose(l[1]['data']['img'], s[1]['data']['pe1_image'])
+            assert_allclose(l[1]['data']['pe1_image'], s[1]['data']['pe1_image'])
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
 
