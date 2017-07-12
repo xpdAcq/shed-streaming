@@ -245,6 +245,7 @@ def test_bundle(exp_db, start_uid1, start_uid3):
         list(exp_db.get_events(ih2))) + 3
 
     for l in L:
+        print(l)
         assert l[1]['uid'] not in uids
 
 

@@ -250,7 +250,7 @@ class EventStream(Stream):
             else:
                 new_event.update(data=outputs['data'])
             self.i += 1
-            return 'event', new_event
+            return new_event
 
     def refresh_event(self, event):
         """Issue a new event
@@ -276,7 +276,7 @@ class EventStream(Stream):
                                   seq_num=self.i))
 
             self.i += 1
-            return 'event', new_event
+            return new_event
 
 
 class map(EventStream):
@@ -299,7 +299,7 @@ class map(EventStream):
             result = self.issue_event(result)
         except Exception as e:
             result = self.issue_event(e)
-        return result
+        return super().event(result)
 
 
 class filter(EventStream):
@@ -316,7 +316,7 @@ class filter(EventStream):
         else:
             g = doc
         if self.predicate(g):
-            return 'event', doc[0]
+            return super().event(doc[0])
 
 
 class accumulate(EventStream):
@@ -343,7 +343,7 @@ class accumulate(EventStream):
             doc[self.state_key] = self.state
             result = self.func(doc)
             self.state = result
-        return self.issue_event(self.state)
+        return super().event(self.issue_event(self.state))
 
 
 class zip(EventStream):
@@ -402,7 +402,7 @@ class bundle(EventStream):
                                 break
                             else:
                                 nd_pair = b.popleft()
-                                new_nd_pair = self.refresh_event(nd_pair[1])
+                                new_nd_pair = super().event(self.refresh_event(nd_pair[1]))
                                 rvs.append(self.emit(new_nd_pair))
 
                 else:
@@ -472,7 +472,7 @@ class eventify(EventStream):
         super().start(docs)
 
     def event(self, docs):
-        return self.issue_event(self.val)
+        return super().event(self.issue_event(self.val))
 
 
 # class partition(EventStream):
