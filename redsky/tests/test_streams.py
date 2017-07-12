@@ -37,8 +37,6 @@ def test_map(exp_db, start_uid1):
             assert_allclose(l[1]['data']['image'], s[1]['data']['pe1_image'] + 5)
         if l[0] == 'stop':
             if l[1]['exit_status'] == 'failure':
-                print(l[1]['trace'])
-                print(l[1]['reason'])
             assert l[1]['exit_status'] == 'success'
         assert l[1] != s[1]
 
@@ -72,8 +70,6 @@ def test_map_stream_input(exp_db, start_uid1):
             assert_allclose(l[1]['data']['img'], s[1]['data']['pe1_image'] + 5)
         if l[0] == 'stop':
             if l[1]['exit_status'] == 'failure':
-                print(l[1]['trace'])
-                print(l[1]['reason'])
             assert l[1]['exit_status'] == 'success'
         assert l[1] != s[1]
 
@@ -144,7 +140,6 @@ def test_double_map_error(exp_db, start_uid1):
                            {'dtype': 'array',
                             'source': 'testing'})])
     L = pipeline.sink_to_list()
-    pipeline.sink(print)
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -168,7 +163,6 @@ def test_filter(exp_db, start_uid1):
     for a in s:
         source.emit(a)
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
-        print(l)
         if l[0] == 'event':
             assert_allclose(l[1]['data']['pe1_image'], s[1]['data']['pe1_image'])
         if l[0] == 'stop':
@@ -245,7 +239,6 @@ def test_bundle(exp_db, start_uid1, start_uid3):
         list(exp_db.get_events(ih2))) + 3
 
     for l in L:
-        print(l)
         assert l[1]['uid'] not in uids
 
 
