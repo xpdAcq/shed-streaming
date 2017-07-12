@@ -1,6 +1,3 @@
-from functools import partial
-
-import numpy as np
 from numpy.testing import assert_allclose
 from streams.core import Stream
 
@@ -34,7 +31,8 @@ def test_map(exp_db, start_uid1):
         if l[0] == 'start':
             assert l[1]['provenance'] == prov
         if l[0] == 'event':
-            assert_allclose(l[1]['data']['image'], s[1]['data']['pe1_image'] + 5)
+            assert_allclose(l[1]['data']['image'],
+                            s[1]['data']['pe1_image'] + 5)
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
         assert l[1] != s[1]
@@ -162,7 +160,8 @@ def test_filter(exp_db, start_uid1):
         source.emit(a)
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
         if l[0] == 'event':
-            assert_allclose(l[1]['data']['pe1_image'], s[1]['data']['pe1_image'])
+            assert_allclose(l[1]['data']['pe1_image'],
+                            s[1]['data']['pe1_image'])
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
 
@@ -181,8 +180,8 @@ def test_scan(exp_db, start_uid1):
                       state_key='img1',
                       input_info={'img2': 'pe1_image'},
                       output_info=[('img', {
-                    'dtype': 'array',
-                    'source': 'testing'})]).sink_to_list()
+                          'dtype': 'array',
+                          'source': 'testing'})]).sink_to_list()
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
