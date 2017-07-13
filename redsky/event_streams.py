@@ -31,7 +31,7 @@ class EventStream(Stream):
     Serve up documents and their internals as requested.
     The main way that this works is by a) ingesting documents, b) issuing
     documents, c) returning the internals of documents upon request.
-    
+
     Attributes
     ----------
     outbound_descriptor_uid : str
@@ -115,13 +115,53 @@ class EventStream(Stream):
             return [element for element in result if element is not None]
 
     def dispatch(self, nds):
+        """Call method which correlates to the input document
+
+        Parameters
+        ----------
+        nds: tuple
+            Name document pair
+
+        Returns
+        -------
+        tuple:
+            New name document pair
+        """
         name, docs = self.curate_streams(nds)
         return getattr(self, name)(docs)
 
     def update(self, x, who=None):
+        """Emit the new name document pair
+
+        Parameters
+        ----------
+        x: tuple
+            Name document pair
+        who: stream instance, optional
+            This is mostly used internally for emit
+
+        Returns
+        -------
+        list:
+            The list of issued documents, used for back pressure
+        """
         return self.emit(self.dispatch(x))
 
     def curate_streams(self, nds):
+        """Standardize name document pairs
+
+        Parameters
+        ----------
+        nds: tuple, or tuple of tuples
+            The name document pair(s)
+
+        Returns
+        -------
+        name: str
+            The name of the output doc(s)
+        docs: tuple
+            The document(s)
+        """
         # If we get multiple streams make (doc, doc, doc, ...)
         if isinstance(nds[0], tuple):
             names, docs = list(zzip(*nds))
@@ -136,6 +176,13 @@ class EventStream(Stream):
         return name, docs
 
     def generate_provenance(self, func=None):
+        """Generate provenance information about the stream function
+
+        Parameters
+        ----------
+        func: callable
+            The function used inside the stream class (see map, filter, etc.)
+        """
         d = dict(
             stream_class=self.__class__.__name__,
             stream_class_module=self.__class__.__module__,
@@ -163,7 +210,9 @@ class EventStream(Stream):
 
         Returns
         -------
-
+        name: 'start'
+        doc: dict
+            The document
         """
         self.run_start_uid = str(uuid.uuid4())
         new_start_doc = dict(uid=self.run_start_uid,
@@ -173,6 +222,19 @@ class EventStream(Stream):
         return 'start', new_start_doc
 
     def descriptor(self, docs):
+        """
+        Issue new descriptor document for input documents
+
+        Parameters
+        ----------
+        docs: tuple of dicts or dict
+
+        Returns
+        -------
+        name: 'descriptor'
+        doc: dict
+            The document
+        """
         if self.run_start_uid is None:
             raise RuntimeError("Received EventDescriptor before "
                                "RunStart.")
@@ -198,9 +260,35 @@ class EventStream(Stream):
         return 'descriptor', new_descriptor
 
     def event(self, docs):
+        """
+        Issue event descriptor document for input documents
+
+        Parameters
+        ----------
+        docs: tuple of dicts or dict
+
+        Returns
+        -------
+        name: 'event'
+        doc: dict
+            The document
+        """
         return 'event', docs
 
     def stop(self, docs):
+        """
+        Issue new descriptor document for input documents
+
+        Parameters
+        ----------
+        docs: tuple of dicts or dict
+
+        Returns
+        -------
+        name: 'descriptor'
+        doc: dict
+            The document
+        """
         if not self.event_failed:
             if self.run_start_uid is None:
                 raise RuntimeError("Received RunStop before RunStart.")
@@ -224,7 +312,7 @@ class EventStream(Stream):
 
         Parameters
         ----------
-        docs
+        docs: tuple of dicts
 
         Returns
         -------
@@ -239,10 +327,17 @@ class EventStream(Stream):
         Parameters
         ----------
         outputs: tuple, dict, or other
+            Data returned from some external functon
 
         Returns
         -------
+        new_event: dict
+            The new event
 
+        Notes
+        -----
+        If the outputs of the function is an exception no event will be
+        created, but a stop document will be issued.
         """
         if not self.event_failed:
             if self.run_start_uid is None:
@@ -276,10 +371,11 @@ class EventStream(Stream):
         Parameters
         ----------
         event: tuple, dict, or other
-
+            The event document
         Returns
         -------
-
+        new_event: dict
+            A new event with the same core data
         """
         if not self.event_failed:
             if self.run_start_uid is None:
@@ -298,8 +394,23 @@ class EventStream(Stream):
 
 
 class map(EventStream):
-    def __init__(self, func, child, raw=False, output_info=None,
-                 input_info=None, **kwargs):
+    """Map a function onto an event stream """
+    def __init__(self, func, child, raw=False, *,
+                 output_info=None, input_info=None,
+                 **kwargs):
+        """Initialize the node
+
+        Parameters
+        ----------
+        func: callable
+            The function to map on the event data
+        child: stream instance
+            The source of the data
+        raw:
+        output_info
+        input_info
+        kwargs
+        """
         self.func = func
         self.kwargs = kwargs
         self.raw = raw
