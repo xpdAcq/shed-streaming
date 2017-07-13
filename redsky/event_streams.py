@@ -27,22 +27,38 @@ def dstar(f):
 
 
 class EventStream(Stream):
+    """
+    Serve up documents and their internals as requested.
+    The main way that this works is by a) ingesting documents, b) issuing
+    documents, c) returning the internals of documents upon request.
+    
+    Attributes
+    ----------
+    outbound_descriptor_uid : str
+        The outbound descriptor uid
+    md : dict
+        Metadata to be added to the start document
+    input_info : dict, optional
+        Input info for the operation, not needed for all cases
+    output_info : list of tuples, optional
+        Output info for the operation, not needed for all cases
+    i : int
+        Counter for the number of events
+    run_start_uid : None
+    provenance : {}
+    event_failed : False
+    """
     def __init__(self, child=None, children=None,
-                 *, output_info=None, input_info=None,
+                 *, output_info=None, input_info=None, md=None,
                  **kwargs):
         """
-        Serve up documents and their internals as requested.
-        The main way that this works is by a) ingesting documents, b) issuing
-        documents, c) returning the internals of documents upon request.
-
+        Initialize the stream
         Parameters
         ----------
-        input_info: list of tuples
+        input_info: dict
             describs the incoming streams
         output_info: list of tuples
             describs the resulting stream
-        provenance : dict, optional
-            metadata about this operation
 
         Notes
         ------
@@ -56,15 +72,20 @@ class EventStream(Stream):
         data_keys.
         output_info = [('data_key', {'dtype': 'array', 'source': 'testing'})]
         """
-        # TODO: this needs something super maybe a Base Class
         Stream.__init__(self, child, children)
+        if md is None:
+            md = {}
         if output_info is None:
             output_info = {}
         if input_info is None:
             input_info = {}
         self.outbound_descriptor_uid = None
+        self.md = md
         self.output_info = output_info
-        self.allowed_names = ['start', 'descriptor', 'event', 'stop']
+        self.input_info = input_info
+
+        # TODO: need multiple counters for multiple descriptors
+        # This will need to be a dict with keys of descriptor names
         self.i = None
         self.run_start_uid = None
         self.provenance = {}
@@ -76,7 +97,6 @@ class EventStream(Stream):
                 input_info[k] = (v, 0)
             if isinstance(v[1], Stream):
                 input_info[k] = (v[0], self.children.index(v[1]))
-        self.input_info = input_info
 
     def emit(self, x):
         """ Push data into the stream at this point
@@ -96,8 +116,7 @@ class EventStream(Stream):
 
     def dispatch(self, nds):
         name, docs = self.curate_streams(nds)
-        if name in self.allowed_names:
-            return getattr(self, name)(docs)
+        return getattr(self, name)(docs)
 
     def update(self, x, who=None):
         return self.emit(self.dispatch(x))
@@ -150,8 +169,7 @@ class EventStream(Stream):
         new_start_doc = dict(uid=self.run_start_uid,
                              time=time.time(),
                              parents=[doc['uid'] for doc in docs],
-                             # parent_keys=[k for k in stream_keys],
-                             provenance=self.provenance)
+                             provenance=self.provenance, **self.md)
         return 'start', new_start_doc
 
     def descriptor(self, docs):
@@ -402,7 +420,8 @@ class bundle(EventStream):
                                 break
                             else:
                                 nd_pair = b.popleft()
-                                new_nd_pair = super().event(self.refresh_event(nd_pair[1]))
+                                new_nd_pair = super().event(
+                                    self.refresh_event(nd_pair[1]))
                                 rvs.append(self.emit(new_nd_pair))
 
                 else:
@@ -473,163 +492,3 @@ class eventify(EventStream):
 
     def event(self, docs):
         return super().event(self.issue_event(self.val))
-
-
-# class partition(EventStream):
-#     def __init__(self, n, child):
-#         self.n = n
-#         self.buffer = []
-#         EventStream.__init__(self, child)
-#
-#     def update(self, x, who=None):
-#         self.buffer.append(x)
-#         if len(self.buffer) == self.n:
-#             result, self.buffer = self.buffer, []
-#             return self.emit(tuple(result))
-#         else:
-#             return []
-
-
-# class sliding_window(EventStream):
-#     def __init__(self, n, child):
-#         self.n = n
-#         self.buffer = deque(maxlen=n)
-#         EventStream.__init__(self, child)
-#
-#     def update(self, x, who=None):
-#         self.buffer.append(x)
-#         if len(self.buffer) == self.n:
-#             return self.emit(tuple(self.buffer))
-#         else:
-#             return []
-
-
-# class timed_window(EventStream):
-#     def __init__(self, interval, child, loop=None):
-#         self.interval = interval
-#         self.buffer = []
-#         self.last = gen.moment
-#
-#         EventStream.__init__(self, child, loop=loop)
-#
-#         self.loop.add_callback(self.cb)
-#
-#     def update(self, x, who=None):
-#         self.buffer.append(x)
-#         return self.last
-#
-#     @gen.coroutine
-#     def cb(self):
-#         while True:
-#             L, self.buffer = self.buffer, []
-#             self.last = self.emit(L)
-#             yield self.last
-#             yield gen.sleep(self.interval)
-
-
-# class delay(EventStream):
-#     def __init__(self, interval, child, loop=None):
-#         self.interval = interval
-#         self.queue = Queue()
-#
-#         EventStream.__init__(self, child, loop=loop)
-#
-#         self.loop.add_callback(self.cb)
-#
-#     @gen.coroutine
-#     def cb(self):
-#         while True:
-#             last = time()
-#             x = yield self.queue.get()
-#             yield self.emit(x)
-#             duration = self.interval - (time() - last)
-#             if duration > 0:
-#                 yield gen.sleep(duration)
-#
-#     def update(self, x, who=None):
-#         return self.queue.put(x)
-
-
-# class rate_limit(EventStream):
-#     def __init__(self, interval, child):
-#         self.interval = interval
-#         self.next = 0
-#
-#         EventStream.__init__(self, child)
-#
-#     @gen.coroutine
-#     def update(self, x, who=None):
-#         now = time()
-#         old_next = self.next
-#         self.next = max(now, self.next) + self.interval
-#         if now < old_next:
-#             yield gen.sleep(old_next - now)
-#         yield self.emit(x)
-
-
-# class buffer(EventStream):
-#     def __init__(self, n, child, loop=None):
-#         self.queue = Queue(maxsize=n)
-#
-#         EventStream.__init__(self, child, loop=loop)
-#
-#         self.loop.add_callback(self.cb)
-#
-#     def update(self, x, who=None):
-#         return self.queue.put(x)
-#
-#     @gen.coroutine
-#     def cb(self):
-#         while True:
-#             x = yield self.queue.get()
-#             yield self.emit(x)
-
-# class concat(EventStream):
-#     def update(self, x, who=None):
-#         L = []
-#         for item in x:
-#             y = self.emit(item)
-#             if type(y) is list:
-#                 L.extend(y)
-#             else:
-#                 L.append(y)
-#         return L
-
-
-# class unique(EventStream):
-#     def __init__(self, child, history=None, key=identity):
-#         self.seen = dict()
-#         self.key = key
-#         if history:
-#             from zict import LRU
-#             self.seen = LRU(history, self.seen)
-#
-#         EventStream.__init__(self, child)
-#
-#     def update(self, x, who=None):
-#         y = self.key(x)
-#         if y not in self.seen:
-#             self.seen[y] = 1
-#             return self.emit(x)
-
-
-# class union(EventStream):
-#     def update(self, x, who=None):
-#         return self.emit(x)
-
-
-# class collect(EventStream):
-#     def __init__(self, child, cache=None):
-#         if cache is None:
-#             cache = deque()
-#         self.cache = cache
-#
-#         EventStream.__init__(self, child)
-#
-#     def update(self, x, who=None):
-#         self.cache.append(x)
-#
-#     def flush(self, _=None):
-#         out = tuple(self.cache)
-#         self.emit(out)
-#         self.cache.clear()
