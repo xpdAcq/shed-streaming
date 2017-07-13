@@ -13,10 +13,11 @@ def test_map(exp_db, start_uid1):
 
     ii = {'img': 'pe1_image'}
     oi = [('image', {'dtype': 'array', 'source': 'testing'})]
-    L = es.map(dstar(add5),
-               source,
-               input_info=ii,
-               output_info=oi).sink_to_list()
+    dp = es.map(dstar(add5),
+                source,
+                input_info=ii,
+                output_info=oi)
+    L = dp.sink_to_list()
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:

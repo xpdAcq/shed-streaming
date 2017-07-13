@@ -27,10 +27,16 @@ def dstar(f):
 
 
 class EventStream(Stream):
-    """
-    Serve up documents and their internals as requested.
-    The main way that this works is by a) ingesting documents, b) issuing
-    documents, c) returning the internals of documents upon request.
+    """ A EventStream is an infinite sequence of data in the Event Model
+
+    EventStreams subscribe to each other passing and transforming data between
+    them. An EventStream object listens for updates from upstream, reacts to
+    these updates, and then emits more data to flow downstream to all
+    EventStream objects that subscribe to it.  Downstream EventStream objects
+    may connect at any point of an EventStream graph to get a full view of the
+    data coming off of that point to do with as they will.
+
+
 
     Attributes
     ----------
@@ -51,14 +57,16 @@ class EventStream(Stream):
     def __init__(self, child=None, children=None,
                  *, output_info=None, input_info=None, md=None,
                  **kwargs):
-        """
-        Initialize the stream
+        """Initialize the stream
+
         Parameters
         ----------
-        input_info: dict
-            describs the incoming streams
-        output_info: list of tuples
-            describs the resulting stream
+        input_info: dict, optional
+            describes the incoming streams
+        output_info: list of tuples, optional
+            describes the resulting stream
+        md: dict, optional
+            Additional metadata to be added to the run start document
 
         Notes
         ------
@@ -394,8 +402,8 @@ class EventStream(Stream):
 
 
 class map(EventStream):
-    """Map a function onto an event stream """
-    def __init__(self, func, child, raw=False, *,
+    """Apply a function onto every event in the stream"""
+    def __init__(self, func, child, *,
                  output_info=None, input_info=None,
                  **kwargs):
         """Initialize the node
@@ -404,16 +412,15 @@ class map(EventStream):
         ----------
         func: callable
             The function to map on the event data
-        child: stream instance
+        child: EventStream instance
             The source of the data
-        raw:
-        output_info
-        input_info
-        kwargs
+        input_info: dict
+            describe the incoming streams
+        output_info: list of tuples
+            describe the resulting stream
         """
         self.func = func
         self.kwargs = kwargs
-        self.raw = raw
 
         EventStream.__init__(self, child, output_info=output_info,
                              input_info=input_info, **kwargs)
@@ -432,10 +439,27 @@ class map(EventStream):
 
 
 class filter(EventStream):
-    def __init__(self, predicate, child, full_event=False, **kwargs):
+    """Only pass through events that satisfy the predicate"""
+    def __init__(self, predicate, child, *, input_info,
+                 full_event=False, **kwargs):
+        """Initialize the node
+
+        Parameters
+        ----------
+        predicate: callable
+            The function which returns True if the event is to propagate
+            further in the pipeline
+        child: EventStream instance
+            The source of the data
+        input_info: dict
+            describe the incoming streams
+        full_event: bool, optional
+            If True expose the full event dict to the predicate, if False
+            only expose the data from the event
+        """
         self.predicate = predicate
 
-        EventStream.__init__(self, child, **kwargs)
+        EventStream.__init__(self, child, input_info=input_info, **kwargs)
         self.full_event = full_event
         self.generate_provenance(predicate)
 
@@ -449,9 +473,35 @@ class filter(EventStream):
 
 
 class accumulate(EventStream):
+    """Accumulate results with previous state
+
+    This preforms running or cumulative reductions, applying the function
+    to the previous total and the new element.  The function should take
+    two arguments, the previous accumulated state and the next element and
+    it should return a new accumulated state.
+    """
     def __init__(self, func, child, state_key=None, *,
                  output_info=None,
                  input_info=None, start=no_default):
+        """Initialize the node
+
+        Parameters
+        ----------
+        func: callable
+            The function to map on the event data
+        child: EventStream instance
+            The source of the data
+        state_key: str
+            The keyword for current accumulated state in the func
+        input_info: dict
+            describe the incoming streams
+        output_info: list of tuples
+            describe the resulting stream
+        start: any or callable, optional
+            Starting value for accumulation, if no_default use the event data
+            dictionary, if callable run that callable on the event data, else
+            use `start` as the starting data, defaults to no_default
+        """
         self.state_key = state_key
         self.func = func
         self.state = start
@@ -476,7 +526,15 @@ class accumulate(EventStream):
 
 
 class zip(EventStream):
+    """Combine two streams together into a stream of tuples"""
     def __init__(self, *children, **kwargs):
+        """Initialize the Node
+
+        Parameters
+        ----------
+        children: EventStream instances
+            The event streams to be zipped together
+        """
         self.maxsize = kwargs.pop('maxsize', 10)
         self.buffers = [deque() for _ in children]
         self.condition = Condition()
@@ -501,7 +559,15 @@ class zip(EventStream):
 
 
 class bundle(EventStream):
+    """Combine multiple event streams into one"""
     def __init__(self, *children, **kwargs):
+        """Initialize the Node
+
+        Parameters
+        ----------
+        children: EventStream instances
+            The event streams to be zipped together
+        """
         self.maxsize = kwargs.pop('maxsize', 100)
         self.buffers = [deque() for _ in children]
         self.condition = Condition()
@@ -547,7 +613,22 @@ class bundle(EventStream):
 
 
 class combine_latest(EventStream):
+    """Combine multiple streams together to a stream of tuples
+
+    This will emit a new tuple of all of the most recent elements seen from
+    any stream.
+    """
     def __init__(self, *children, emit_on=None):
+        """Initialize the node
+
+        Parameters
+        ----------
+        children: EventStream instances
+            The streams to combine
+        emit_on: EventStream, list of EventStreams or None
+            Only emit upon update of the streams listed.
+            If None, emit on update from any stream
+        """
         self.last = [None for _ in children]
         self.special_docs_names = ['start', 'descriptor', 'stop']
         self.special_docs = {k: [None for _ in children] for k in
@@ -590,12 +671,23 @@ class combine_latest(EventStream):
 
 class eventify(EventStream):
     """Generate events from data in starts"""
+    def __init__(self, child, start_key, *, output_info, **kwargs):
+        """Initialize the node
 
-    def __init__(self, child, start_key, **kwargs):
+        Parameters
+        ----------
+        child: EventStream instance
+            The event stream to eventify
+        start_key: str
+            The run start key to use to create the events
+        output_info: list of tuples, optional
+            describes the resulting stream
+        """
+        # TODO: maybe allow start_key to be a list of relevent keys?
         self.start_key = start_key
         self.val = None
 
-        EventStream.__init__(self, child, **kwargs)
+        EventStream.__init__(self, child, output_info=output_info, **kwargs)
 
     def start(self, docs):
         self.val = docs[0][self.start_key]
