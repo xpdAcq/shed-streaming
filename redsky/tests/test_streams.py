@@ -1,3 +1,17 @@
+##############################################################################
+#
+# xpdan            by Billinge Group
+#                   Simon J. L. Billinge sb2896@columbia.edu
+#                   (c) 2017 trustees of Columbia University in the City of
+#                        New York.
+#                   All rights reserved
+#
+# File coded by:    Christopher J. Wright (CJ-Wright)
+#
+# See AUTHORS.txt for a list of people who contributed.
+# See LICENSE.txt for license information.
+#
+##############################################################################
 from numpy.testing import assert_allclose
 from streams.core import Stream
 
