@@ -7,6 +7,7 @@ from collections import deque
 from streams.core import Stream, no_default
 from tornado.locks import Condition
 from builtins import zip as zzip
+from functools import partial
 
 
 def star(f):
@@ -88,6 +89,8 @@ class EventStream(Stream):
         if input_info is None:
             input_info = {}
         self.outbound_descriptor_uid = None
+        if 'name' in md.keys():
+            self.name = md['name']
         self.md = md
         self.output_info = output_info
         self.input_info = input_info
@@ -105,6 +108,19 @@ class EventStream(Stream):
                 input_info[k] = (v, 0)
             if isinstance(v[1], Stream):
                 input_info[k] = (v[0], self.children.index(v[1]))
+
+    def __str__(self):
+        s = self.__class__.__name__
+        for m in ['func', 'predicate']:
+            if hasattr(self, m):
+                if hasattr(getattr(self, m), '__name__'):
+                    s += '\n{}'.format(getattr(self, m).__name__)
+                elif hasattr(getattr(self, m).__class__, '__name__'):
+                    s += '\n{}'.format(getattr(self, m).__class__.__name__)
+        n = getattr(self, 'name', None)
+        if n:
+            s = '{}\n'.format(n) + s
+        return s
 
     def emit(self, x):
         """ Push data into the stream at this point
@@ -203,9 +219,14 @@ class EventStream(Stream):
         if self.output_info:
             d.update(output_info=self.output_info)
         if func:
-            d.update(function_module=func.__module__,
-                     # this line gets more complex with classes
-                     function_name=func.__name__, )
+            if isinstance(func, partial):
+                d.update(function_module=func.__module__,
+                         # this line gets more complex with classes
+                         function_name=func.__name__, )
+            else:
+                d.update(function_module=func.__module__,
+                         # this line gets more complex with classes
+                         function_name=func.__name__, )
         self.provenance = d
 
     def start(self, docs):
