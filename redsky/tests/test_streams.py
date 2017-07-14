@@ -346,7 +346,6 @@ def test_scan_fail(exp_db, start_uid1):
         source.emit(a)
 
     assert_docs = set()
-    state = None
     for o, l in zip(exp_db.restream(ih1, fill=True), L):
         assert_docs.add(l[0])
         if l[0] == 'stop':
