@@ -16,8 +16,28 @@ from numpy.testing import assert_allclose
 from streams.core import Stream
 
 import redsky.event_streams as es
-from ..event_streams import dstar
+from ..event_streams import dstar, star
 import pytest
+from bluesky.callbacks.core import CallbackBase
+
+
+class SinkAssertion(CallbackBase):
+    def __init__(self, fail=True):
+        self.fail = fail
+        self.docs = []
+
+    def __call__(self, name, doc):
+        "Dispatch to methods expecting particular doc types."
+        self.docs.append(name)
+        return getattr(self, name)(doc)
+
+    def stop(self, doc):
+        if self.fail:
+            assert doc['exit_status'] == 'failure'
+            assert doc.get('reason')
+        else:
+            assert doc['exit_status']
+            assert not doc.get('reason', None)
 
 
 def test_map(exp_db, start_uid1):
@@ -33,6 +53,8 @@ def test_map(exp_db, start_uid1):
                 input_info=ii,
                 output_info=oi)
     L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -70,7 +92,9 @@ def test_map_full_event(exp_db, start_uid1):
                 input_info=ii,
                 output_info=oi,
                 full_event=True)
+    dp.sink(star(SinkAssertion(False)))
     L = dp.sink_to_list()
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -107,10 +131,13 @@ def test_map_stream_input(exp_db, start_uid1):
 
     ii = {'img': ('pe1_image', source)}
     oi = [('img', {'dtype': 'array', 'source': 'testing'})]
-    L = es.map(dstar(add5),
-               source,
-               input_info=ii,
-               output_info=oi).sink_to_list()
+    dp = es.map(dstar(add5),
+                source,
+                input_info=ii,
+                output_info=oi)
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -142,12 +169,16 @@ def test_double_map(exp_db, start_uid1):
     def add_imgs(img1, img2):
         return img1 + img2
 
-    L = es.map(dstar(add_imgs), es.zip(source, source2),
-               input_info={'img1': ('pe1_image', 0), 'img2': ('pe1_image', 1)},
-               output_info=[
-                   ('img',
-                    {'dtype': 'array',
-                     'source': 'testing'})]).sink_to_list()
+    dp = es.map(dstar(add_imgs), es.zip(source, source2),
+                input_info={'img1': ('pe1_image', 0),
+                            'img2': ('pe1_image', 1)},
+                output_info=[
+                    ('img',
+                     {'dtype': 'array',
+                      'source': 'testing'})])
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -173,12 +204,16 @@ def test_double_internal_map(exp_db, start_uid1):
     def div(img1, ct):
         return img1 / ct
 
-    L = es.map(dstar(div), source,
-               input_info={'img1': 'pe1_image', 'ct': 'I0'},
-               output_info=[
-                   ('img',
-                    {'dtype': 'array',
-                     'source': 'testing'})]).sink_to_list()
+    dp = es.map(dstar(div), source,
+                input_info={'img1': 'pe1_image', 'ct': 'I0'},
+                output_info=[
+                    ('img',
+                     {'dtype': 'array',
+                      'source': 'testing'})])
+
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -210,6 +245,8 @@ def test_map_fail(exp_db, start_uid1):
                 input_info=ii,
                 output_info=oi)
     L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion()))
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -238,6 +275,8 @@ def test_map_fail_dont_except(exp_db, start_uid1):
                 input_info=ii,
                 output_info=oi, raise_upon_error=False)
     L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion()))
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -259,8 +298,11 @@ def test_filter(exp_db, start_uid1):
     def f(img1):
         return img1 is not None
 
-    L = es.filter(dstar(f), source,
-                  input_info={'img1': 'pe1_image'}).sink_to_list()
+    dp = es.filter(dstar(f), source,
+                   input_info={'img1': 'pe1_image'})
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -285,8 +327,11 @@ def test_filter_fail(exp_db, start_uid1):
     def f(img1):
         return img1 is not None
 
-    L = es.filter(dstar(f), source,
-                  input_info={'i': 'pe1_image'}).sink_to_list()
+    dp = es.filter(dstar(f), source,
+                   input_info={'i': 'pe1_image'})
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion()))
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -307,9 +352,12 @@ def test_filter_full_event(exp_db, start_uid1):
     def f(i):
         return i > 1
 
-    L = es.filter(dstar(f), source,
-                  input_info={'i': 'seq_num'},
-                  full_event=True).sink_to_list()
+    dp = es.filter(dstar(f), source,
+                   input_info={'i': 'seq_num'},
+                   full_event=True)
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -332,12 +380,15 @@ def test_scan(exp_db, start_uid1):
     def add(img1, img2):
         return img1 + img2
 
-    L = es.accumulate(dstar(add), source,
-                      state_key='img1',
-                      input_info={'img2': 'pe1_image'},
-                      output_info=[('img', {
-                          'dtype': 'array',
-                          'source': 'testing'})]).sink_to_list()
+    dp = es.accumulate(dstar(add), source,
+                       state_key='img1',
+                       input_info={'img2': 'pe1_image'},
+                       output_info=[('img', {
+                           'dtype': 'array',
+                           'source': 'testing'})])
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -366,12 +417,16 @@ def test_scan_fail(exp_db, start_uid1):
     def add(img1, img2):
         return img1 + img2
 
-    L = es.accumulate(dstar(add), source,
-                      state_key='i',
-                      input_info={'img2': 'pe1_image'},
-                      output_info=[('img', {
-                          'dtype': 'array',
-                          'source': 'testing'})]).sink_to_list()
+    dp = es.accumulate(dstar(add), source,
+                       state_key='i',
+                       input_info={'img2': 'pe1_image'},
+                       output_info=[('img', {
+                           'dtype': 'array',
+                           'source': 'testing'})])
+
+    dp.sink(star(SinkAssertion()))
+    L = dp.sink_to_list()
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -395,13 +450,16 @@ def test_scan_start_func(exp_db, start_uid1):
     def get_array(img2):
         return img2
 
-    L = es.accumulate(dstar(add), source,
-                      start=dstar(get_array),
-                      state_key='img1',
-                      input_info={'img2': 'pe1_image'},
-                      output_info=[('img', {
-                          'dtype': 'array',
-                          'source': 'testing'})]).sink_to_list()
+    dp = es.accumulate(dstar(add), source,
+                       start=dstar(get_array),
+                       state_key='img1',
+                       input_info={'img2': 'pe1_image'},
+                       output_info=[('img', {
+                           'dtype': 'array',
+                           'source': 'testing'})])
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -429,13 +487,17 @@ def test_scan_full_event(exp_db, start_uid1):
     def add(i, j):
         return i + j
 
-    L = es.accumulate(dstar(add), source,
-                      state_key='i',
-                      input_info={'j': 'seq_num'},
-                      output_info=[('total', {
-                          'dtype': 'int',
-                          'source': 'testing'})],
-                      full_event=True).sink_to_list()
+    dp = es.accumulate(dstar(add), source,
+                       state_key='i',
+                       input_info={'j': 'seq_num'},
+                       output_info=[('total', {
+                           'dtype': 'int',
+                           'source': 'testing'})],
+                       full_event=True)
+
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
@@ -484,17 +546,18 @@ def test_bundle(exp_db, start_uid1, start_uid3):
     source2 = Stream()
 
     s = es.bundle(source, source2)
+    s.sink(star(SinkAssertion(False)))
     L = s.sink_to_list()
 
     ih1 = exp_db[start_uid1]
     ih2 = exp_db[start_uid3]
-    s = list(exp_db.restream(ih1))
+    s1 = list(exp_db.restream(ih1))
     s2 = list(exp_db.restream(ih2))
-    uids = set([doc['uid'] for name, doc in s] + [doc['uid'] for name, doc in
+    uids = set([doc['uid'] for name, doc in s1] + [doc['uid'] for name, doc in
                                                   s2])
     for b in s2:
         source2.emit(b)
-    for a in s:
+    for a in s1:
         source.emit(a)
     assert len(L) == len(list(exp_db.get_events(ih1))) + len(
         list(exp_db.get_events(ih2))) + 3
@@ -534,10 +597,12 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
 def test_eventify(exp_db, start_uid1):
     source = Stream()
 
-    L = es.eventify(source, 'name',
+    dp = es.eventify(source, 'name',
                     output_info=[('name', {
                         'dtype': 'str',
-                        'source': 'testing'})]).sink_to_list()
+                        'source': 'testing'})])
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
