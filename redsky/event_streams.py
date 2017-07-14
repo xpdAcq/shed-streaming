@@ -135,9 +135,9 @@ class EventStream(Stream):
 
         # If the stream number is not specified its zero
         for k, v in input_info.items():
-            if len(v) < 2 or isinstance(v, str):
+            if isinstance(v, str) or len(v) < 2:
                 input_info[k] = (v, 0)
-            if isinstance(v[1], Stream):
+            elif isinstance(v[1], Stream):
                 input_info[k] = (v[0], self.children.index(v[1]))
 
     def emit(self, x):
@@ -364,6 +364,9 @@ class EventStream(Stream):
         Parameters
         ----------
         docs: tuple of dicts
+        full_event: bool, optional
+            If True expose the data from full event, else only expose data
+            from the 'data' dictionary inside the event, defaults to False
 
         Returns
         -------

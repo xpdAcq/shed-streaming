@@ -110,14 +110,14 @@ summed_bg = es.accumulate(dstar(add), bg_bundle, start=dstar(pull_array),
                           state_key='img1',
                           input_info=[('img2', 'img')],
                           output_info=[('img', {
-                        'dtype': 'array',
-                        'source': 'testing'})])
+                              'dtype': 'array',
+                              'source': 'testing'})])
 
 count_bg = es.accumulate(lambda x: x['count'] + 1, bg_bundle, start=1,
                          state_key='count',
                          output_info=[('count', {
-                       'dtype': 'int',
-                       'source': 'testing'})])
+                             'dtype': 'int',
+                             'source': 'testing'})])
 
 ave_bg = es.map(dstar(div), es.zip(summed_bg, count_bg),
                 input_info=[('img', 'img'), ('count', 'count')],

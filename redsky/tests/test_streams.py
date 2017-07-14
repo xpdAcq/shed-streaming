@@ -25,6 +25,10 @@ class SinkAssertion(CallbackBase):
     def __init__(self, fail=True):
         self.fail = fail
         self.docs = []
+        if fail:
+            self.expected_docs = {'start', 'descriptor', 'stop'}
+        else:
+            self.expected_docs = {'start', 'descriptor', 'event', 'stop'}
 
     def __call__(self, name, doc):
         "Dispatch to methods expecting particular doc types."
@@ -32,6 +36,7 @@ class SinkAssertion(CallbackBase):
         return getattr(self, name)(doc)
 
     def stop(self, doc):
+        assert self.expected_docs == set(self.docs)
         if self.fail:
             assert doc['exit_status'] == 'failure'
             assert doc.get('reason')
@@ -252,15 +257,6 @@ def test_map_fail(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
-    assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
-        assert_docs.add(l[0])
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'failure'
-        assert l[1] != s[1]
-    for n in ['start', 'descriptor', 'stop']:
-        assert n in assert_docs
-
 
 def test_map_fail_dont_except(exp_db, start_uid1):
     source = Stream()
@@ -337,14 +333,6 @@ def test_filter_fail(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
-    assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
-        assert_docs.add(l[0])
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'failure'
-    for n in ['start', 'descriptor', 'stop']:
-        assert n in assert_docs
-
 
 def test_filter_full_event(exp_db, start_uid1):
     source = Stream()
@@ -419,26 +407,18 @@ def test_scan_fail(exp_db, start_uid1):
 
     dp = es.accumulate(dstar(add), source,
                        state_key='i',
-                       input_info={'img2': 'pe1_image'},
+                       input_info={'i': 'pe1_image'},
                        output_info=[('img', {
                            'dtype': 'array',
                            'source': 'testing'})])
-
-    dp.sink(star(SinkAssertion()))
-    L = dp.sink_to_list()
+    sa = SinkAssertion()
+    sa.expected_docs = {'start', 'descriptor', 'event', 'stop'}
+    dp.sink(star(sa))
 
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
         source.emit(a)
-
-    assert_docs = set()
-    for o, l in zip(exp_db.restream(ih1, fill=True), L):
-        assert_docs.add(l[0])
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'failure'
-    for n in ['start', 'descriptor', 'stop']:
-        assert n in assert_docs
 
 
 def test_scan_start_func(exp_db, start_uid1):
