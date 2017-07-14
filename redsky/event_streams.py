@@ -54,20 +54,34 @@ class EventStream(Stream):
 
     Attributes
     ----------
-    outbound_descriptor_uid : str
-        The outbound descriptor uid
     md : dict
         Metadata to be added to the start document
     input_info : dict, optional
         Input info for the operation, not needed for all cases
+        This provides a map between event data keys and function args/kwargs
     output_info : list of tuples, optional
         Output info for the operation, not needed for all cases
-    i : int
-        Counter for the number of events
-    run_start_uid : None
-    provenance : {}
-    event_failed : False
+        This helps to:
+            Create a map between function returns and data keys
+            Provide information for building a descriptor for that data
+
+    Notes
+    -----
+    This is intended as a base class for the stream functions (map, filter,
+    etc.).
+
+    Most implementations of the subclasses will:
+    a) override update for flow control based classes
+    b) override event for operator based classes
+    c) override multiple document methods (see eventify) although this is rare
+
+    It is important for the overridden document methods that the return
+     follows the pattern of `super().document_name(new_document)`. This way
+     the EventStream properly issues the new document with its name and other
+     needed internal flow control
+
     """
+
     def __init__(self, child=None, children=None,
                  *, output_info=None, input_info=None, md=None,
                  **kwargs):
@@ -103,6 +117,7 @@ class EventStream(Stream):
             input_info = {}
         self.outbound_descriptor_uid = None
         self.md = md
+        self.md.update(**kwargs)
         self.output_info = output_info
         self.input_info = input_info
 
@@ -184,7 +199,7 @@ class EventStream(Stream):
         docs: tuple
             The document(s)
         """
-        # If we get multiple streams make (doc, doc, doc, ...)
+        # If we get multiple streams make (name, (doc, doc, doc, ...))
         if isinstance(nds[0], tuple):
             names, docs = list(zzip(*nds))
             if len(set(names)) > 1:
@@ -216,10 +231,14 @@ class EventStream(Stream):
             d.update(input_info=self.input_info)
         if self.output_info:
             d.update(output_info=self.output_info)
+        # TODO: support partials?
         if func:
             d.update(function_module=func.__module__,
                      # this line gets more complex with classes
                      function_name=func.__name__, )
+        full_event = getattr(self, 'full_event', None)
+        if full_event:
+            d.update(full_event=full_event)
         self.provenance = d
 
     def start(self, docs):
@@ -283,7 +302,7 @@ class EventStream(Stream):
 
     def event(self, docs):
         """
-        Issue event descriptor document for input documents
+        Issue event document for input documents
 
         Parameters
         ----------
@@ -295,19 +314,21 @@ class EventStream(Stream):
         doc: dict
             The document
         """
-        return 'event', docs
+        if not self.event_failed:
+            return 'event', docs
 
     def stop(self, docs):
         """
-        Issue new descriptor document for input documents
+        Issue new stop document
 
         Parameters
         ----------
-        docs: tuple of dicts or dict
+        docs: tuple of dicts or dict or Exception
+            If Exception issue a stop which notes the failure
 
         Returns
         -------
-        name: 'descriptor'
+        name: 'stop'
         doc: dict
             The document
         """
@@ -328,7 +349,7 @@ class EventStream(Stream):
             self.run_start_uid = None
             return 'stop', new_stop
 
-    def event_guts(self, docs):
+    def event_guts(self, docs, full_event=False):
         """
         Provide some of the event data as a dict, which may be used as kwargs
 
@@ -340,11 +361,17 @@ class EventStream(Stream):
         -------
 
         """
-        return {input_kwarg: docs[position]['data'][data_key] for
-                input_kwarg, (data_key, position) in self.input_info.items()}
+        if full_event:
+            return {input_kwarg: docs[position][data_key] for
+                    input_kwarg, (data_key, position) in
+                    self.input_info.items()}
+        else:
+            return {input_kwarg: docs[position]['data'][data_key] for
+                    input_kwarg, (data_key, position) in
+                    self.input_info.items()}
 
     def issue_event(self, outputs):
-        """Issue a new event
+        """Create a new event document based off of function returns
 
         Parameters
         ----------
@@ -388,7 +415,8 @@ class EventStream(Stream):
             return new_event
 
     def refresh_event(self, event):
-        """Issue a new event
+        """Create a new event with the same data, but new metadata
+        (uid, timestamp, etc.)
 
         Parameters
         ----------
@@ -417,7 +445,9 @@ class EventStream(Stream):
 
 class map(EventStream):
     """Apply a function onto every event in the stream"""
+
     def __init__(self, func, child, *,
+                 full_event=False,
                  output_info=None, input_info=None,
                  **kwargs):
         """Initialize the node
@@ -428,6 +458,9 @@ class map(EventStream):
             The function to map on the event data
         child: EventStream instance
             The source of the data
+        full_event: bool, optional
+            If True expose the full event dict to the function, if False
+            only expose the data from the event
         input_info: dict
             describe the incoming streams
         output_info: list of tuples
@@ -438,12 +471,13 @@ class map(EventStream):
 
         EventStream.__init__(self, child, output_info=output_info,
                              input_info=input_info, **kwargs)
+        self.full_event = full_event
         self.generate_provenance(func)
 
     def event(self, docs):
         try:
-            # we need to expose the raw event data
-            res = self.event_guts(docs)
+            # we need to expose the event data
+            res = self.event_guts(docs, self.full_event)
             result = self.func(res, **self.kwargs)
             # Now we must massage the raw return into a new event
             result = self.issue_event(result)
@@ -454,6 +488,7 @@ class map(EventStream):
 
 class filter(EventStream):
     """Only pass through events that satisfy the predicate"""
+
     def __init__(self, predicate, child, *, input_info,
                  full_event=False, **kwargs):
         """Initialize the node
@@ -478,10 +513,7 @@ class filter(EventStream):
         self.generate_provenance(predicate)
 
     def event(self, doc):
-        if not self.full_event:
-            g = self.event_guts(doc)
-        else:
-            g = doc
+        g = self.event_guts(doc, self.full_event)
         if self.predicate(g):
             return super().event(doc[0])
 
@@ -494,7 +526,9 @@ class accumulate(EventStream):
     two arguments, the previous accumulated state and the next element and
     it should return a new accumulated state.
     """
+
     def __init__(self, func, child, state_key=None, *,
+                 full_event=False,
                  output_info=None,
                  input_info=None, start=no_default):
         """Initialize the node
@@ -507,8 +541,12 @@ class accumulate(EventStream):
             The source of the data
         state_key: str
             The keyword for current accumulated state in the func
+        full_event: bool, optional
+            If True expose the full event dict to the predicate, if False
+            only expose the data from the event
         input_info: dict
             describe the incoming streams
+            Note that only one key allowed since the func only takes two inputs
         output_info: list of tuples
             describe the resulting stream
         start: any or callable, optional
@@ -521,14 +559,17 @@ class accumulate(EventStream):
         self.state = start
         EventStream.__init__(self, child, input_info=input_info,
                              output_info=output_info)
+        self.full_event = full_event
         self.generate_provenance(func)
 
     def event(self, doc):
-        doc = self.event_guts(doc)
-        # TODO: this handling of the initial state is a bit clunky
-        # I need to decide if state is going to be the array or the dict
+        doc = self.event_guts(doc, self.full_event)
+
         if self.state is no_default:
-            self.state = doc
+            self.state = {}
+            # Note that there is only one input_info key allowed for this
+            # stream function so this works
+            self.state = doc[next(iter(self.input_info.keys()))]
         # in case we need a bit more flexibility eg lambda x: np.empty(x.shape)
         elif hasattr(self.state, '__call__'):
             self.state = self.state(doc)
@@ -540,7 +581,8 @@ class accumulate(EventStream):
 
 
 class zip(EventStream):
-    """Combine two streams together into a stream of tuples"""
+    """Combine multiple streams together into a stream of tuples"""
+
     def __init__(self, *children, **kwargs):
         """Initialize the Node
 
@@ -574,6 +616,7 @@ class zip(EventStream):
 
 class bundle(EventStream):
     """Combine multiple event streams into one"""
+
     def __init__(self, *children, **kwargs):
         """Initialize the Node
 
@@ -597,7 +640,8 @@ class bundle(EventStream):
             # new documents which are combined
             rvs = []
             while all(self.buffers):
-                if all([b[0][0] == self.buffers[0][0][0] and b[0][0] != 'event'
+                first_doc_name = self.buffers[0][0][0]
+                if all([b[0][0] == first_doc_name and b[0][0] != 'event'
                         for b in self.buffers]):
                     res = self.dispatch(
                         tuple([b.popleft() for b in self.buffers]))
@@ -632,6 +676,7 @@ class combine_latest(EventStream):
     This will emit a new tuple of all of the most recent elements seen from
     any stream.
     """
+
     def __init__(self, *children, emit_on=None):
         """Initialize the node
 
@@ -685,6 +730,7 @@ class combine_latest(EventStream):
 
 class eventify(EventStream):
     """Generate events from data in starts"""
+
     def __init__(self, child, start_key, *, output_info, **kwargs):
         """Initialize the node
 

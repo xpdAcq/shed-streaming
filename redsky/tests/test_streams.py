@@ -53,6 +53,48 @@ def test_map(exp_db, start_uid1):
         assert l[1] != s[1]
 
 
+def test_map_full_event(exp_db, start_uid1):
+    source = Stream()
+
+    def add5(i):
+        return i + 5
+
+    ii = {'i': 'seq_num'}
+    oi = [('i', {'dtype': 'array', 'source': 'testing'})]
+    dp = es.map(dstar(add5),
+                source,
+                input_info=ii,
+                output_info=oi,
+                full_event=True)
+    L = dp.sink_to_list()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    prov = dict(stream_class='map', function_name=add5.__name__,
+                function_module=add5.__module__,
+                stream_class_module=es.map.__module__,
+                input_info=ii, output_info=oi,
+                full_event=True)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'start':
+            assert l[1]['provenance'] == prov
+        if l[0] == 'event':
+            print(l[1])
+            print(s[1]['seq_num'])
+            assert_allclose(l[1]['data']['i'],
+                            s[1]['seq_num'] + 5)
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+        assert l[1] != s[1]
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_map_stream_input(exp_db, start_uid1):
     source = Stream()
 
@@ -167,7 +209,7 @@ def test_filter(exp_db, start_uid1):
     def f(img1):
         return img1 is not None
 
-    L = es.filter(f, source,
+    L = es.filter(dstar(f), source,
                   input_info={'img1': 'pe1_image'}).sink_to_list()
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
@@ -181,7 +223,56 @@ def test_filter(exp_db, start_uid1):
             assert l[1]['exit_status'] == 'success'
 
 
+def test_filter_full_event(exp_db, start_uid1):
+    source = Stream()
+
+    def f(i):
+        return i > 1
+
+    L = es.filter(dstar(f), source,
+                  input_info={'i': 'seq_num'},
+                  full_event=True).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    for l in L:
+        if l[0] == 'event':
+            assert l[1]['seq_num'] > 1
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+
+
 def test_scan(exp_db, start_uid1):
+    source = Stream()
+
+    def add(img1, img2):
+        return img1 + img2
+
+    L = es.accumulate(dstar(add), source,
+                      state_key='img1',
+                      input_info={'img2': 'pe1_image'},
+                      output_info=[('img', {
+                          'dtype': 'array',
+                          'source': 'testing'})]).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+    state = None
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        if l[0] == 'event':
+            if state is None:
+                state = o[1]['data']['pe1_image']
+            else:
+                state += o[1]['data']['pe1_image']
+            assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+
+
+def test_scan_start_func(exp_db, start_uid1):
     source = Stream()
 
     def add(img1, img2):
@@ -209,6 +300,35 @@ def test_scan(exp_db, start_uid1):
             else:
                 state += o[1]['data']['pe1_image']
             assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+
+
+def test_scan_full_event(exp_db, start_uid1):
+    source = Stream()
+
+    def add(i, j):
+        return i + j
+
+    L = es.accumulate(dstar(add), source,
+                      state_key='i',
+                      input_info={'j': 'seq_num'},
+                      output_info=[('total', {
+                          'dtype': 'int',
+                          'source': 'testing'})],
+                      full_event=True).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+    state = None
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        if l[0] == 'event':
+            if state is None:
+                state = o[1]['seq_num']
+            else:
+                state += o[1]['seq_num']
+            assert_allclose(state, l[1]['data']['total'])
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
 
