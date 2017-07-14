@@ -225,6 +225,34 @@ def test_map_fail(exp_db, start_uid1):
         assert n in assert_docs
 
 
+def test_map_fail_dont_except(exp_db, start_uid1):
+    source = Stream()
+
+    def add5(img):
+        return img + 5
+
+    ii = {'i': 'pe1_image'}
+    oi = [('image', {'dtype': 'array', 'source': 'testing'})]
+    dp = es.map(dstar(add5),
+                source,
+                input_info=ii,
+                output_info=oi, raise_upon_error=False)
+    L = dp.sink_to_list()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'failure'
+        assert l[1] != s[1]
+    for n in ['start', 'descriptor', 'stop']:
+        assert n in assert_docs
+
+
 def test_filter(exp_db, start_uid1):
     source = Stream()
 

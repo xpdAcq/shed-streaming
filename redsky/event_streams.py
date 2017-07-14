@@ -84,6 +84,7 @@ class EventStream(Stream):
 
     def __init__(self, child=None, children=None,
                  *, output_info=None, input_info=None, md=None,
+                 raise_upon_error=True,
                  **kwargs):
         """Initialize the stream
 
@@ -120,6 +121,7 @@ class EventStream(Stream):
         self.md.update(**kwargs)
         self.output_info = output_info
         self.input_info = input_info
+        self.raise_upon_error = raise_upon_error
 
         # TODO: need multiple counters for multiple descriptors
         # This will need to be a dict with keys of descriptor names
@@ -350,7 +352,7 @@ class EventStream(Stream):
             self.outbound_descriptor_uid = None
             self.run_start_uid = None
             return 'stop', new_stop
-        else:
+        elif self.raise_upon_error:
             raise self.excep
 
     def event_guts(self, docs, full_event=False):
