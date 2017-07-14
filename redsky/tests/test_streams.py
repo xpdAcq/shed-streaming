@@ -41,8 +41,9 @@ def test_map(exp_db, start_uid1):
                 function_module=add5.__module__,
                 stream_class_module=es.map.__module__,
                 input_info=ii, output_info=oi)
-
+    assert_docs = set()
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
         if l[0] == 'start':
             assert l[1]['provenance'] == prov
         if l[0] == 'event':
@@ -51,6 +52,8 @@ def test_map(exp_db, start_uid1):
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
         assert l[1] != s[1]
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_map_full_event(exp_db, start_uid1):
@@ -117,7 +120,9 @@ def test_map_stream_input(exp_db, start_uid1):
                 stream_class_module=es.map.__module__,
                 input_info=ii, output_info=oi)
 
+    assert_docs = set()
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
         if l[0] == 'start':
             assert l[1]['provenance'] == prov
         if l[0] == 'event':
@@ -125,6 +130,8 @@ def test_map_stream_input(exp_db, start_uid1):
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
         assert l[1] != s[1]
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_double_map(exp_db, start_uid1):
@@ -145,13 +152,18 @@ def test_double_map(exp_db, start_uid1):
     for a in s:
         source.emit(a)
         source2.emit(a)
+
+    assert_docs = set()
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
         if l[0] == 'event':
             assert_allclose(l[1]['data']['img'],
                             add_imgs(s[1]['data']['pe1_image'],
                                      s[1]['data']['pe1_image']))
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_double_internal_map(exp_db, start_uid1):
@@ -170,12 +182,17 @@ def test_double_internal_map(exp_db, start_uid1):
     s = exp_db.restream(ih1, fill=True)
     for a in s:
         source.emit(a)
+
+    assert_docs = set()
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
         if l[0] == 'event':
             assert_allclose(l[1]['data']['img'], div(s[1]['data']['pe1_image'],
                                                      s[1]['data']['I0']))
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_double_map_error(exp_db, start_uid1):
@@ -198,9 +215,15 @@ def test_double_map_error(exp_db, start_uid1):
     for a in s:
         source.emit(a)
         source2.emit(a)
+
+    assert_docs = set()
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'failure'
+    # No event since we error
+    for n in ['start', 'descriptor', 'stop']:
+        assert n in assert_docs
 
 
 def test_filter(exp_db, start_uid1):
@@ -215,12 +238,17 @@ def test_filter(exp_db, start_uid1):
     s = exp_db.restream(ih1, fill=True)
     for a in s:
         source.emit(a)
+
+    assert_docs = set()
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
         if l[0] == 'event':
             assert_allclose(l[1]['data']['pe1_image'],
                             s[1]['data']['pe1_image'])
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_filter_full_event(exp_db, start_uid1):
@@ -237,11 +265,15 @@ def test_filter_full_event(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
+    assert_docs = set()
     for l in L:
+        assert_docs.add(l[0])
         if l[0] == 'event':
             assert l[1]['seq_num'] > 1
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_scan(exp_db, start_uid1):
@@ -260,8 +292,11 @@ def test_scan(exp_db, start_uid1):
     s = exp_db.restream(ih1, fill=True)
     for a in s:
         source.emit(a)
+
+    assert_docs = set()
     state = None
     for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
         if l[0] == 'event':
             if state is None:
                 state = o[1]['data']['pe1_image']
@@ -270,6 +305,8 @@ def test_scan(exp_db, start_uid1):
             assert_allclose(state, l[1]['data']['img'])
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_scan_start_func(exp_db, start_uid1):
@@ -292,8 +329,11 @@ def test_scan_start_func(exp_db, start_uid1):
     s = exp_db.restream(ih1, fill=True)
     for a in s:
         source.emit(a)
+
+    assert_docs = set()
     state = None
     for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
         if l[0] == 'event':
             if state is None:
                 state = o[1]['data']['pe1_image']
@@ -302,6 +342,8 @@ def test_scan_start_func(exp_db, start_uid1):
             assert_allclose(state, l[1]['data']['img'])
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_scan_full_event(exp_db, start_uid1):
@@ -321,8 +363,11 @@ def test_scan_full_event(exp_db, start_uid1):
     s = exp_db.restream(ih1, fill=True)
     for a in s:
         source.emit(a)
+
+    assert_docs = set()
     state = None
     for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
         if l[0] == 'event':
             if state is None:
                 state = o[1]['seq_num']
@@ -331,6 +376,8 @@ def test_scan_full_event(exp_db, start_uid1):
             assert_allclose(state, l[1]['data']['total'])
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_zip(exp_db, start_uid1, start_uid3):
@@ -346,8 +393,13 @@ def test_zip(exp_db, start_uid1, start_uid3):
         source2.emit(b)
     for a in s:
         source.emit(a)
+
+    assert_docs = set()
     for l1, l2 in L:
+        assert_docs.add(l1[0])
         assert l1 != l2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_bundle(exp_db, start_uid1, start_uid3):
@@ -370,8 +422,12 @@ def test_bundle(exp_db, start_uid1, start_uid3):
     assert len(L) == len(list(exp_db.get_events(ih1))) + len(
         list(exp_db.get_events(ih2))) + 3
 
+    assert_docs = set()
     for l in L:
+        assert_docs.add(l[0])
         assert l[1]['uid'] not in uids
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_combine_latest(exp_db, start_uid1, start_uid3):
@@ -387,10 +443,15 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
         source2.emit(b)
     for a in s:
         source.emit(a)
+
+    assert_docs = set()
     for l1, l2 in L:
+        assert_docs.add(l1[0])
         assert l1 != l2
         if l1[0] == 'event':
             assert l2[1]['seq_num'] == 1
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_eventify(exp_db, start_uid1):
@@ -404,11 +465,16 @@ def test_eventify(exp_db, start_uid1):
     s = exp_db.restream(ih1, fill=True)
     for a in s:
         source.emit(a)
+
+    assert_docs = set()
     for l in L:
+        assert_docs.add(l[0])
         if l[0] == 'event':
             assert l[1]['data']['name'] == 'test'
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 
 def test_workflow(exp_db, start_uid1):
@@ -437,8 +503,13 @@ def test_workflow(exp_db, start_uid1):
         dark_data_stream.emit(d)
     for d in raw_data:
         rds.emit(d)
+
+    assert_docs = set()
     for (n, d) in L:
+        assert_docs.add(n)
         # just a smoke test for now
         if n == 'stop':
             assert d['exit_status'] == 'success'
         assert d
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
