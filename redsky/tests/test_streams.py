@@ -554,7 +554,7 @@ def test_bundle(exp_db, start_uid1, start_uid3):
     s1 = list(exp_db.restream(ih1))
     s2 = list(exp_db.restream(ih2))
     uids = set([doc['uid'] for name, doc in s1] + [doc['uid'] for name, doc in
-                                                  s2])
+                                                   s2])
     for b in s2:
         source2.emit(b)
     for a in s1:
@@ -598,9 +598,9 @@ def test_eventify(exp_db, start_uid1):
     source = Stream()
 
     dp = es.eventify(source, 'name',
-                    output_info=[('name', {
-                        'dtype': 'str',
-                        'source': 'testing'})])
+                     output_info=[('name', {
+                         'dtype': 'str',
+                         'source': 'testing'})])
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
     ih1 = exp_db[start_uid1]
