@@ -1,3 +1,5 @@
+"""Stream functions (actually classes) for building pipelines for the Event
+Model"""
 ##############################################################################
 #
 # xpdan            by Billinge Group
@@ -367,6 +369,7 @@ class EventStream(Stream):
         -------
 
         """
+        # TODO: what if I want to operate on the full event? Return full dict
         if full_event:
             return {input_kwarg: docs[position][data_key] for
                     input_kwarg, (data_key, position) in
@@ -728,8 +731,6 @@ class combine_latest(EventStream):
             self.special_docs[name][self.children.index(who)] = x
             if not self.special_missing[name] and who in self.emit_on:
                 tup = tuple(self.special_docs[name])
-                if tup and hasattr(tup[0], '__stream_merge__'):
-                    tup = tup[0].__stream_merge__(*tup[1:])
                 return self.emit(tup)
         else:
             if self.missing and who in self.missing:
