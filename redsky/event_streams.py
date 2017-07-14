@@ -127,6 +127,7 @@ class EventStream(Stream):
         self.run_start_uid = None
         self.provenance = {}
         self.event_failed = False
+        self.excep = None
 
         # If the stream number is not specified its zero
         for k, v in input_info.items():
@@ -343,11 +344,14 @@ class EventStream(Stream):
                 new_stop.update(reason=repr(docs),
                                 trace=traceback.format_exc(),
                                 exit_status='failure')
+                self.excep = docs
             else:
                 new_stop.update(exit_status='success')
             self.outbound_descriptor_uid = None
             self.run_start_uid = None
             return 'stop', new_stop
+        else:
+            raise self.excep
 
     def event_guts(self, docs, full_event=False):
         """

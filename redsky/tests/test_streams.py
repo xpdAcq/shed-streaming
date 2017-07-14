@@ -17,6 +17,7 @@ from streams.core import Stream
 
 import redsky.event_streams as es
 from ..event_streams import dstar
+import pytest
 
 
 def test_map(exp_db, start_uid1):
@@ -195,6 +196,7 @@ def test_double_internal_map(exp_db, start_uid1):
         assert n in assert_docs
 
 
+@pytest.mark.xfail(raises=TypeError)
 def test_map_fail(exp_db, start_uid1):
     source = Stream()
 
@@ -248,6 +250,7 @@ def test_filter(exp_db, start_uid1):
         assert n in assert_docs
 
 
+@pytest.mark.xfail(raises=TypeError)
 def test_filter_fail(exp_db, start_uid1):
     source = Stream()
 
@@ -328,6 +331,7 @@ def test_scan(exp_db, start_uid1):
         assert n in assert_docs
 
 
+@pytest.mark.xfail(raises=TypeError)
 def test_scan_fail(exp_db, start_uid1):
     source = Stream()
 
