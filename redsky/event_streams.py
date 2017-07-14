@@ -343,7 +343,7 @@ class EventStream(Stream):
                 new_stop.update(reason=repr(docs),
                                 trace=traceback.format_exc(),
                                 exit_status='failure')
-            if not self.event_failed:
+            else:
                 new_stop.update(exit_status='success')
             self.outbound_descriptor_uid = None
             self.run_start_uid = None
@@ -482,8 +482,9 @@ class map(EventStream):
             # Now we must massage the raw return into a new event
             result = self.issue_event(result)
         except Exception as e:
-            result = self.issue_event(e)
-        return super().event(result)
+            return super().stop(e)
+        else:
+            return super().event(result)
 
 
 class filter(EventStream):
@@ -514,8 +515,11 @@ class filter(EventStream):
 
     def event(self, doc):
         g = self.event_guts(doc, self.full_event)
-        if self.predicate(g):
-            return super().event(doc[0])
+        try:
+            if self.predicate(g):
+                return super().event(doc[0])
+        except Exception as e:
+            return super().stop(e)
 
 
 class accumulate(EventStream):
@@ -575,7 +579,10 @@ class accumulate(EventStream):
             self.state = self.state(doc)
         else:
             doc[self.state_key] = self.state
-            result = self.func(doc)
+            try:
+                result = self.func(doc)
+            except Exception as e:
+                return super().stop(e)
             self.state = result
         return super().event(self.issue_event(self.state))
 
@@ -751,7 +758,7 @@ class eventify(EventStream):
 
     def start(self, docs):
         self.val = docs[0][self.start_key]
-        super().start(docs)
+        return super().start(docs)
 
     def event(self, docs):
         return super().event(self.issue_event(self.val))

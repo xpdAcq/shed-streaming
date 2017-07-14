@@ -195,33 +195,30 @@ def test_double_internal_map(exp_db, start_uid1):
         assert n in assert_docs
 
 
-def test_double_map_error(exp_db, start_uid1):
+def test_map_fail(exp_db, start_uid1):
     source = Stream()
-    source2 = Stream()
 
-    def add_imgs(img1, img3):
-        return img1 + img3
+    def add5(img):
+        return img + 5
 
-    pipeline = es.map(dstar(add_imgs), es.zip(source, source2),
-                      input_info={'img1': ('pe1_image', 0),
-                                  'img2': ('pe1_image', 1)},
-                      output_info=[
-                          ('img',
-                           {'dtype': 'array',
-                            'source': 'testing'})])
-    L = pipeline.sink_to_list()
+    ii = {'i': 'pe1_image'}
+    oi = [('image', {'dtype': 'array', 'source': 'testing'})]
+    dp = es.map(dstar(add5),
+                source,
+                input_info=ii,
+                output_info=oi)
+    L = dp.sink_to_list()
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
     for a in s:
         source.emit(a)
-        source2.emit(a)
 
     assert_docs = set()
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
         assert_docs.add(l[0])
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'failure'
-    # No event since we error
+        assert l[1] != s[1]
     for n in ['start', 'descriptor', 'stop']:
         assert n in assert_docs
 
@@ -248,6 +245,28 @@ def test_filter(exp_db, start_uid1):
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
     for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_filter_fail(exp_db, start_uid1):
+    source = Stream()
+
+    def f(img1):
+        return img1 is not None
+
+    L = es.filter(dstar(f), source,
+                  input_info={'i': 'pe1_image'}).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'failure'
+    for n in ['start', 'descriptor', 'stop']:
         assert n in assert_docs
 
 
@@ -306,6 +325,33 @@ def test_scan(exp_db, start_uid1):
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
     for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_scan_fail(exp_db, start_uid1):
+    source = Stream()
+
+    def add(img1, img2):
+        return img1 + img2
+
+    L = es.accumulate(dstar(add), source,
+                      state_key='i',
+                      input_info={'img2': 'pe1_image'},
+                      output_info=[('img', {
+                          'dtype': 'array',
+                          'source': 'testing'})]).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    state = None
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'failure'
+    for n in ['start', 'descriptor', 'stop']:
         assert n in assert_docs
 
 
