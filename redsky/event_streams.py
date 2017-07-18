@@ -455,13 +455,13 @@ class EventStream(Stream):
             self.i += 1
             return new_event
 
-    def refresh_event(self, event):
+    def refresh_event(self, docs):
         """Create a new event with the same data, but new metadata
         (uid, timestamp, etc.)
 
         Parameters
         ----------
-        event: tuple, dict, or other
+        docs: tuple, dict, or other
             The event document
         Returns
         -------
@@ -471,9 +471,10 @@ class EventStream(Stream):
         if not self.event_failed:
             if self.run_start_uid is None:
                 raise RuntimeError("Received Event before RunStart.")
-            if isinstance(event, Exception):
-                return self.stop(event)
+            if isinstance(docs, Exception):
+                return self.stop(docs)
 
+            event = docs[0]
             new_event = dict(event)
             new_event.update(dict(uid=str(uuid.uuid4()),
                                   time=time.time(),
@@ -560,7 +561,7 @@ class filter(EventStream):
         g = self.event_guts(doc, self.full_event)
         try:
             if self.predicate(g):
-                return super().event(doc[0])
+                return super().event(self.refresh_event(doc))
         except Exception as e:
             return super().stop(e)
 
@@ -706,7 +707,7 @@ class bundle(EventStream):
                             else:
                                 nd_pair = b.popleft()
                                 new_nd_pair = super().event(
-                                    self.refresh_event(nd_pair[1]))
+                                    self.refresh_event((nd_pair[1], )))
                                 rvs.append(self.emit(new_nd_pair))
 
                 else:

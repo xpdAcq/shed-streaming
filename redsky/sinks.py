@@ -51,10 +51,28 @@ class StoreSink(object):
         # The mutated fs_doc is inserted into metadatastore.
         fs_doc.pop('filled', None)
         fs_doc.pop('_name', None)
-        self.db.mds.insert(name, fs_doc)
+        self.db.insert(name, fs_doc)
 
         # The pristine doc is returned.
         return name, doc
+
+    def start(self, doc):
+        # Make a fresh instance of any WriterClass classes.
+        self.writers = {data_key: cl(self.db.fs)
+                        for data_key, cl in self.external_writers.items()}
+        return 'start', doc, doc
+
+    def descriptor(self, doc):
+        fs_doc = dict(doc)
+        fs_doc['data_keys'] = dict(doc['data_keys'])
+        # Mutate fs_doc here to mark data as external.
+        for data_name in self.external_writers.keys():
+            # data doesn't have to exist
+            if data_name in fs_doc['data_keys']:
+                fs_doc['data_keys'][data_name] = dict(doc['data_keys'][data_name])
+                fs_doc['data_keys'][data_name].update(
+                    external='FILESTORE:')
+        return 'descriptor', doc, fs_doc
 
     def event(self, doc):
         fs_doc = dict(doc)
@@ -74,24 +92,6 @@ class StoreSink(object):
         fs_doc.update(
             filled={k: False for k in self.external_writers.keys()})
         return 'event', doc, fs_doc
-
-    def descriptor(self, doc):
-        fs_doc = dict(doc)
-        fs_doc['data_keys'] = dict(doc['data_keys'])
-        # Mutate fs_doc here to mark data as external.
-        for data_name in self.external_writers.keys():
-            # data doesn't have to exist
-            if data_name in fs_doc['data_keys']:
-                fs_doc['data_keys'][data_name] = dict(doc['data_keys'][data_name])
-                fs_doc['data_keys'][data_name].update(
-                    external='FILESTORE:')
-        return 'descriptor', doc, fs_doc
-
-    def start(self, doc):
-        # Make a fresh instance of any WriterClass classes.
-        self.writers = {data_key: cl(self.db.fs)
-                        for data_key, cl in self.external_writers.items()}
-        return 'start', doc, doc
 
     def stop(self, doc):
         for data_key, writer in list(self.writers.items()):
@@ -120,5 +120,5 @@ class StubStoreSink(object):
 
     def __call__(self, name, doc):
         if name in self.doc_names:
-            self.db.mds.insert(name, doc)
+            self.db.insert(name, doc)
         return name, doc

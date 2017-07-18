@@ -12,6 +12,7 @@
 # See LICENSE.txt for license information.
 #
 ##############################################################################
+from functools import partial
 from numpy.testing import assert_allclose
 from streams.core import Stream
 
@@ -19,6 +20,14 @@ import redsky.event_streams as es
 from ..event_streams import dstar, star
 import pytest
 from bluesky.callbacks.core import CallbackBase
+from ..sinks import StoreSink, StubStoreSink
+from numpy.testing import assert_equal
+from .utils import clean_databroker, tuple_doc
+from redsky.savers import NpyWriter
+from pprint import pprint
+
+
+test_params = ['None', 'Store', 'Stub']
 
 
 class SinkAssertion(CallbackBase):
@@ -36,13 +45,13 @@ class SinkAssertion(CallbackBase):
         return getattr(self, name)(doc)
 
     def stop(self, doc):
-        assert self.expected_docs == set(self.docs)
         if self.fail:
             assert doc['exit_status'] == 'failure'
             assert doc.get('reason')
         else:
             assert doc['exit_status']
             assert not doc.get('reason', None)
+        assert self.expected_docs == set(self.docs)
 
 
 def test_call(exp_db, start_uid1):
@@ -59,7 +68,16 @@ def test_call(exp_db, start_uid1):
         assert l[0] == s[0]
 
 
-def test_map(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_map(exp_db, tmp_dir, an_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'image': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
 
     def add5(img):
@@ -71,6 +89,9 @@ def test_map(exp_db, start_uid1):
                 source,
                 input_info=ii,
                 output_info=oi)
+
+    if sf:
+        dp.sink(sf)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -83,22 +104,46 @@ def test_map(exp_db, start_uid1):
                 function_module=add5.__module__,
                 stream_class_module=es.map.__module__,
                 input_info=ii, output_info=oi)
+
     assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
-        assert_docs.add(l[0])
-        if l[0] == 'start':
-            assert l[1]['provenance'] == prov
-        if l[0] == 'event':
-            assert_allclose(l[1]['data']['image'],
-                            s[1]['data']['pe1_image'] + 5)
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-        assert l[1] != s[1]
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+            assert_docs.add(l[0])
+            if l[0] == 'start':
+                assert l[1]['provenance'] == prov
+            if l[0] == 'event':
+                assert_allclose(l[1]['data']['image'],
+                                s[1]['data']['pe1_image'] + 5)
+            if l[0] == 'stop':
+                assert l[1]['exit_status'] == 'success'
+            assert l[1] != s[1]
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs
 
 
-def test_map_full_event(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_map_full_event(exp_db, tmp_dir, an_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'i': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
 
     def add5(i):
@@ -111,6 +156,8 @@ def test_map_full_event(exp_db, start_uid1):
                 input_info=ii,
                 output_info=oi,
                 full_event=True)
+    if sf:
+        dp.sink(sf)
     dp.sink(star(SinkAssertion(False)))
     L = dp.sink_to_list()
 
@@ -126,23 +173,46 @@ def test_map_full_event(exp_db, start_uid1):
                 full_event=True)
 
     assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
-        assert_docs.add(l[0])
-        if l[0] == 'start':
-            assert l[1]['provenance'] == prov
-        if l[0] == 'event':
-            print(l[1])
-            print(s[1]['seq_num'])
-            assert_allclose(l[1]['data']['i'],
-                            s[1]['seq_num'] + 5)
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-        assert l[1] != s[1]
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+            assert_docs.add(l[0])
+            if l[0] == 'start':
+                assert l[1]['provenance'] == prov
+            if l[0] == 'event':
+                print(l[1])
+                print(s[1]['seq_num'])
+                assert_allclose(l[1]['data']['i'],
+                                s[1]['seq_num'] + 5)
+            if l[0] == 'stop':
+                assert l[1]['exit_status'] == 'success'
+            assert l[1] != s[1]
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs
 
 
-def test_map_stream_input(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_map_stream_input(exp_db, tmp_dir, an_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
 
     def add5(img):
@@ -154,6 +224,8 @@ def test_map_stream_input(exp_db, start_uid1):
                 source,
                 input_info=ii,
                 output_info=oi)
+    if sf:
+        dp.sink(sf)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -168,20 +240,43 @@ def test_map_stream_input(exp_db, start_uid1):
                 input_info=ii, output_info=oi)
 
     assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
-        assert_docs.add(l[0])
-        if l[0] == 'start':
-            assert l[1]['provenance'] == prov
-        if l[0] == 'event':
-            assert_allclose(l[1]['data']['img'], s[1]['data']['pe1_image'] + 5)
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-        assert l[1] != s[1]
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+            assert_docs.add(l[0])
+            if l[0] == 'start':
+                assert l[1]['provenance'] == prov
+            if l[0] == 'event':
+                assert_allclose(l[1]['data']['img'], s[1]['data']['pe1_image'] + 5)
+            if l[0] == 'stop':
+                assert l[1]['exit_status'] == 'success'
+            assert l[1] != s[1]
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs
 
 
-def test_double_map(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_double_map(exp_db, tmp_dir, an_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
     source2 = Stream()
 
@@ -195,6 +290,8 @@ def test_double_map(exp_db, start_uid1):
                     ('img',
                      {'dtype': 'array',
                       'source': 'testing'})])
+    if sf:
+        dp.sink(sf)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -205,19 +302,42 @@ def test_double_map(exp_db, start_uid1):
         source2.emit(a)
 
     assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
-        assert_docs.add(l[0])
-        if l[0] == 'event':
-            assert_allclose(l[1]['data']['img'],
-                            add_imgs(s[1]['data']['pe1_image'],
-                                     s[1]['data']['pe1_image']))
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+            assert_docs.add(l[0])
+            if l[0] == 'event':
+                assert_allclose(l[1]['data']['img'],
+                                add_imgs(s[1]['data']['pe1_image'],
+                                         s[1]['data']['pe1_image']))
+            if l[0] == 'stop':
+                assert l[1]['exit_status'] == 'success'
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs
 
 
-def test_double_internal_map(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_double_internal_map(exp_db, tmp_dir, an_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
 
     def div(img1, ct):
@@ -230,6 +350,8 @@ def test_double_internal_map(exp_db, start_uid1):
                      {'dtype': 'array',
                       'source': 'testing'})])
 
+    if sf:
+        dp.sink(sf)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -239,15 +361,29 @@ def test_double_internal_map(exp_db, start_uid1):
         source.emit(a)
 
     assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
-        assert_docs.add(l[0])
-        if l[0] == 'event':
-            assert_allclose(l[1]['data']['img'], div(s[1]['data']['pe1_image'],
-                                                     s[1]['data']['I0']))
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+            assert_docs.add(l[0])
+            if l[0] == 'event':
+                assert_allclose(l[1]['data']['img'], div(s[1]['data']['pe1_image'],
+                                                         s[1]['data']['I0']))
+            if l[0] == 'stop':
+                assert l[1]['exit_status'] == 'success'
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs
 
 
 @pytest.mark.xfail(raises=TypeError)
@@ -271,7 +407,16 @@ def test_map_fail(exp_db, start_uid1):
         source.emit(a)
 
 
-def test_map_fail_dont_except(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_map_fail_dont_except(exp_db, tmp_dir, an_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
 
     def add5(img):
@@ -283,6 +428,8 @@ def test_map_fail_dont_except(exp_db, start_uid1):
                 source,
                 input_info=ii,
                 output_info=oi, raise_upon_error=False)
+    if sf:
+        dp.sink(sf)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion()))
 
@@ -292,16 +439,39 @@ def test_map_fail_dont_except(exp_db, start_uid1):
         source.emit(a)
 
     assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
-        assert_docs.add(l[0])
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'failure'
-        assert l[1] != s[1]
-    for n in ['start', 'descriptor', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+            assert_docs.add(l[0])
+            if l[0] == 'stop':
+                assert l[1]['exit_status'] == 'failure'
+            assert l[1] != s[1]
+        for n in ['start', 'descriptor', 'stop']:
+            assert n in assert_docs
 
 
-def test_filter(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_filter(exp_db, tmp_dir, an_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
 
     def f(img1):
@@ -309,6 +479,9 @@ def test_filter(exp_db, start_uid1):
 
     dp = es.filter(dstar(f), source,
                    input_info={'img1': 'pe1_image'})
+
+    if sf:
+        dp.sink(sf)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -318,15 +491,35 @@ def test_filter(exp_db, start_uid1):
         source.emit(a)
 
     assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
-        assert_docs.add(l[0])
-        if l[0] == 'event':
-            assert_allclose(l[1]['data']['pe1_image'],
-                            s[1]['data']['pe1_image'])
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            try:
+                assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+            except Exception as e:
+                pprint(tuple_doc(d))
+                print('==============================================')
+                pprint(tuple_doc(clean_databroker(dd)))
+                raise e
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+            assert_docs.add(l[0])
+            if l[0] == 'event':
+                assert_allclose(l[1]['data']['pe1_image'],
+                                s[1]['data']['pe1_image'])
+            if l[0] == 'stop':
+                assert l[1]['exit_status'] == 'success'
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs
 
 
 @pytest.mark.xfail(raises=TypeError)
@@ -346,7 +539,14 @@ def test_filter_fail(exp_db, start_uid1):
         source.emit(a)
 
 
-def test_filter_full_event(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_filter_full_event(exp_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(db=an_db,))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
 
     def f(i):
@@ -355,6 +555,9 @@ def test_filter_full_event(exp_db, start_uid1):
     dp = es.filter(dstar(f), source,
                    input_info={'i': 'seq_num'},
                    full_event=True)
+
+    if sf:
+        dp.sink(sf)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -364,17 +567,40 @@ def test_filter_full_event(exp_db, start_uid1):
         source.emit(a)
 
     assert_docs = set()
-    for l in L:
-        assert_docs.add(l[0])
-        if l[0] == 'event':
-            assert l[1]['seq_num'] > 1
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        for l in L:
+            assert_docs.add(l[0])
+            if l[0] == 'event':
+                assert l[1]['seq_num'] > 1
+            if l[0] == 'stop':
+                assert l[1]['exit_status'] == 'success'
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs
 
 
-def test_scan(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_scan(exp_db, tmp_dir, an_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
 
     def add(img1, img2):
@@ -386,6 +612,9 @@ def test_scan(exp_db, start_uid1):
                        output_info=[('img', {
                            'dtype': 'array',
                            'source': 'testing'})])
+
+    if sf:
+        dp.sink(sf)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -395,19 +624,33 @@ def test_scan(exp_db, start_uid1):
         source.emit(a)
 
     assert_docs = set()
-    state = None
-    for o, l in zip(exp_db.restream(ih1, fill=True), L):
-        assert_docs.add(l[0])
-        if l[0] == 'event':
-            if state is None:
-                state = o[1]['data']['pe1_image']
-            else:
-                state += o[1]['data']['pe1_image']
-            assert_allclose(state, l[1]['data']['img'])
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        state = None
+        for o, l in zip(exp_db.restream(ih1, fill=True), L):
+            assert_docs.add(l[0])
+            if l[0] == 'event':
+                if state is None:
+                    state = o[1]['data']['pe1_image']
+                else:
+                    state += o[1]['data']['pe1_image']
+                assert_allclose(state, l[1]['data']['img'])
+            if l[0] == 'stop':
+                assert l[1]['exit_status'] == 'success'
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs
 
 
 @pytest.mark.xfail(raises=TypeError)
@@ -433,7 +676,16 @@ def test_scan_fail(exp_db, start_uid1):
         source.emit(a)
 
 
-def test_scan_start_func(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_scan_start_func(exp_db, tmp_dir, an_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
 
     def add(img1, img2):
@@ -449,6 +701,9 @@ def test_scan_start_func(exp_db, start_uid1):
                        output_info=[('img', {
                            'dtype': 'array',
                            'source': 'testing'})])
+
+    if sf:
+        dp.sink(sf)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -458,22 +713,45 @@ def test_scan_start_func(exp_db, start_uid1):
         source.emit(a)
 
     assert_docs = set()
-    state = None
-    for o, l in zip(exp_db.restream(ih1, fill=True), L):
-        assert_docs.add(l[0])
-        if l[0] == 'event':
-            if state is None:
-                state = o[1]['data']['pe1_image']
-            else:
-                state += o[1]['data']['pe1_image']
-            assert_allclose(state, l[1]['data']['img'])
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        state = None
+        for o, l in zip(exp_db.restream(ih1, fill=True), L):
+            assert_docs.add(l[0])
+            if l[0] == 'event':
+                if state is None:
+                    state = o[1]['data']['pe1_image']
+                else:
+                    state += o[1]['data']['pe1_image']
+                assert_allclose(state, l[1]['data']['img'])
+            if l[0] == 'stop':
+                assert l[1]['exit_status'] == 'success'
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs
 
 
-def test_scan_full_event(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_scan_full_event(exp_db, tmp_dir, an_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'total': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
 
     def add(i, j):
@@ -487,6 +765,8 @@ def test_scan_full_event(exp_db, start_uid1):
                            'source': 'testing'})],
                        full_event=True)
 
+    if sf:
+        dp.sink(sf)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -496,19 +776,33 @@ def test_scan_full_event(exp_db, start_uid1):
         source.emit(a)
 
     assert_docs = set()
-    state = None
-    for o, l in zip(exp_db.restream(ih1, fill=True), L):
-        assert_docs.add(l[0])
-        if l[0] == 'event':
-            if state is None:
-                state = o[1]['seq_num']
-            else:
-                state += o[1]['seq_num']
-            assert_allclose(state, l[1]['data']['total'])
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        state = None
+        for o, l in zip(exp_db.restream(ih1, fill=True), L):
+            assert_docs.add(l[0])
+            if l[0] == 'event':
+                if state is None:
+                    state = o[1]['seq_num']
+                else:
+                    state += o[1]['seq_num']
+                assert_allclose(state, l[1]['data']['total'])
+            if l[0] == 'stop':
+                assert l[1]['exit_status'] == 'success'
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs
 
 
 def test_zip(exp_db, start_uid1, start_uid3):
@@ -533,11 +827,23 @@ def test_zip(exp_db, start_uid1, start_uid3):
         assert n in assert_docs
 
 
-def test_bundle(exp_db, start_uid1, start_uid3):
+@pytest.mark.parametrize("sn", test_params)
+def test_bundle(exp_db, tmp_dir, an_db, start_uid1, start_uid3, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
     source2 = Stream()
 
     s = es.bundle(source, source2)
+
+    if sf:
+        s.sink(sf)
     s.sink(star(SinkAssertion(False)))
     L = s.sink_to_list()
 
@@ -555,11 +861,25 @@ def test_bundle(exp_db, start_uid1, start_uid3):
         list(exp_db.get_events(ih2))) + 3
 
     assert_docs = set()
-    for l in L:
-        assert_docs.add(l[0])
-        assert l[1]['uid'] not in uids
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        for l in L:
+            assert_docs.add(l[0])
+            assert l[1]['uid'] not in uids
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs
 
 
 def test_combine_latest(exp_db, start_uid1, start_uid3):
@@ -586,13 +906,25 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
         assert n in assert_docs
 
 
-def test_eventify(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_eventify(exp_db, tmp_dir, an_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
     source = Stream()
 
     dp = es.eventify(source, 'name',
                      output_info=[('name', {
                          'dtype': 'str',
                          'source': 'testing'})])
+
+    if sf:
+        dp.sink(sf)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
     ih1 = exp_db[start_uid1]
@@ -601,17 +933,41 @@ def test_eventify(exp_db, start_uid1):
         source.emit(a)
 
     assert_docs = set()
-    for l in L:
-        assert_docs.add(l[0])
-        if l[0] == 'event':
-            assert l[1]['data']['name'] == 'test'
-        if l[0] == 'stop':
-            assert l[1]['exit_status'] == 'success'
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        for l in L:
+            assert_docs.add(l[0])
+            if l[0] == 'event':
+                assert l[1]['data']['name'] == 'test'
+            if l[0] == 'stop':
+                assert l[1]['exit_status'] == 'success'
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs
 
 
-def test_workflow(exp_db, start_uid1):
+@pytest.mark.parametrize("sn", test_params)
+def test_workflow(exp_db, tmp_dir, an_db, start_uid1, sn):
+    if sn == 'Store':
+        sf = star(StoreSink(
+            db=an_db,
+            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+    elif sn == 'Stub':
+        sf = star(StubStoreSink(db=an_db))
+    else:
+        sf = None
+
     def subs(x1, x2):
         return x1 - x2
 
@@ -631,6 +987,8 @@ def test_workflow(exp_db, start_uid1):
                             'dtype': 'array',
                             'source': 'testing'})]
                         )
+    if sf:
+        img_stream.sink(sf)
     L = img_stream.sink_to_list()
 
     for d in dark_data:
@@ -639,11 +997,25 @@ def test_workflow(exp_db, start_uid1):
         rds.emit(d)
 
     assert_docs = set()
-    for (n, d) in L:
-        assert_docs.add(n)
-        # just a smoke test for now
-        if n == 'stop':
-            assert d['exit_status'] == 'success'
-        assert d
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    if sn == 'Store':
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+            assert_docs.add(nn)
+            assert n == nn
+            if nn == 'event':
+                assert dd['filled']
+            assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
+        assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
+    elif sn == 'Stub':
+        for nn, dd in an_db[-1].stream(fill=True):
+            assert_docs.add(nn)
+            assert dd
+        assert {'start', 'stop'} == assert_docs
+    else:
+        for (n, d) in L:
+            assert_docs.add(n)
+            # just a smoke test for now
+            if n == 'stop':
+                assert d['exit_status'] == 'success'
+            assert d
+        for n in ['start', 'descriptor', 'event', 'stop']:
+            assert n in assert_docs

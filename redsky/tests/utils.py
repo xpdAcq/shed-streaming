@@ -140,3 +140,33 @@ def insert_imgs(mds, fs, n, shape, save_dir=tempfile.mkdtemp(),
                         uid=str(uuid4()),
                         time=time.time())
     return save_dir
+
+
+def clean_databroker(doc):
+    doc = dict(doc)
+    for k2 in ['run_start', 'descriptor']:
+        if k2 in doc.keys():
+            doc[k2] = doc[k2]['uid']
+    if '_name' in doc.keys():
+        doc.pop('_name')
+    if 'data_keys' in doc.keys():
+        doc['data_keys'] = dict(doc['data_keys'])
+        for k, v in doc['data_keys'].items():
+            doc['data_keys'][k] = dict(doc['data_keys'][k])
+            if 'external' in v.keys():
+                doc['data_keys'][k].pop('external')
+    return doc
+
+
+def tuple_doc(doc):
+    if isinstance(doc, dict):
+        for k in doc.keys():
+            doc[k] = tuple_doc(doc[k])
+    elif isinstance(doc, list):
+        for i in doc:
+            if isinstance(i, list):
+                doc[doc.index(i)] = tuple(i)
+        return tuple(doc)
+    else:
+        return doc
+    return doc

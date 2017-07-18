@@ -18,9 +18,17 @@ import shutil
 import numpy as np
 import pytest
 
-from .utils import build_pymongo_backed_broker, insert_imgs
+# from databroker.tests.utils import build_pymongo_backed_broker
+from .utils import insert_imgs, build_pymongo_backed_broker
 import tempfile
+from tempfile import TemporaryDirectory
 from uuid import uuid4
+
+
+def clean_database(database):
+    for sub_db_name in ['mds', 'fs']:
+        sub_db = getattr(database, sub_db_name)
+        sub_db._connection.drop_database(sub_db.config['database'])
 
 
 @pytest.fixture(scope='module')
@@ -48,11 +56,13 @@ def img_size():
     # 'sqlite',
     'mongo'], scope='module')
 def db(request):
+    print('Making DB')
     param_map = {
         # 'sqlite': build_sqlite_backed_broker,
         'mongo': build_pymongo_backed_broker}
-
-    return param_map[request.param](request)
+    rv = param_map[request.param](request)
+    yield rv
+    clean_database(rv)
 
 
 @pytest.fixture(scope='module')
@@ -72,8 +82,19 @@ def exp_db(db, tmp_dir, img_size, start_uid1, start_uid2, start_uid3):
 
 @pytest.fixture(scope='module')
 def tmp_dir():
-    td = tempfile.mkdtemp()
-    yield td
-    if os.path.exists(td):
-        print('removing {}'.format(td))
-        shutil.rmtree(td)
+    td = TemporaryDirectory()
+    yield td.name
+    td.cleanup()
+
+
+@pytest.fixture(params=[
+    # 'sqlite',
+    'mongo'], scope='module')
+def an_db(request):
+    print('Making DB')
+    param_map = {
+        # 'sqlite': build_sqlite_backed_broker,
+        'mongo': build_pymongo_backed_broker}
+    rv = param_map[request.param](request)
+    yield rv
+    clean_database(rv)
