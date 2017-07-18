@@ -81,8 +81,8 @@ bg_dark_uids = [db[db[uid]['start']['sc_dk_field_uid']]['start']['uid'] for uid
 fg_dark_uids = [db[db[uid]['start']['sc_dk_field_uid']]['start']['uid'] for uid
                 in fg_uids if 'sc_dk_field_uid' in db[uid]['start']]
 
-bg_uids = list(range(5))
-bg_dark_uids = list(range(5))
+bg_uids = list(range(3))
+bg_dark_uids = list(range(3))
 
 # Create streams for all the data sets
 bg_streams = [es.EventStream(
@@ -113,7 +113,11 @@ summed_bg = es.accumulate(dstar(add), bg_bundle, start=dstar(pull_array),
                               'dtype': 'array',
                               'source': 'testing'})])
 
-count_bg = es.accumulate(lambda x: x['count'] + 1, bg_bundle, start=1,
+
+def event_count(x):
+    return x['count'] + 1
+
+count_bg = es.accumulate(event_count, bg_bundle, start=1,
                          state_key='count',
                          output_info=[('count', {
                              'dtype': 'int',
@@ -156,7 +160,7 @@ fg_sub_bg.sink(pprint)
 # """
 # """
 # make/get calibration stream
-cal_stream = es.EventStream()
+cal_stream = es.EventStream(md=dict(name='Calibration'))
 
 # polarization correction
 pfactor = .87
@@ -165,7 +169,8 @@ p_corrected_stream = es.map(polarization_correction,
                             input_info={'img': 'img',
                                         'geo': 'geo'},
                             output_info=[('img', {'dtype': 'array',
-                                                  'source': 'testing'})], polarization_factor=pfactor)
+                                                  'source': 'testing'})],
+                            polarization_factor=pfactor)
 
 # generate masks
 mask_kwargs = {}
@@ -216,5 +221,6 @@ for fg_uid, fg_dark_uid in zip(fg_uids, fg_dark_uids):
         for nd in db.restream(u, fill=True):
             s.emit(nd)
 # """
-start_nodes = [fg_stream, fg_dark_stream] + bg_streams + bg_dark_streams
-plot_graph(start_nodes)
+start_nodes = [fg_stream, fg_dark_stream,
+               cal_stream] + bg_streams + bg_dark_streams
+g = plot_graph(start_nodes, file='abcd.png')
