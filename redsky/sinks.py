@@ -91,6 +91,7 @@ class StoreSink(object):
 
         fs_doc.update(
             filled={k: False for k in self.external_writers.keys()})
+        doc.update(filled={k: True for k in self.external_writers.keys()})
         return 'event', doc, fs_doc
 
     def stop(self, doc):

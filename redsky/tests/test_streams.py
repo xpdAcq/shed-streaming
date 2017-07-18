@@ -465,9 +465,7 @@ def test_map_fail_dont_except(exp_db, tmp_dir, an_db, start_uid1, sn):
 @pytest.mark.parametrize("sn", test_params)
 def test_filter(exp_db, tmp_dir, an_db, start_uid1, sn):
     if sn == 'Store':
-        sf = star(StoreSink(
-            db=an_db,
-            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+        sf = star(StoreSink(db=an_db,))
     elif sn == 'Stub':
         sf = star(StubStoreSink(db=an_db))
     else:
@@ -540,7 +538,7 @@ def test_filter_fail(exp_db, start_uid1):
 
 
 @pytest.mark.parametrize("sn", test_params)
-def test_filter_full_event(exp_db, start_uid1, sn):
+def test_filter_full_event(exp_db, an_db, start_uid1, sn):
     if sn == 'Store':
         sf = star(StoreSink(db=an_db,))
     elif sn == 'Stub':
@@ -562,17 +560,15 @@ def test_filter_full_event(exp_db, start_uid1, sn):
     dp.sink(star(SinkAssertion(False)))
 
     ih1 = exp_db[start_uid1]
-    s = exp_db.restream(ih1, fill=True)
+    s = exp_db.restream(ih1)
     for a in s:
         source.emit(a)
 
     assert_docs = set()
     if sn == 'Store':
-        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream()):
             assert_docs.add(nn)
             assert n == nn
-            if nn == 'event':
-                assert dd['filled']
             assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
         assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
     elif sn == 'Stub':
@@ -581,11 +577,13 @@ def test_filter_full_event(exp_db, start_uid1, sn):
             assert dd
         assert {'start', 'stop'} == assert_docs
     else:
+        i = 0
         for l in L:
             assert_docs.add(l[0])
             if l[0] == 'event':
-                assert l[1]['seq_num'] > 1
+                i += 1
             if l[0] == 'stop':
+                assert i < len(list(exp_db.restream(ih1))) - 3
                 assert l[1]['exit_status'] == 'success'
         for n in ['start', 'descriptor', 'event', 'stop']:
             assert n in assert_docs
@@ -828,11 +826,9 @@ def test_zip(exp_db, start_uid1, start_uid3):
 
 
 @pytest.mark.parametrize("sn", test_params)
-def test_bundle(exp_db, tmp_dir, an_db, start_uid1, start_uid3, sn):
+def test_bundle(exp_db, an_db, start_uid1, start_uid3, sn):
     if sn == 'Store':
-        sf = star(StoreSink(
-            db=an_db,
-            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+        sf = star(StoreSink(db=an_db,))
     elif sn == 'Stub':
         sf = star(StubStoreSink(db=an_db))
     else:
@@ -907,11 +903,9 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
 
 
 @pytest.mark.parametrize("sn", test_params)
-def test_eventify(exp_db, tmp_dir, an_db, start_uid1, sn):
+def test_eventify(exp_db, an_db, start_uid1, sn):
     if sn == 'Store':
-        sf = star(StoreSink(
-            db=an_db,
-            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+        sf = star(StoreSink(db=an_db,))
     elif sn == 'Stub':
         sf = star(StubStoreSink(db=an_db))
     else:
@@ -928,21 +922,19 @@ def test_eventify(exp_db, tmp_dir, an_db, start_uid1, sn):
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
     ih1 = exp_db[start_uid1]
-    s = exp_db.restream(ih1, fill=True)
+    s = exp_db.restream(ih1)
     for a in s:
         source.emit(a)
 
     assert_docs = set()
     if sn == 'Store':
-        for (n, d), (nn, dd) in zip(L, an_db[-1].stream(fill=True)):
+        for (n, d), (nn, dd) in zip(L, an_db[-1].stream()):
             assert_docs.add(nn)
             assert n == nn
-            if nn == 'event':
-                assert dd['filled']
             assert_equal(tuple_doc(d), tuple_doc(clean_databroker(dd)))
         assert {'start', 'descriptor', 'event', 'stop'} == assert_docs
     elif sn == 'Stub':
-        for nn, dd in an_db[-1].stream(fill=True):
+        for nn, dd in an_db[-1].stream():
             assert_docs.add(nn)
             assert dd
         assert {'start', 'stop'} == assert_docs
@@ -962,7 +954,7 @@ def test_workflow(exp_db, tmp_dir, an_db, start_uid1, sn):
     if sn == 'Store':
         sf = star(StoreSink(
             db=an_db,
-            external_writers={'img': partial(NpyWriter, root=tmp_dir)}))
+            external_writers={'image': partial(NpyWriter, root=tmp_dir)}))
     elif sn == 'Stub':
         sf = star(StubStoreSink(db=an_db))
     else:
