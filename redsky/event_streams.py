@@ -43,29 +43,45 @@ def dstar(f):
 
 
 class EventStream(Stream):
-    """ A EventStream is an infinite sequence of data in the Event Model
+    """ The EventStream class handles data of the form of an infinite
+    sequence of events in the Event Model.
+
+    In the Event model, the data-stream is a series of fortunate events.
+    Each event consists of a name-document pair
+    where the dictionary contains the data and metadata associated with the
+    event.
+    More information here:
+    https://nsls-ii.github.io/architecture-overview.html
 
     EventStreams subscribe to each other passing and transforming data between
     them. An EventStream object listens for updates from upstream, reacts to
     these updates, and then emits more data to flow downstream to all
-    EventStream objects that subscribe to it.  Downstream EventStream objects
+    EventStream objects that subscribe to it. Downstream EventStream objects
     may connect at any point of an EventStream graph to get a full view of the
     data coming off of that point to do with as they will.
-
-
 
     Attributes
     ----------
     md : dict
-        Metadata to be added to the start document
+        Each event stream has a Start document that contains metadata about
+        the stream
     input_info : dict, optional
-        Input info for the operation, not needed for all cases
-        This provides a map between event data keys and function args/kwargs
+        Input info for an operation. Operations are callables that will apply
+        operations to the data streams. Not always needed. The input_info
+        provides a map between event data keys and the callable (function)
+        args/kwargs
+
     output_info : list of tuples, optional
-        Output info for the operation, not needed for all cases
-        This helps to:
-            Create a map between function returns and data keys
-            Provide information for building a descriptor for that data
+        Output info from the operation, not needed for all cases
+        This:
+            Creates a map between function returns and event data keys
+            Provides information for building a descriptor for the output
+            event stream. Each event stream has a descriptor which contains
+            information about what is in the events in the stream.
+
+    Examples
+    --------
+    >>> my_new_stream = EventStream()
 
     Notes
     -----
@@ -78,9 +94,9 @@ class EventStream(Stream):
     c) override multiple document methods (see eventify) although this is rare
 
     It is important for the overridden document methods that the return
-     follows the pattern of `super().document_name(new_document)`. This way
-     the EventStream properly issues the new document with its name and other
-     needed internal flow control
+    follows the pattern of ``super().document_name(new_document)``. This way
+    the EventStream properly issues the new document with its name and other
+    needed internal flow control.
 
     """
 
@@ -143,8 +159,11 @@ class EventStream(Stream):
     def emit(self, x):
         """ Push data into the stream at this point
 
-        This is typically done only at source Streams but can theoretically be
-        done at any point
+        Events will not automatically propagate down a stream unless they are
+        emitted, so for example, one could take every second event returned
+        from a node function and emit it into a subsampled output stream.
+        (for this specific example see ``filter``)
+
         """
         if x is not None:
             result = []
@@ -157,7 +176,7 @@ class EventStream(Stream):
             return [element for element in result if element is not None]
 
     def dispatch(self, nds):
-        """Call method which correlates to the input document
+        """Dispatch to methods expecting particular doc types.
 
         Parameters
         ----------
@@ -203,14 +222,18 @@ class EventStream(Stream):
             The name of the output doc(s)
         docs: tuple
             The document(s)
+
+        Notes
+        ------
+        If we get multiple streams make (name, (doc, doc, doc, ...))
+        Otherwise (name, (doc,))
         """
-        # If we get multiple streams make (name, (doc, doc, doc, ...))
+
         if isinstance(nds[0], tuple):
             names, docs = list(zzip(*nds))
             if len(set(names)) > 1:
                 raise RuntimeError('Misaligned Streams')
             name = names[0]
-        # If only one stream then (doc, )
         else:
             names, docs = nds
             name = names

@@ -31,7 +31,7 @@ class SinkAssertion(CallbackBase):
             self.expected_docs = {'start', 'descriptor', 'event', 'stop'}
 
     def __call__(self, name, doc):
-        "Dispatch to methods expecting particular doc types."
+        """Dispatch to methods expecting particular doc types."""
         self.docs.append(name)
         return getattr(self, name)(doc)
 
@@ -263,7 +263,6 @@ def test_map_fail(exp_db, start_uid1):
                 source,
                 input_info=ii,
                 output_info=oi)
-    L = dp.sink_to_list()
     dp.sink(star(SinkAssertion()))
 
     ih1 = exp_db[start_uid1]
@@ -339,7 +338,6 @@ def test_filter_fail(exp_db, start_uid1):
 
     dp = es.filter(dstar(f), source,
                    input_info={'i': 'pe1_image'})
-    L = dp.sink_to_list()
     dp.sink(star(SinkAssertion()))
 
     ih1 = exp_db[start_uid1]
