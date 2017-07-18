@@ -51,14 +51,6 @@ install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
   - conda create --yes -n testenv numpy scipy nose python=$TRAVIS_PYTHON_VERSION scipy jsonschema traitlets pytest coverage pip databroker bluesky ophyd historydict boltons doct pyepics super_state_machine xray-vision lmfit jinja2 icu pyzmq mongoquery mock xlrd scikit-beam codecov flake8 pyFAI doctr sphinx sphinx_rtd_theme -c conda-forge -c lightsource2-tag -c soft-matter
   - source activate testenv
-#  - 'pip install https://github.com/NSLS-II/event-model/zipball/master#egg=event_model'
-#  - conda remove metadatastore databroker filestore --yes
-#  - 'pip install https://github.com/NSLS-II/databroker/zipball/master#egg=databroker'
-#  - 'pip install https://github.com/NSLS-II/filestore/zipball/master#egg=filestore'
-#  - 'pip install https://github.com/NSLS-II/metadatastore/zipball/master#egg=metadatastore'
-#  - 'pip install https://github.com/NSLS-II/portable-mds/zipball/master#egg=portable_mds'
-#  - 'pip install https://github.com/NSLS-II/portable-fs/zipball/master#egg=portable_fs'
-#  - 'pip install https://github.com/NSLS-II/bluesky/zipball/master#egg=bluesky'
   - 'pip install https://github.com/mrocklin/streams/zipball/master#egg=streams'
   - python setup.py install
   # Need to clean the python build directory (and other cruft) or pytest is
@@ -81,4 +73,3 @@ script:
 
 after_success:
   - codecov
-  - coveralls
