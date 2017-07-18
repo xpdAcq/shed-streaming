@@ -454,6 +454,8 @@ class EventStream(Stream):
             self.i += 1
             return new_event
 
+    __call__ = emit
+
 
 class map(EventStream):
     """Apply a function onto every event in the stream"""

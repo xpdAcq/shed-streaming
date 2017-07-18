@@ -45,6 +45,20 @@ class SinkAssertion(CallbackBase):
             assert not doc.get('reason', None)
 
 
+def test_call(exp_db, start_uid1):
+    source = es.EventStream()
+
+    L = source.sink_to_list()
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source(a)
+
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert l[0] == s[0]
+
+
 def test_map(exp_db, start_uid1):
     source = Stream()
 
