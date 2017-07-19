@@ -34,6 +34,11 @@ def start_uid2():
 
 
 @pytest.fixture(scope='module')
+def start_uid3():
+    return str(uuid4())
+
+
+@pytest.fixture(scope='module')
 def img_size():
     a = np.random.random_integers(100, 200)
     yield (a, a)
@@ -51,10 +56,11 @@ def db(request):
 
 
 @pytest.fixture(scope='module')
-def exp_db(db, tmp_dir, img_size, start_uid1, start_uid2):
+def exp_db(db, tmp_dir, img_size, start_uid1, start_uid2, start_uid3):
     db2 = db
     mds = db2.mds
     fs = db2.fs
+    insert_imgs(mds, fs, 2, img_size, tmp_dir, start_uid3)
     insert_imgs(mds, fs, 5, img_size, tmp_dir, start_uid1)
     insert_imgs(mds, fs, 5, img_size, tmp_dir, start_uid2)
     yield db2
