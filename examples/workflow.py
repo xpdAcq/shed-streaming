@@ -10,7 +10,7 @@ from databroker.databroker import DataBroker as db
 from bluesky.callbacks.broker import LiveImage, LiveSliderImage
 from pprint import pprint
 from matplotlib.colors import LogNorm
-from redsky.graph import plot_graph
+from streams.graph import plot_graph
 
 
 def subs(img1, img2):
@@ -101,7 +101,7 @@ dark_sub_bg = [es.map(dstar(subs),
                in zip(bg_streams, bg_dark_streams)]
 # [d.sink(pprint) for d in dark_sub_bg]
 # bundle the backgrounds into one stream
-bg_bundle = es.bundle(*dark_sub_bg)
+bg_bundle = es.bundle(*dark_sub_bg, name='Background Bundle')
 # bg_bundle.sink(pprint)
 # bg_bundle.sink(star(LiveSliderImage('img', cmap='viridis')))
 
@@ -127,7 +127,7 @@ ave_bg = es.map(dstar(div), es.zip(summed_bg, count_bg),
                 input_info={'img': 'img', 'count': 'count'},
                 output_info=[('img', {
                     'dtype': 'array',
-                    'source': 'testing'})])
+                    'source': 'testing'})], name='Average Background')
 ave_bg.sink(pprint)
 
 # summed_bg.sink(star(LiveSliderImage('img')))
@@ -142,7 +142,8 @@ dark_sub_fg = es.map(dstar(subs),
                      input_info={'img1': 'pe1_image',
                                  'img2': 'pe1_image'},
                      output_info=[('img', {'dtype': 'array',
-                                           'source': 'testing'})])
+                                           'source': 'testing'})],
+                     name='Dark Subtracted Foreground')
 # norm_dark_sub_fg.sink(pprint)
 # combine the fg with the summed_bg
 fg_bg = es.combine_latest(dark_sub_fg, ave_bg, emit_on=dark_sub_fg)
@@ -153,7 +154,8 @@ fg_sub_bg = es.map(dstar(subs),
                    input_info={'img1': 'img',
                                'img2': 'img'},
                    output_info=[('img', {'dtype': 'array',
-                                         'source': 'testing'})])
+                                         'source': 'testing'})],
+                   name='Background Corrected Foreground')
 fg_sub_bg.sink(pprint)
 # fg_sub_bg.sink(star(LiveSliderImage('img')))
 """
@@ -221,6 +223,4 @@ for fg_uid, fg_dark_uid in zip(fg_uids, fg_dark_uids):
         for nd in db.restream(u, fill=True):
             s.emit(nd)
 # """
-start_nodes = [fg_stream, fg_dark_stream,
-               cal_stream] + bg_streams + bg_dark_streams
-g = plot_graph(start_nodes, file='abcd.png')
+g = plot_graph(iq_stream, file='abcd.png')

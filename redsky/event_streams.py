@@ -56,7 +56,7 @@ class EventStream(Stream):
     event_failed : False
     """
     def __init__(self, child=None, children=None,
-                 *, output_info=None, input_info=None, md=None,
+                 *, output_info=None, input_info=None, md=None, name=None,
                  **kwargs):
         """Initialize the stream
 
@@ -81,16 +81,20 @@ class EventStream(Stream):
         data_keys.
         output_info = [('data_key', {'dtype': 'array', 'source': 'testing'})]
         """
-        Stream.__init__(self, child, children)
         if md is None:
             md = {}
+        if name is not None:
+            md.update(name=name)
+        if 'name' in md.keys():
+            self.name = md['name']
+        else:
+            self.name = None
+        Stream.__init__(self, child, children, name=self.name)
         if output_info is None:
             output_info = {}
         if input_info is None:
             input_info = {}
         self.outbound_descriptor_uid = None
-        if 'name' in md.keys():
-            self.name = md['name']
         self.md = md
         self.output_info = output_info
         self.input_info = input_info
@@ -108,19 +112,6 @@ class EventStream(Stream):
                 input_info[k] = (v, 0)
             if isinstance(v[1], Stream):
                 input_info[k] = (v[0], self.children.index(v[1]))
-
-    def __str__(self):
-        s = self.__class__.__name__
-        for m in ['func', 'predicate']:
-            if hasattr(self, m):
-                if hasattr(getattr(self, m), '__name__'):
-                    s += '\n{}'.format(getattr(self, m).__name__)
-                elif hasattr(getattr(self, m).__class__, '__name__'):
-                    s += '\n{}'.format(getattr(self, m).__class__.__name__)
-        n = getattr(self, 'name', None)
-        if n:
-            s = '{}\n'.format(n) + s
-        return s
 
     def emit(self, x):
         """ Push data into the stream at this point
