@@ -463,7 +463,7 @@ def test_map_fail_dont_except(exp_db, tmp_dir, an_db, start_uid1, sn):
 
 
 @pytest.mark.parametrize("sn", test_params)
-def test_filter(exp_db, tmp_dir, an_db, start_uid1, sn):
+def test_filter(exp_db, an_db, start_uid1, sn):
     if sn == 'Store':
         sf = star(StoreSink(db=an_db,))
     elif sn == 'Stub':
