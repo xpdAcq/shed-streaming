@@ -301,13 +301,13 @@ class EventStream(Stream):
         doc: dict
             The document
         """
-        if not self.bypass:
-            self.run_start_uid = str(uuid.uuid4())
-            new_start_doc = dict(uid=self.run_start_uid,
-                                 time=time.time(),
-                                 parents=[doc['uid'] for doc in docs],
-                                 provenance=self.provenance, **self.md)
-            return 'start', new_start_doc
+        self.run_start_uid = str(uuid.uuid4())
+        new_start_doc = dict(uid=self.run_start_uid,
+                             time=time.time(),
+                             parents=[doc['uid'] for doc in docs],
+                             provenance=self.provenance, **self.md)
+        self.bypass = False
+        return 'start', new_start_doc
 
     def descriptor(self, docs):
         """
@@ -841,3 +841,19 @@ class query(EventStream):
 
     def event(self, docs):
         return super().event(self.issue_event(self.uid))
+
+
+class query_unpacker(EventStream):
+    def __init__(self, db, child, fill=True):
+        self.db = db
+        EventStream.__init__(self, child)
+        self.seen_event = False
+        self.fill = fill
+
+    def update(self, x, who=None):
+        if not self.seen_event:
+            name, doc = x
+            if name == 'event':
+                self.seen_event = True
+                return [self.emit(nd) for nd in
+                        self.db[doc['data']['hdr_uid']].stream(fill=self.fill)]

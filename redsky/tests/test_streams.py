@@ -670,6 +670,9 @@ def test_query(exp_db, start_uid1):
     dp = es.query(exp_db, source, qf)
     L = dp.sink_to_list()
 
+    dp2 = es.query_unpacker(exp_db, dp)
+    L2 = dp2.sink_to_list()
+
     for a in s:
         source.emit(a)
 
@@ -678,6 +681,17 @@ def test_query(exp_db, start_uid1):
         assert_docs.add(l[0])
         if l[0] == 'event':
             assert l[1]['data']['hdr_uid'] == start_uid1
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    assert_docs = set()
+    for l, ll in zip(L2, hdr.stream()):
+        assert_docs.add(l[0])
+        assert l[0] == ll[0]
+        if l[0] is 'start':
+            assert l[1] == ll[1]
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
     for n in ['start', 'descriptor', 'event', 'stop']:
