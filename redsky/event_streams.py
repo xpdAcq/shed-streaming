@@ -23,6 +23,7 @@ from collections import deque
 from streams.core import Stream, no_default
 from tornado.locks import Condition
 from builtins import zip as zzip
+from itertools import islice
 
 
 def star(f):
@@ -160,7 +161,7 @@ class EventStream(Stream):
         self.i = None
         self.run_start_uid = None
         self.provenance = {}
-        self.event_failed = False
+        self.bypass = False
         self.excep = None
 
         # If the stream number is not specified its zero
@@ -254,7 +255,7 @@ class EventStream(Stream):
             docs = (docs,)
         return name, docs
 
-    def generate_provenance(self, func=None):
+    def generate_provenance(self, **kwargs):
         """Generate provenance information about the stream function
 
         Parameters
@@ -274,13 +275,16 @@ class EventStream(Stream):
         if self.output_info:
             d.update(output_info=self.output_info)
         # TODO: support partials?
-        if func:
-            d.update(function_module=func.__module__,
-                     # this line gets more complex with classes
-                     function_name=func.__name__, )
+        d.update(**kwargs)
+        for k, func in d.items():
+            if callable(func):
+                d[k] = dict(function_module=func.__module__,
+                            # this line gets more complex with classes
+                            function_name=func.__name__, )
         full_event = getattr(self, 'full_event', None)
         if full_event:
             d.update(full_event=full_event)
+
         self.provenance = d
 
     def start(self, docs):
@@ -297,12 +301,13 @@ class EventStream(Stream):
         doc: dict
             The document
         """
-        self.run_start_uid = str(uuid.uuid4())
-        new_start_doc = dict(uid=self.run_start_uid,
-                             time=time.time(),
-                             parents=[doc['uid'] for doc in docs],
-                             provenance=self.provenance, **self.md)
-        return 'start', new_start_doc
+        if not self.bypass:
+            self.run_start_uid = str(uuid.uuid4())
+            new_start_doc = dict(uid=self.run_start_uid,
+                                 time=time.time(),
+                                 parents=[doc['uid'] for doc in docs],
+                                 provenance=self.provenance, **self.md)
+            return 'start', new_start_doc
 
     def descriptor(self, docs):
         """
@@ -318,29 +323,30 @@ class EventStream(Stream):
         doc: dict
             The document
         """
-        if self.run_start_uid is None:
-            raise RuntimeError("Received EventDescriptor before "
-                               "RunStart.")
-        # If we had to describe the output information then we need an all new
-        # descriptor
-        self.outbound_descriptor_uid = str(uuid.uuid4())
-        new_descriptor = dict(uid=self.outbound_descriptor_uid,
-                              time=time.time(),
-                              run_start=self.run_start_uid)
-        if self.output_info:
-            new_descriptor.update(
-                data_keys={k: v for k, v in self.output_info})
+        if not self.bypass:
+            if self.run_start_uid is None:
+                raise RuntimeError("Received EventDescriptor before "
+                                   "RunStart.")
+            # If we had to describe the output information then we need an all new
+            # descriptor
+            self.outbound_descriptor_uid = str(uuid.uuid4())
+            new_descriptor = dict(uid=self.outbound_descriptor_uid,
+                                  time=time.time(),
+                                  run_start=self.run_start_uid)
+            if self.output_info:
+                new_descriptor.update(
+                    data_keys={k: v for k, v in self.output_info})
 
-        # no truly new data needed
-        elif all(d['data_keys'] == docs[0]['data_keys'] for d in docs):
-            new_descriptor.update(data_keys=docs[0]['data_keys'])
+            # no truly new data needed
+            elif all(d['data_keys'] == docs[0]['data_keys'] for d in docs):
+                new_descriptor.update(data_keys=docs[0]['data_keys'])
 
-        else:
-            raise RuntimeError("Descriptor mismatch: "
-                               "you have tried to combine descriptors with "
-                               "different data keys")
-        self.i = 0
-        return 'descriptor', new_descriptor
+            else:
+                raise RuntimeError("Descriptor mismatch: "
+                                   "you have tried to combine descriptors with "
+                                   "different data keys")
+            self.i = 0
+            return 'descriptor', new_descriptor
 
     def event(self, docs):
         """
@@ -356,7 +362,7 @@ class EventStream(Stream):
         doc: dict
             The document
         """
-        if not self.event_failed:
+        if not self.bypass:
             return 'event', docs
 
     def stop(self, docs):
@@ -374,14 +380,14 @@ class EventStream(Stream):
         doc: dict
             The document
         """
-        if not self.event_failed:
+        if not self.bypass:
             if self.run_start_uid is None:
                 raise RuntimeError("Received RunStop before RunStart.")
             new_stop = dict(uid=str(uuid.uuid4()),
                             time=time.time(),
                             run_start=self.run_start_uid)
             if isinstance(docs, Exception):
-                self.event_failed = True
+                self.bypass = True
                 new_stop.update(reason=repr(docs),
                                 trace=traceback.format_exc(),
                                 exit_status='failure')
@@ -437,7 +443,7 @@ class EventStream(Stream):
         If the outputs of the function is an exception no event will be
         created, but a stop document will be issued.
         """
-        if not self.event_failed:
+        if not self.bypass:
             if self.run_start_uid is None:
                 raise RuntimeError("Received Event before RunStart.")
             if isinstance(outputs, Exception):
@@ -476,7 +482,7 @@ class EventStream(Stream):
         new_event: dict
             A new event with the same core data
         """
-        if not self.event_failed:
+        if not self.bypass:
             if self.run_start_uid is None:
                 raise RuntimeError("Received Event before RunStart.")
             if isinstance(event, Exception):
@@ -812,3 +818,26 @@ class eventify(EventStream):
 
     def event(self, docs):
         return super().event(self.issue_event(self.val))
+
+
+class query(EventStream):
+    def __init__(self, db, child, query_function,
+                 query_decider=lambda x, y: next(iter(x)), **kwargs):
+        self.db = db
+        self.query_function = query_function
+        self.query_decider = query_decider
+        EventStream.__init__(self, child, **kwargs)
+        self.generate_provenance(query_function=query_function,
+                                 query_decider=query_decider)
+        self.uid = None
+        self.output_info = [('hdr_uid', {'dtype': 'str', 'source': 'query'})]
+
+    def start(self, docs):
+        res = self.query_function(self.db, docs)
+        single_hdr = self.query_decider(res, docs)
+        s = single_hdr.stream(fill=True)
+        self.uid = next(iter(s))[1]['uid']
+        return super().start(docs)
+
+    def event(self, docs):
+        return super().event(self.issue_event(self.uid))

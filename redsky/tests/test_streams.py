@@ -658,6 +658,32 @@ def test_eventify(exp_db, start_uid1):
         assert n in assert_docs
 
 
+def test_query(exp_db, start_uid1):
+    source = es.EventStream()
+
+    def qf(db, docs):
+        return db(uid=docs[0]['uid'])
+
+    hdr = exp_db[start_uid1]
+    s = hdr.stream()
+
+    dp = es.query(exp_db, source, qf)
+    L = dp.sink_to_list()
+
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert l[1]['data']['hdr_uid'] == start_uid1
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_workflow(exp_db, start_uid1):
     def subs(x1, x2):
         return x1 - x2
