@@ -101,7 +101,7 @@ class EventStream(Stream):
     """
 
     def __init__(self, child=None, children=None,
-                 *, output_info=None, input_info=None, md=None,
+                 *, output_info=None, input_info=None, md=None, name=None,
                  raise_upon_error=True,
                  **kwargs):
         """Initialize the stream
@@ -127,9 +127,15 @@ class EventStream(Stream):
         data_keys.
         output_info = [('data_key', {'dtype': 'array', 'source': 'testing'})]
         """
-        Stream.__init__(self, child, children)
         if md is None:
             md = {}
+        if name is not None:
+            md.update(name=name)
+        if 'name' in md.keys():
+            self.name = md['name']
+        else:
+            self.name = None
+        Stream.__init__(self, child, children, name=self.name)
         if output_info is None:
             output_info = {}
         if input_info is None:
