@@ -8,6 +8,7 @@ env:
     HTML_SUBDIR: build/html
     DOCS_CONDA_DEPS: "bluesky"
     DOCS_PIP_DEPS: "tqdm"
+    secure: "b0v6zC8slxUJokhtKzLRojZE+NMKwTrfMd2t954oq8COTXwnTNIJhFSSqoTuNfuo3A7b2XE53AlyuB3rOwwzWxvAClHWAxjmA1OXtGATEy8qpqyQeFoo4Xt4oQe5zNXEWg/LbyTAbivbIFub4VyVE8PwE8Nr4TD6Sf8Ylu5Uk6fpXZhty6j+DASF5eRD63bIf02Xe1yH2eKt8wkd78oWmhorsrj2MHggb4e+MIDDVKsWRBhL9l4MphyoG55TKEOVZTLkCJneAFW4gjJWT4FBMrfzfH6daod3xV3hXZf799ZNdA5rEKmBaXsXojj+spgWczY1E7I9tahVfQBbHIATvdmqh8aQBarArnMZivsSbqOYgrabbgP/s6Q+GTaRLcog0mN/8cPPTQ9bby09fnfBWzxovpDPrbBTOucE5eHcYDbD3+cjbaMbb0UXpXR5p9okGA2YHXLAXK7xvafFJcC9Mo+NqufitCjmCgeRSJI+c8nxJl7jIJakzjKnobT6ruwGrv3i8gL6Ayp7b6e2M2B05v2fT08K/3ivg9tpiULolVrsTkvjGMUOJluD0nOsUbjUfy5q29rz34q8OhbXNN2mlhmuqdA7o0RG7xzkcvsyGObEbKnmeGtS5ZUuQkeH/eRsVgL8Ckzs6cmL+22rZLdgOPoJbZJ2cv7LxhiEz3/ZcUY="
 
 cache:
   directories:
@@ -48,17 +49,9 @@ before_install:
 
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
-  - conda create --yes -n testenv numpy scipy nose python=$TRAVIS_PYTHON_VERSION scipy jsonschema traitlets pytest coverage pip databroker ophyd historydict boltons doct pyepics super_state_machine xray-vision lmfit jinja2 icu pyzmq mongoquery mock xlrd scikit-beam -c lightsource2 -c conda-forge -c soft-matter
+  - conda create --yes -n testenv numpy scipy nose python=$TRAVIS_PYTHON_VERSION scipy jsonschema traitlets pytest coverage pip databroker bluesky ophyd historydict boltons doct pyepics super_state_machine xray-vision lmfit jinja2 icu pyzmq mongoquery mock xlrd scikit-beam codecov flake8 pyFAI doctr sphinx sphinx_rtd_theme graphviz python-graphviz -c conda-forge -c lightsource2-tag -c soft-matter
   - source activate testenv
-  - 'pip install python-coveralls'
-  - 'pip install https://github.com/NSLS-II/event-model/zipball/master#egg=event_model'
-  - conda remove metadatastore databroker filestore --yes
-  - 'pip install https://github.com/NSLS-II/databroker/zipball/master#egg=databroker'
-  - 'pip install https://github.com/NSLS-II/filestore/zipball/master#egg=filestore'
-  - 'pip install https://github.com/NSLS-II/metadatastore/zipball/master#egg=metadatastore'
-  - 'pip install https://github.com/NSLS-II/portable-mds/zipball/master#egg=portable_mds'
-  - 'pip install https://github.com/NSLS-II/portable-fs/zipball/master#egg=portable_fs'
-  - 'pip install https://github.com/NSLS-II/bluesky/zipball/master#egg=bluesky'
+  - 'pip install https://github.com/mrocklin/streams/zipball/master#egg=streams'
   - python setup.py install
   # Need to clean the python build directory (and other cruft) or pytest is
   # going to find the build directory and get confused why there are two sets
@@ -66,14 +59,17 @@ install:
   - python -c "from filestore import utils, conf; utils.install_sentinels(conf.connection_config, 1)"
   # make sure the sqlite file exists to avoid race conditions
   - python -c "from bluesky.utils import get_history; get_history()"
-  - pip install codecov flake8 pyFAI pytest-env
   - git clean -xfd
 
 script:
+  - set -e
   - coverage run run_tests.py
   - coverage report -m
   - flake8 .
+  - cd docs
+  - make html
+  - cd ..
+  - doctr deploy . --built-docs ./docs/_build/html
 
 after_success:
   - codecov
-  - coveralls

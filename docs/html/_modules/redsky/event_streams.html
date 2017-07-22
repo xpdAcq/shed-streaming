@@ -1,0 +1,899 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>redsky.event_streams &#8212; redsky  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for redsky.event_streams</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Stream functions (actually classes) for building pipelines for the Event</span>
+<span class="sd">Model&quot;&quot;&quot;</span>
+<span class="c1">##############################################################################</span>
+<span class="c1">#</span>
+<span class="c1"># xpdan            by Billinge Group</span>
+<span class="c1">#                   Simon J. L. Billinge sb2896@columbia.edu</span>
+<span class="c1">#                   (c) 2017 trustees of Columbia University in the City of</span>
+<span class="c1">#                        New York.</span>
+<span class="c1">#                   All rights reserved</span>
+<span class="c1">#</span>
+<span class="c1"># File coded by:    Christopher J. Wright (CJ-Wright)</span>
+<span class="c1">#</span>
+<span class="c1"># See AUTHORS.txt for a list of people who contributed.</span>
+<span class="c1"># See LICENSE.txt for license information.</span>
+<span class="c1">#</span>
+<span class="c1">##############################################################################</span>
+<span class="kn">import</span> <span class="nn">functools</span> <span class="k">as</span> <span class="nn">ft</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span>
+
+<span class="kn">from</span> <span class="nn">streams.core</span> <span class="k">import</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">no_default</span>
+<span class="kn">from</span> <span class="nn">tornado.locks</span> <span class="k">import</span> <span class="n">Condition</span>
+<span class="kn">from</span> <span class="nn">builtins</span> <span class="k">import</span> <span class="nb">zip</span> <span class="k">as</span> <span class="n">zzip</span>
+
+
+<div class="viewcode-block" id="star"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.star">[docs]</a><span class="k">def</span> <span class="nf">star</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="nd">@ft</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wraps</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wraps</span></div>
+
+
+<div class="viewcode-block" id="dstar"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.dstar">[docs]</a><span class="k">def</span> <span class="nf">dstar</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="nd">@ft</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wraps</span><span class="p">(</span><span class="n">kwargs1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs2</span><span class="p">):</span>
+        <span class="n">kwargs1</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wraps</span></div>
+
+
+<div class="viewcode-block" id="EventStream"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream">[docs]</a><span class="k">class</span> <span class="nc">EventStream</span><span class="p">(</span><span class="n">Stream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; The EventStream class handles data of the form of an infinite</span>
+<span class="sd">    sequence of events in the Event Model.</span>
+
+<span class="sd">    In the Event model, the data-stream is a series of fortunate events.</span>
+<span class="sd">    Each event consists of a name-document pair</span>
+<span class="sd">    where the dictionary contains the data and metadata associated with the</span>
+<span class="sd">    event.</span>
+<span class="sd">    More information here:</span>
+<span class="sd">    https://nsls-ii.github.io/architecture-overview.html</span>
+
+<span class="sd">    EventStreams subscribe to each other passing and transforming data between</span>
+<span class="sd">    them. An EventStream object listens for updates from upstream, reacts to</span>
+<span class="sd">    these updates, and then emits more data to flow downstream to all</span>
+<span class="sd">    EventStream objects that subscribe to it. Downstream EventStream objects</span>
+<span class="sd">    may connect at any point of an EventStream graph to get a full view of the</span>
+<span class="sd">    data coming off of that point to do with as they will.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    md : dict</span>
+<span class="sd">        Each event stream has a Start document that contains metadata about</span>
+<span class="sd">        the stream</span>
+<span class="sd">    input_info : dict, optional</span>
+<span class="sd">        Input info for an operation. Operations are callables that will apply</span>
+<span class="sd">        operations to the data streams. Not always needed. The input_info</span>
+<span class="sd">        provides a map between event data keys and the callable (function)</span>
+<span class="sd">        args/kwargs</span>
+
+<span class="sd">    output_info : list of tuples, optional</span>
+<span class="sd">        Output info from the operation, not needed for all cases</span>
+<span class="sd">        This:</span>
+<span class="sd">            Creates a map between function returns and event data keys</span>
+<span class="sd">            Provides information for building a descriptor for the output</span>
+<span class="sd">            event stream. Each event stream has a descriptor which contains</span>
+<span class="sd">            information about what is in the events in the stream.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; my_new_stream = EventStream()</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    This is intended as a base class for the stream functions (map, filter,</span>
+<span class="sd">    etc.).</span>
+
+<span class="sd">    Most implementations of the subclasses will:</span>
+<span class="sd">    a) override update for flow control based classes</span>
+<span class="sd">    b) override event for operator based classes</span>
+<span class="sd">    c) override multiple document methods (see eventify) although this is rare</span>
+
+<span class="sd">    It is important for the overridden document methods that the return</span>
+<span class="sd">    follows the pattern of ``super().document_name(new_document)``. This way</span>
+<span class="sd">    the EventStream properly issues the new document with its name and other</span>
+<span class="sd">    needed internal flow control.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="o">*</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">md</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">raise_upon_error</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the stream</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input_info: dict, optional</span>
+<span class="sd">            describes the incoming streams</span>
+<span class="sd">        output_info: list of tuples, optional</span>
+<span class="sd">            describes the resulting stream</span>
+<span class="sd">        md: dict, optional</span>
+<span class="sd">            Additional metadata to be added to the run start document</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        ------</span>
+<span class="sd">        input_info is designed to map keys in streams to kwargs in functions.</span>
+<span class="sd">        It is critical for the internal data from the events to be returned,</span>
+<span class="sd">        upon `event_guts`.</span>
+<span class="sd">        input_info = {&#39;input_kwarg&#39;: (&#39;data_key&#39;, stream_number)}</span>
+<span class="sd">        Note that the stream number is assumed to be zero if not specified</span>
+
+<span class="sd">        output_info is designed to take the output tuple and map it back into</span>
+<span class="sd">        data_keys.</span>
+<span class="sd">        output_info = [(&#39;data_key&#39;, {&#39;dtype&#39;: &#39;array&#39;, &#39;source&#39;: &#39;testing&#39;})]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Stream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">children</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">md</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">md</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">output_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">output_info</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">input_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">input_info</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outbound_descriptor_uid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">md</span> <span class="o">=</span> <span class="n">md</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_info</span> <span class="o">=</span> <span class="n">output_info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span> <span class="o">=</span> <span class="n">input_info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raise_upon_error</span> <span class="o">=</span> <span class="n">raise_upon_error</span>
+
+        <span class="c1"># TODO: need multiple counters for multiple descriptors</span>
+        <span class="c1"># This will need to be a dict with keys of descriptor names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">provenance</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event_failed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">excep</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># If the stream number is not specified its zero</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">input_info</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">input_info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Stream</span><span class="p">):</span>
+                <span class="n">input_info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+<div class="viewcode-block" id="EventStream.emit"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream.emit">[docs]</a>    <span class="k">def</span> <span class="nf">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Push data into the stream at this point</span>
+
+<span class="sd">        Events will not automatically propagate down a stream unless they are</span>
+<span class="sd">        emitted, so for example, one could take every second event returned</span>
+<span class="sd">        from a node function and emit it into a subsampled output stream.</span>
+<span class="sd">        (for this specific example see ``filter``)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">:</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">element</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">result</span> <span class="k">if</span> <span class="n">element</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="EventStream.dispatch"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream.dispatch">[docs]</a>    <span class="k">def</span> <span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nds</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Dispatch to methods expecting particular doc types.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nds: tuple</span>
+<span class="sd">            Name document pair</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple:</span>
+<span class="sd">            New name document pair</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">docs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curate_streams</span><span class="p">(</span><span class="n">nds</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)(</span><span class="n">docs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EventStream.update"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Emit the new name document pair</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: tuple</span>
+<span class="sd">            Name document pair</span>
+<span class="sd">        who: stream instance, optional</span>
+<span class="sd">            This is mostly used internally for emit</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list:</span>
+<span class="sd">            The list of issued documents, used for back pressure</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="n">x</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="EventStream.curate_streams"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream.curate_streams">[docs]</a>    <span class="k">def</span> <span class="nf">curate_streams</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nds</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Standardize name document pairs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nds: tuple, or tuple of tuples</span>
+<span class="sd">            The name document pair(s)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        name: str</span>
+<span class="sd">            The name of the output doc(s)</span>
+<span class="sd">        docs: tuple</span>
+<span class="sd">            The document(s)</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        ------</span>
+<span class="sd">        If we get multiple streams make (name, (doc, doc, doc, ...))</span>
+<span class="sd">        Otherwise (name, (doc,))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">names</span><span class="p">,</span> <span class="n">docs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">zzip</span><span class="p">(</span><span class="o">*</span><span class="n">nds</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Misaligned Streams&#39;</span><span class="p">)</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">names</span><span class="p">,</span> <span class="n">docs</span> <span class="o">=</span> <span class="n">nds</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">names</span>
+            <span class="n">docs</span> <span class="o">=</span> <span class="p">(</span><span class="n">docs</span><span class="p">,)</span>
+        <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">docs</span></div>
+
+<div class="viewcode-block" id="EventStream.generate_provenance"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream.generate_provenance">[docs]</a>    <span class="k">def</span> <span class="nf">generate_provenance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate provenance information about the stream function</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        func: callable</span>
+<span class="sd">            The function used inside the stream class (see map, filter, etc.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">stream_class</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="n">stream_class_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+            <span class="c1"># TODO: Need to support pip and other sources at some point</span>
+            <span class="c1"># conda_list=subprocess.check_output([&#39;conda&#39;, &#39;list&#39;,</span>
+            <span class="c1">#                                     &#39;-e&#39;]).decode()</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">:</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">input_info</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_info</span><span class="p">:</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">output_info</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output_info</span><span class="p">)</span>
+        <span class="c1"># TODO: support partials?</span>
+        <span class="k">if</span> <span class="n">func</span><span class="p">:</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">function_module</span><span class="o">=</span><span class="n">func</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+                     <span class="c1"># this line gets more complex with classes</span>
+                     <span class="n">function_name</span><span class="o">=</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">)</span>
+        <span class="n">full_event</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;full_event&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">full_event</span><span class="p">:</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">full_event</span><span class="o">=</span><span class="n">full_event</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">provenance</span> <span class="o">=</span> <span class="n">d</span></div>
+
+<div class="viewcode-block" id="EventStream.start"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Issue new start document for input documents</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        docs: tuple of dicts or dict</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        name: &#39;start&#39;</span>
+<span class="sd">        doc: dict</span>
+<span class="sd">            The document</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="n">new_start_doc</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">uid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span><span class="p">,</span>
+                             <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+                             <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="n">doc</span><span class="p">[</span><span class="s1">&#39;uid&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">],</span>
+                             <span class="n">provenance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">provenance</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">new_start_doc</span></div>
+
+<div class="viewcode-block" id="EventStream.descriptor"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream.descriptor">[docs]</a>    <span class="k">def</span> <span class="nf">descriptor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Issue new descriptor document for input documents</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        docs: tuple of dicts or dict</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        name: &#39;descriptor&#39;</span>
+<span class="sd">        doc: dict</span>
+<span class="sd">            The document</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Received EventDescriptor before &quot;</span>
+                               <span class="s2">&quot;RunStart.&quot;</span><span class="p">)</span>
+        <span class="c1"># If we had to describe the output information then we need an all new</span>
+        <span class="c1"># descriptor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outbound_descriptor_uid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="n">new_descriptor</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">uid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">outbound_descriptor_uid</span><span class="p">,</span>
+                              <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+                              <span class="n">run_start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_info</span><span class="p">:</span>
+            <span class="n">new_descriptor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="n">data_keys</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_info</span><span class="p">})</span>
+
+        <span class="c1"># no truly new data needed</span>
+        <span class="k">elif</span> <span class="nb">all</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;data_keys&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;data_keys&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">):</span>
+            <span class="n">new_descriptor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data_keys</span><span class="o">=</span><span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;data_keys&#39;</span><span class="p">])</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Descriptor mismatch: &quot;</span>
+                               <span class="s2">&quot;you have tried to combine descriptors with &quot;</span>
+                               <span class="s2">&quot;different data keys&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="n">new_descriptor</span></div>
+
+<div class="viewcode-block" id="EventStream.event"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Issue event document for input documents</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        docs: tuple of dicts or dict</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        name: &#39;event&#39;</span>
+<span class="sd">        doc: dict</span>
+<span class="sd">            The document</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_failed</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="n">docs</span></div>
+
+<div class="viewcode-block" id="EventStream.stop"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Issue new stop document</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        docs: tuple of dicts or dict or Exception</span>
+<span class="sd">            If Exception issue a stop which notes the failure</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        name: &#39;stop&#39;</span>
+<span class="sd">        doc: dict</span>
+<span class="sd">            The document</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_failed</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Received RunStop before RunStart.&quot;</span><span class="p">)</span>
+            <span class="n">new_stop</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">uid</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
+                            <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+                            <span class="n">run_start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">event_failed</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">new_stop</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="nb">repr</span><span class="p">(</span><span class="n">docs</span><span class="p">),</span>
+                                <span class="n">trace</span><span class="o">=</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">(),</span>
+                                <span class="n">exit_status</span><span class="o">=</span><span class="s1">&#39;failure&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">excep</span> <span class="o">=</span> <span class="n">docs</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_stop</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">exit_status</span><span class="o">=</span><span class="s1">&#39;success&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outbound_descriptor_uid</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">return</span> <span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="n">new_stop</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">raise_upon_error</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">excep</span></div>
+
+<div class="viewcode-block" id="EventStream.event_guts"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream.event_guts">[docs]</a>    <span class="k">def</span> <span class="nf">event_guts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">,</span> <span class="n">full_event</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Provide some of the event data as a dict, which may be used as kwargs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        docs: tuple of dicts</span>
+<span class="sd">        full_event: bool, optional</span>
+<span class="sd">            If True expose the data from full event, else only expose data</span>
+<span class="sd">            from the &#39;data&#39; dictionary inside the event, defaults to False</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: what if I want to operate on the full event? Return full dict</span>
+        <span class="k">if</span> <span class="n">full_event</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">input_kwarg</span><span class="p">:</span> <span class="n">docs</span><span class="p">[</span><span class="n">position</span><span class="p">][</span><span class="n">data_key</span><span class="p">]</span> <span class="k">for</span>
+                    <span class="n">input_kwarg</span><span class="p">,</span> <span class="p">(</span><span class="n">data_key</span><span class="p">,</span> <span class="n">position</span><span class="p">)</span> <span class="ow">in</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">input_kwarg</span><span class="p">:</span> <span class="n">docs</span><span class="p">[</span><span class="n">position</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="n">data_key</span><span class="p">]</span> <span class="k">for</span>
+                    <span class="n">input_kwarg</span><span class="p">,</span> <span class="p">(</span><span class="n">data_key</span><span class="p">,</span> <span class="n">position</span><span class="p">)</span> <span class="ow">in</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+
+<div class="viewcode-block" id="EventStream.issue_event"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream.issue_event">[docs]</a>    <span class="k">def</span> <span class="nf">issue_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new event document based off of function returns</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        outputs: tuple, dict, or other</span>
+<span class="sd">            Data returned from some external functon</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        new_event: dict</span>
+<span class="sd">            The new event</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        If the outputs of the function is an exception no event will be</span>
+<span class="sd">        created, but a stop document will be issued.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_failed</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Received Event before RunStart.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span>
+
+            <span class="c1"># Make a new event with no data</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_info</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">outputs</span> <span class="o">=</span> <span class="p">(</span><span class="n">outputs</span><span class="p">,)</span>
+
+            <span class="n">new_event</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">uid</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
+                             <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+                             <span class="n">timestamps</span><span class="o">=</span><span class="p">{},</span>
+                             <span class="n">descriptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">outbound_descriptor_uid</span><span class="p">,</span>
+                             <span class="n">filled</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="kc">True</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_info</span><span class="p">},</span>
+                             <span class="n">seq_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_info</span><span class="p">:</span>
+                <span class="n">new_event</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="n">output_name</span><span class="p">:</span> <span class="n">output</span>
+                                       <span class="k">for</span> <span class="p">(</span><span class="n">output_name</span><span class="p">,</span> <span class="n">desc</span><span class="p">),</span> <span class="n">output</span> <span class="ow">in</span>
+                                       <span class="n">zzip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_info</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)})</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_event</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">outputs</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">new_event</span></div>
+
+<div class="viewcode-block" id="EventStream.refresh_event"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream.refresh_event">[docs]</a>    <span class="k">def</span> <span class="nf">refresh_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new event with the same data, but new metadata</span>
+<span class="sd">        (uid, timestamp, etc.)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        event: tuple, dict, or other</span>
+<span class="sd">            The event document</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        new_event: dict</span>
+<span class="sd">            A new event with the same core data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_failed</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Received Event before RunStart.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+            <span class="n">new_event</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+            <span class="n">new_event</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">uid</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
+                                  <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+                                  <span class="n">timestamps</span><span class="o">=</span><span class="p">{},</span>
+                                  <span class="n">seq_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">new_event</span></div>
+
+    <span class="fm">__call__</span> <span class="o">=</span> <span class="n">emit</span></div>
+
+
+<div class="viewcode-block" id="map"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.map">[docs]</a><span class="k">class</span> <span class="nc">map</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Apply a function onto every event in the stream&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                 <span class="n">full_event</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">output_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the node</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        func: callable</span>
+<span class="sd">            The function to map on the event data</span>
+<span class="sd">        child: EventStream instance</span>
+<span class="sd">            The source of the data</span>
+<span class="sd">        full_event: bool, optional</span>
+<span class="sd">            If True expose the full event dict to the function, if False</span>
+<span class="sd">            only expose the data from the event</span>
+<span class="sd">        input_info: dict</span>
+<span class="sd">            describe the incoming streams</span>
+<span class="sd">        output_info: list of tuples</span>
+<span class="sd">            describe the resulting stream</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="n">output_info</span><span class="p">,</span>
+                             <span class="n">input_info</span><span class="o">=</span><span class="n">input_info</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span> <span class="o">=</span> <span class="n">full_event</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generate_provenance</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+<div class="viewcode-block" id="map.event"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.map.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># we need to expose the event data</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_guts</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="c1"># Now we must massage the raw return into a new event</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">issue_event</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">stop</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="filter"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.filter">[docs]</a><span class="k">class</span> <span class="nc">filter</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Only pass through events that satisfy the predicate&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predicate</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">input_info</span><span class="p">,</span>
+                 <span class="n">full_event</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the node</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        predicate: callable</span>
+<span class="sd">            The function which returns True if the event is to propagate</span>
+<span class="sd">            further in the pipeline</span>
+<span class="sd">        child: EventStream instance</span>
+<span class="sd">            The source of the data</span>
+<span class="sd">        input_info: dict</span>
+<span class="sd">            describe the incoming streams</span>
+<span class="sd">        full_event: bool, optional</span>
+<span class="sd">            If True expose the full event dict to the predicate, if False</span>
+<span class="sd">            only expose the data from the event</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predicate</span> <span class="o">=</span> <span class="n">predicate</span>
+
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="n">input_info</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span> <span class="o">=</span> <span class="n">full_event</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generate_provenance</span><span class="p">(</span><span class="n">predicate</span><span class="p">)</span>
+
+<div class="viewcode-block" id="filter.event"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.filter.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">):</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_guts</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predicate</span><span class="p">(</span><span class="n">g</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">stop</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="accumulate"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.accumulate">[docs]</a><span class="k">class</span> <span class="nc">accumulate</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Accumulate results with previous state</span>
+
+<span class="sd">    This preforms running or cumulative reductions, applying the function</span>
+<span class="sd">    to the previous total and the new element.  The function should take</span>
+<span class="sd">    two arguments, the previous accumulated state and the next element and</span>
+<span class="sd">    it should return a new accumulated state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">state_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                 <span class="n">full_event</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">output_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">input_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">no_default</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the node</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        func: callable</span>
+<span class="sd">            The function to map on the event data</span>
+<span class="sd">        child: EventStream instance</span>
+<span class="sd">            The source of the data</span>
+<span class="sd">        state_key: str</span>
+<span class="sd">            The keyword for current accumulated state in the func</span>
+<span class="sd">        full_event: bool, optional</span>
+<span class="sd">            If True expose the full event dict to the predicate, if False</span>
+<span class="sd">            only expose the data from the event</span>
+<span class="sd">        input_info: dict</span>
+<span class="sd">            describe the incoming streams</span>
+<span class="sd">            Note that only one key allowed since the func only takes two inputs</span>
+<span class="sd">        output_info: list of tuples</span>
+<span class="sd">            describe the resulting stream</span>
+<span class="sd">        start: any or callable, optional</span>
+<span class="sd">            Starting value for accumulation, if no_default use the event data</span>
+<span class="sd">            dictionary, if callable run that callable on the event data, else</span>
+<span class="sd">            use `start` as the starting data, defaults to no_default</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_key</span> <span class="o">=</span> <span class="n">state_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">start</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="n">input_info</span><span class="p">,</span>
+                             <span class="n">output_info</span><span class="o">=</span><span class="n">output_info</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span> <span class="o">=</span> <span class="n">full_event</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generate_provenance</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+<div class="viewcode-block" id="accumulate.event"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.accumulate.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">):</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_guts</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="n">no_default</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1"># Note that there is only one input_info key allowed for this</span>
+            <span class="c1"># stream function so this works</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="o">.</span><span class="n">keys</span><span class="p">()))]</span>
+        <span class="c1"># in case we need a bit more flexibility eg lambda x: np.empty(x.shape)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="s1">&#39;__call__&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">doc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">state_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">stop</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">issue_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="zip"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.zip">[docs]</a><span class="k">class</span> <span class="nc">zip</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Combine multiple streams together into a stream of tuples&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">children</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the Node</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        children: EventStream instances</span>
+<span class="sd">            The event streams to be zipped together</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;maxsize&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span> <span class="o">=</span> <span class="p">[</span><span class="n">deque</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">condition</span> <span class="o">=</span> <span class="n">Condition</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="p">()</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="n">children</span><span class="p">)</span>
+
+<div class="viewcode-block" id="zip.update"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.zip.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)]</span>
+        <span class="n">L</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">)):</span>
+                    <span class="c1"># If the docs don&#39;t match, preempt with prior good result</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">appendleft</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">tup</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">buf</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span> <span class="k">for</span> <span class="n">buf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tup</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">tup</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="bundle"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.bundle">[docs]</a><span class="k">class</span> <span class="nc">bundle</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Combine multiple event streams into one&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">children</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the Node</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        children: EventStream instances</span>
+<span class="sd">            The event streams to be zipped together</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;maxsize&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span> <span class="o">=</span> <span class="p">[</span><span class="n">deque</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">condition</span> <span class="o">=</span> <span class="n">Condition</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="p">()</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="n">children</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generate_provenance</span><span class="p">()</span>
+
+<div class="viewcode-block" id="bundle.update"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.bundle.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)]</span>
+        <span class="n">L</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">):</span>
+            <span class="c1"># if all the docs are of the same type and not an event, issue</span>
+            <span class="c1"># new documents which are combined</span>
+            <span class="n">rvs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">while</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">):</span>
+                <span class="n">first_doc_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">first_doc_name</span> <span class="ow">and</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;event&#39;</span>
+                        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">]):</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span>
+                        <span class="nb">tuple</span><span class="p">([</span><span class="n">b</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">]))</span>
+                    <span class="n">rvs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="nb">any</span><span class="p">([</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;event&#39;</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">]):</span>
+                    <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">:</span>
+                        <span class="k">while</span> <span class="n">b</span><span class="p">:</span>
+                            <span class="n">nd_pair</span> <span class="o">=</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="c1"># run the buffers down until no events are left</span>
+                            <span class="k">if</span> <span class="n">nd_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span>
+                                <span class="k">break</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">nd_pair</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+                                <span class="n">new_nd_pair</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh_event</span><span class="p">(</span><span class="n">nd_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                                <span class="n">rvs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">new_nd_pair</span><span class="p">))</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;There is a mismatch of docs, but none &quot;</span>
+                                       <span class="s2">&quot;of them are events so we have reached &quot;</span>
+                                       <span class="s2">&quot;a potential deadlock, so we raise &quot;</span>
+                                       <span class="s2">&quot;this error instead&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">rvs</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="combine_latest"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.combine_latest">[docs]</a><span class="k">class</span> <span class="nc">combine_latest</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Combine multiple streams together to a stream of tuples</span>
+
+<span class="sd">    This will emit a new tuple of all of the most recent elements seen from</span>
+<span class="sd">    any stream.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">children</span><span class="p">,</span> <span class="n">emit_on</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the node</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        children: EventStream instances</span>
+<span class="sd">            The streams to combine</span>
+<span class="sd">        emit_on: EventStream, list of EventStreams or None</span>
+<span class="sd">            Only emit upon update of the streams listed.</span>
+<span class="sd">            If None, emit on update from any stream</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">special_docs_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">special_docs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">special_docs_names</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">children</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">special_missing</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">special_docs_names</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">emit_on</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">emit_on</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">):</span>
+                <span class="n">emit_on</span> <span class="o">=</span> <span class="p">(</span><span class="n">emit_on</span><span class="p">,)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">emit_on</span> <span class="o">=</span> <span class="n">emit_on</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">emit_on</span> <span class="o">=</span> <span class="n">children</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="n">children</span><span class="p">)</span>
+
+<div class="viewcode-block" id="combine_latest.update"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.combine_latest.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">special_docs_names</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">special_docs</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">special_missing</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="ow">and</span> <span class="n">who</span> <span class="ow">in</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">special_missing</span><span class="p">[</span><span class="n">name</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">special_missing</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">who</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">special_docs</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)]</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">special_missing</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="ow">and</span> <span class="n">who</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit_on</span><span class="p">:</span>
+                <span class="n">tup</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">special_docs</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">tup</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="ow">and</span> <span class="n">who</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">missing</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">missing</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">who</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">last</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)]</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="ow">and</span> <span class="n">who</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit_on</span><span class="p">:</span>
+                <span class="n">tup</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">tup</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="eventify"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.eventify">[docs]</a><span class="k">class</span> <span class="nc">eventify</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generate events from data in starts&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">start_key</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">output_info</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the node</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        child: EventStream instance</span>
+<span class="sd">            The event stream to eventify</span>
+<span class="sd">        start_key: str</span>
+<span class="sd">            The run start key to use to create the events</span>
+<span class="sd">        output_info: list of tuples, optional</span>
+<span class="sd">            describes the resulting stream</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: maybe allow start_key to be a list of relevent keys?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_key</span> <span class="o">=</span> <span class="n">start_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="n">output_info</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="eventify.start"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.eventify.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">start_key</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="eventify.event"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.eventify.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">issue_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">))</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">redsky</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../redsky.html">redsky package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
