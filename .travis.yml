@@ -71,7 +71,11 @@ script:
   - cd ..
   - conda install --yes sphinx sphinx_rtd_theme
   - pip install git+git://github.com/xpdAcq/redsky.git
-  - doctr deploy . --built-docs ./docs/_build/html
+  - if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
+      doctr deploy . --gh-pages-docs docs --built-docs ./docs/_build/html;
+    else
+      doctr deploy . --no-require-master --gh-pages-docs "docs-$TRAVIS_BRANCH" --built-docs ./docs/_build/html;
+    fi
 
 after_success:
   - codecov
