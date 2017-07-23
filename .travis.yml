@@ -67,7 +67,7 @@ script:
   - coverage report -m
   - flake8 .
   - conda install --yes sphinx sphinx_rtd_theme
-  - pip install git+git://github.com/xpdAcq/redsky.git
+  - pip install git+git://github.com/drdoctr/doctr.git
   - cd docs
   - make html
   - cd ..
