@@ -49,7 +49,7 @@ before_install:
 
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
-  - conda create --yes -n testenv numpy scipy nose python=$TRAVIS_PYTHON_VERSION scipy jsonschema traitlets pytest coverage pip databroker bluesky ophyd historydict boltons doct pyepics super_state_machine xray-vision lmfit jinja2 icu pyzmq mongoquery mock xlrd scikit-beam codecov flake8 pyFAI doctr sphinx sphinx_rtd_theme graphviz python-graphviz -c conda-forge -c lightsource2-tag -c soft-matter
+  - conda create --yes -n testenv numpy scipy nose python=$TRAVIS_PYTHON_VERSION scipy jsonschema traitlets pytest coverage pip databroker bluesky ophyd historydict boltons doct pyepics super_state_machine xray-vision lmfit jinja2 icu pyzmq mongoquery mock xlrd scikit-beam codecov flake8 pyFAI graphviz python-graphviz -c conda-forge -c lightsource2-tag -c soft-matter
   - source activate testenv
   - 'pip install https://github.com/mrocklin/streams/zipball/master#egg=streams'
   - python setup.py install
@@ -69,6 +69,8 @@ script:
   - cd docs
   - make html
   - cd ..
+  - conda install --yes sphinx sphinx_rtd_theme
+  - pip install git+git://github.com/xpdAcq/redsky.git
   - doctr deploy . --built-docs ./docs/_build/html
 
 after_success:
