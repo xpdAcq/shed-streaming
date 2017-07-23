@@ -66,11 +66,11 @@ script:
   - coverage run run_tests.py
   - coverage report -m
   - flake8 .
+  - conda install --yes sphinx sphinx_rtd_theme
+  - pip install git+git://github.com/xpdAcq/redsky.git
   - cd docs
   - make html
   - cd ..
-  - conda install --yes sphinx sphinx_rtd_theme
-  - pip install git+git://github.com/xpdAcq/redsky.git
   - if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
       doctr deploy . --gh-pages-docs docs --built-docs ./docs/_build/html;
     else
