@@ -527,7 +527,7 @@ class map(EventStream):
         EventStream.__init__(self, child, output_info=output_info,
                              input_info=input_info, **kwargs)
         self.full_event = full_event
-        self.generate_provenance(func)
+        self.generate_provenance(function=func)
 
     def event(self, docs):
         try:
@@ -566,7 +566,7 @@ class filter(EventStream):
 
         EventStream.__init__(self, child, input_info=input_info, **kwargs)
         self.full_event = full_event
-        self.generate_provenance(predicate)
+        self.generate_provenance(predicate=predicate)
 
     def event(self, doc):
         g = self.event_guts(doc, self.full_event)
@@ -619,7 +619,7 @@ class accumulate(EventStream):
         EventStream.__init__(self, child, input_info=input_info,
                              output_info=output_info)
         self.full_event = full_event
-        self.generate_provenance(func)
+        self.generate_provenance(function=func)
 
     def event(self, doc):
         doc = self.event_guts(doc, self.full_event)
