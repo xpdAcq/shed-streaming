@@ -65,8 +65,9 @@ def test_map(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
-    prov = dict(stream_class='map', function_name=add5.__name__,
-                function_module=add5.__module__,
+    prov = dict(stream_class='map',
+                function=dict(function_module=add5.__module__,
+                              function_name=add5.__name__),
                 stream_class_module=es.map.__module__,
                 input_info=ii, output_info=oi)
     assert_docs = set()
@@ -166,8 +167,9 @@ def test_map_full_event(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
-    prov = dict(stream_class='map', function_name=add5.__name__,
-                function_module=add5.__module__,
+    prov = dict(stream_class='map',
+                function=dict(function_module=add5.__module__,
+                              function_name=add5.__name__),
                 stream_class_module=es.map.__module__,
                 input_info=ii, output_info=oi,
                 full_event=True)
@@ -209,8 +211,9 @@ def test_map_stream_input(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
-    prov = dict(stream_class='map', function_name=add5.__name__,
-                function_module=add5.__module__,
+    prov = dict(stream_class='map',
+                function=dict(function_module=add5.__module__,
+                              function_name=add5.__name__),
                 stream_class_module=es.map.__module__,
                 input_info=ii, output_info=oi)
 
