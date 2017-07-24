@@ -10,7 +10,7 @@ from databroker.databroker import DataBroker as db
 from bluesky.callbacks.broker import LiveImage, LiveSliderImage
 from pprint import pprint
 from matplotlib.colors import LogNorm
-
+from itertools import islice
 
 def subs(img1, img2):
     return img1 - img2
@@ -62,6 +62,25 @@ def div(img, count):
     return img / count
 
 
+def query_dark(db, docs):
+    doc = docs[0]
+    return db(uid=doc['sc_dk_field_uid'])
+
+
+def query_background(db, docs):
+    doc = docs[0]
+    return db(sample_name='kapton_film_bkgd',
+              is_dark={'$exists': False})
+
+
+def temporal_prox(res, docs):
+    doc = docs[0]
+    t = doc['time']
+    dt_sq = [(t - r['time'])**2 for r in res]
+    i = dt_sq.index(min(dt_sq))
+    return next(islice(dt_sq, i, i+1))
+
+
 db.add_filter(bt_piLast='Billinge')
 hdrs = db(start_time=1496855060.5545955 - 10000)
 
@@ -71,8 +90,11 @@ fg_uids = [h['start']['uid'] for h in hdrs if
 
 fg_stream = Stream(name='Foreground')
 fg_dark_stream = es.query_unpacker(db, es.query(db, fg_stream,
-                                                query_function=))
-fg_dark_stream = es.EventStream(md={'name': 'Foreground Dark'})
+                                                query_function=query_dark,
+                                                query_decider=temporal_prox,
+                                                name='Query for FG Dark'))
+
+
 
 # Get all the background headers
 bg_uids = [h['start']['uid'] for h in hdrs if
@@ -83,8 +105,6 @@ bg_uids = [h['start']['uid'] for h in hdrs if
 # And the darks
 bg_dark_uids = [db[db[uid]['start']['sc_dk_field_uid']]['start']['uid'] for uid
                 in bg_uids if 'sc_dk_field_uid' in db[uid]['start']]
-fg_dark_uids = [db[db[uid]['start']['sc_dk_field_uid']]['start']['uid'] for uid
-                in fg_uids if 'sc_dk_field_uid' in db[uid]['start']]
 
 bg_uids = list(range(3))
 bg_dark_uids = list(range(3))

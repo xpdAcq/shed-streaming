@@ -304,8 +304,9 @@ class EventStream(Stream):
         self.run_start_uid = str(uuid.uuid4())
         new_start_doc = dict(uid=self.run_start_uid,
                              time=time.time(),
-                             parents=[doc['uid'] for doc in docs],
                              provenance=self.provenance, **self.md)
+        if all(docs):
+            new_start_doc.update(parents=[doc['uid'] for doc in docs])
         self.bypass = False
         return 'start', new_start_doc
 
@@ -822,7 +823,7 @@ class eventify(EventStream):
 
 class query(EventStream):
     def __init__(self, db, child, query_function,
-                 query_decider=lambda x, y: next(iter(x)), **kwargs):
+                 query_decider=None, **kwargs):
         self.db = db
         self.query_function = query_function
         self.query_decider = query_decider
@@ -833,27 +834,34 @@ class query(EventStream):
         self.output_info = [('hdr_uid', {'dtype': 'str', 'source': 'query'})]
 
     def start(self, docs):
+        # XXX: If we don't have a decider we return all the results
         res = self.query_function(self.db, docs)
-        single_hdr = self.query_decider(res, docs)
-        s = single_hdr.stream(fill=True)
-        self.uid = next(iter(s))[1]['uid']
+        if self.query_decider:
+            res = [self.query_decider(res, docs), ]
+        self.uid = [next(iter(r.stream(fill=False)))[1]['uid'] for r in res]
+        self.md.update(n_hdrs=len(self.uid))
         return super().start(docs)
 
-    def event(self, docs):
-        return super().event(self.issue_event(self.uid))
+    def update(self, x, who=None):
+        name, docs = self.curate_streams(x)
+        if name == 'start':
+            el = [self.emit(self.start(docs)),
+                  self.emit(self.descriptor(docs))]
+            if isinstance(self.uid, list):
+                for u in self.uid:
+                    el.append(self.emit(super().event(self.issue_event(u))))
+            el.append(self.emit(self.stop(docs)))
+            return el
 
 
 class query_unpacker(EventStream):
     def __init__(self, db, child, fill=True):
         self.db = db
         EventStream.__init__(self, child)
-        self.seen_event = False
         self.fill = fill
 
     def update(self, x, who=None):
-        if not self.seen_event:
-            name, doc = x
-            if name == 'event':
-                self.seen_event = True
-                return [self.emit(nd) for nd in
-                        self.db[doc['data']['hdr_uid']].stream(fill=self.fill)]
+        name, doc = x
+        if name == 'event':
+            return [self.emit(nd) for nd in
+                    self.db[doc['data']['hdr_uid']].stream(fill=self.fill)]
