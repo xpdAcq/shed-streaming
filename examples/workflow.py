@@ -65,14 +65,20 @@ def div(img, count):
 db.add_filter(bt_piLast='Billinge')
 hdrs = db(start_time=1496855060.5545955 - 10000)
 
-# Get all the relevant headers
+fg_uids = [h['start']['uid'] for h in hdrs if
+           h['start']['sample_name'].startswith(
+               'Alginate') and 'sc_dk_field_uid' in h['start'].keys()][0:1]
+
+fg_stream = Stream(name='Foreground')
+fg_dark_stream = es.query_unpacker(db, es.query(db, fg_stream,
+                                                query_function=))
+fg_dark_stream = es.EventStream(md={'name': 'Foreground Dark'})
+
+# Get all the background headers
 bg_uids = [h['start']['uid'] for h in hdrs if
            h['start'][
                'sample_name'] == 'kapton_film_bkgd' and 'sc_dk_field_uid' in h[
                'start'].keys()]
-fg_uids = [h['start']['uid'] for h in hdrs if
-           h['start']['sample_name'].startswith(
-               'Alginate') and 'sc_dk_field_uid' in h['start'].keys()][0:1]
 
 # And the darks
 bg_dark_uids = [db[db[uid]['start']['sc_dk_field_uid']]['start']['uid'] for uid
