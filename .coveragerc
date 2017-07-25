@@ -1,6 +1,6 @@
 [run]
 source = 
-    redsky
+    shed
 [report]
 omit =
     */python?.?/*

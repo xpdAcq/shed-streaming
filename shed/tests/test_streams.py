@@ -15,7 +15,7 @@
 from numpy.testing import assert_allclose, assert_equal, assert_raises
 from streams.core import Stream
 
-import redsky.event_streams as es
+import shed.event_streams as es
 from ..event_streams import dstar, star
 import pytest
 from bluesky.callbacks.core import CallbackBase

@@ -1,7 +1,7 @@
 from bluesky.callbacks.broker import LiveSliderImage
 from xpdview.callbacks import LiveWaterfall
 from streams.core import Stream
-from redsky.event_streams import star
+from shed.event_streams import star
 import numpy as np
 from uuid import uuid4
 import time

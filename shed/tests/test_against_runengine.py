@@ -1,7 +1,7 @@
 from bluesky.examples import (motor, det, stepscan)
 from bluesky.plans import sleep, pchain
 
-import redsky.event_streams as es
+import shed.event_streams as es
 
 from operator import add
 from numpy.testing import assert_allclose
