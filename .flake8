@@ -6,5 +6,6 @@ exclude =
     old,
     build,
     dist,
-    examples
+    examples,
+    redsky/tests/conftest.py
 ignore = C901
