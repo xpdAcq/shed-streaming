@@ -1,11 +1,11 @@
 # SHED
-[![Build Status](https://travis-ci.org/xpdAcq/shed.svg?branch=master)](https://travis-ci.org/xpdAcq/shed)
-[![codecov](https://codecov.io/gh/xpdAcq/shed/branch/master/graph/badge.svg)](https://codecov.io/gh/xpdAcq/shed)
-[![Code Health](https://landscape.io/github/xpdAcq/shed/master/landscape.svg?style=flat)](https://landscape.io/github/xpdAcq/shed/master)
+[![Build Status](https://travis-ci.org/xpdAcq/SHED.svg?branch=master)](https://travis-ci.org/xpdAcq/SHED)
+[![codecov](https://codecov.io/gh/xpdAcq/SHED/branch/master/graph/badge.svg)](https://codecov.io/gh/xpdAcq/SHED)
+[![Code Health](https://landscape.io/github/xpdAcq/SHED/master/landscape.svg?style=flat)](https://landscape.io/github/xpdAcq/SHED/master)
 
 Streaming Heterogeneous Event Data
 
-<img src="https://github.com/xpdAcq/shed/blob/master/examples/mystream.png" style="width: 400px;"/>
+<img src="https://github.com/xpdAcq/SHED/blob/master/examples/mystream.png" style="width: 400px;"/>
 
 
 ## Current Design/Architecture
