@@ -7,5 +7,5 @@ exclude =
     build,
     dist,
     examples,
-    redsky/tests/conftest.py
+    shed/tests/conftest.py
 ignore = C901

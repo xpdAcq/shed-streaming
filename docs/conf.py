@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# redsky documentation build configuration file, created by
-# sphinx-quickstart on Tue Jul 18 13:05:06 2017.
+# SHED documentation build configuration file, created by
+# sphinx-quickstart on Tue Jul 25 16:31:30 2017.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -19,7 +19,7 @@
 #
 # import os
 # import sys
-# sys.path.insert(0, '/home/christopher/dev/redsky/redsky')
+# sys.path.insert(0, '/home/christopher/dev/SHED/shed')
 
 
 # -- General configuration ------------------------------------------------
@@ -33,7 +33,7 @@
 # ones.
 import sphinx_rtd_theme
 html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
 
 extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon',
     'sphinx.ext.todo',
@@ -55,7 +55,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'redsky'
+project = 'SHED'
 copyright = '2017, Author'
 author = 'Author'
 
@@ -124,7 +124,7 @@ html_sidebars = {
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'redskydoc'
+htmlhelp_basename = 'SHEDdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -151,7 +151,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'redsky.tex', 'redsky Documentation',
+    (master_doc, 'SHED.tex', 'SHED Documentation',
      'Author', 'manual'),
 ]
 
@@ -161,7 +161,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'redsky', 'redsky Documentation',
+    (master_doc, 'shed', 'SHED Documentation',
      [author], 1)
 ]
 
@@ -172,8 +172,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'redsky', 'redsky Documentation',
-     author, 'redsky', 'One line description of project.',
+    (master_doc, 'SHED', 'SHED Documentation',
+     author, 'SHED', 'One line description of project.',
      'Miscellaneous'),
 ]
 

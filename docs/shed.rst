@@ -1,28 +1,28 @@
-redsky package
-==============
+shed package
+============
 
 Subpackages
 -----------
 
 .. toctree::
 
-    redsky.tests
+    shed.tests
 
 Submodules
 ----------
 
-redsky\.event\_streams module
------------------------------
+shed\.event\_streams module
+---------------------------
 
-.. automodule:: redsky.event_streams
+.. automodule:: shed.event_streams
     :members:
     :undoc-members:
     :show-inheritance:
 
-redsky\.unused\_streams module
-------------------------------
+shed\.unused\_streams module
+----------------------------
 
-.. automodule:: redsky.unused_streams
+.. automodule:: shed.unused_streams
     :members:
     :undoc-members:
     :show-inheritance:
@@ -31,7 +31,7 @@ redsky\.unused\_streams module
 Module contents
 ---------------
 
-.. automodule:: redsky
+.. automodule:: shed
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,6 +1,6 @@
 """Example for Max's Alginate data"""
-import redsky.event_streams as es
-from redsky.event_streams import dstar, star
+import shed.event_streams as es
+from shed.event_streams import dstar, star
 from streams.core import Stream
 import numpy as np
 from skbeam.core.accumulators.binned_statistic import BinnedStatistic1D
