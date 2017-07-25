@@ -746,6 +746,37 @@ def test_query_many_headers(exp_db):
         assert n in assert_docs
 
 
+def test_bundle_single_stream(exp_db):
+    source = es.EventStream()
+
+    def qf(db, docs):
+        return db(sc_dk_field_uid={'$exists': True})
+
+    s = [('start', None)]
+
+    dp = es.query(exp_db, source, qf)
+
+    dp2 = es.query_unpacker(exp_db, dp)
+
+    dpf = es.bundle_single_stream(dp2, dp)
+
+    L = dpf.sink_to_list()
+    dpf.sink(print)
+
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    assert len(L) == 3 + 5 + 5 + 2
+    for l in L:
+        assert_docs.add(l[0])
+        assert l[0]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_workflow(exp_db, start_uid1):
     def subs(x1, x2):
         return x1 - x2

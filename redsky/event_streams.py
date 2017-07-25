@@ -18,12 +18,11 @@ import functools as ft
 import time
 import traceback
 import uuid
+from builtins import zip as zzip
 from collections import deque
 
 from streams.core import Stream, no_default
 from tornado.locks import Condition
-from builtins import zip as zzip
-from itertools import islice
 
 
 def star(f):
@@ -328,8 +327,8 @@ class EventStream(Stream):
             if self.run_start_uid is None:
                 raise RuntimeError("Received EventDescriptor before "
                                    "RunStart.")
-            # If we had to describe the output information then we need an all new
-            # descriptor
+            # If we had to describe the output information then we need an
+            # all new descriptor
             self.outbound_descriptor_uid = str(uuid.uuid4())
             new_descriptor = dict(uid=self.outbound_descriptor_uid,
                                   time=time.time(),
@@ -344,8 +343,8 @@ class EventStream(Stream):
 
             else:
                 raise RuntimeError("Descriptor mismatch: "
-                                   "you have tried to combine descriptors with "
-                                   "different data keys")
+                                   "you have tried to combine descriptors "
+                                   "with different data keys")
             self.i = 0
             return 'descriptor', new_descriptor
 
@@ -748,33 +747,25 @@ class bundle_single_stream(EventStream):
             The event streams to be zipped together
         """
         self.maxsize = kwargs.pop('maxsize', 100)
-        self.buffers = {}
+        self.buffers = []
         self.desc_start_map = {}
         self.condition = Condition()
         self.prior = ()
         self.control_stream = control_stream
-        EventStream.__init__(self, children=(child + control_stream))
+        EventStream.__init__(self, children=(child, control_stream))
         self.generate_provenance()
         self.n_hdrs = None
         self.uid = None
 
     def update(self, x, who=None):
         if who == self.control_stream:
-            self.n_hdrs = x[1]['n_hdrs']
+            if x[0] == 'start':
+                self.n_hdrs = x[1]['n_hdrs']
         else:
             if x[0] == 'start':
-                self.buffers[x[1]['uid']] = deque()
-                self.uid = x[1]['uid']
-            elif x[0] == 'descriptor':
-                # change the key to the descriptor 'start_uid' when databroker
-                # stops dereference the data
-                self.desc_start_map[self.uid] = x[1]['uid']
-
-
-        # determine if the document comes from an existing data set or not
-        L = self.buffers[self.children.index(who)]
-        L.append(x)
-        if self.n_hdrs:
+                self.buffers.append(deque())
+            self.buffers[-1].append(x)
+        if len(self.buffers) == self.n_hdrs:
             # if all the docs are of the same type and not an event, issue
             # new documents which are combined
             rvs = []
@@ -805,9 +796,6 @@ class bundle_single_stream(EventStream):
                                        "this error instead")
 
             return rvs
-        elif len(L) > self.maxsize:
-            return self.condition.wait()
-
 
 class combine_latest(EventStream):
     """Combine multiple streams together to a stream of tuples
