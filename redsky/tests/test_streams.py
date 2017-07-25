@@ -703,7 +703,7 @@ def test_query(exp_db, start_uid1):
         assert n in assert_docs
 
 
-def test_query_many_headers(exp_db, start_uid1):
+def test_query_many_headers(exp_db):
     source = es.EventStream()
 
     def qf(db, docs):
@@ -725,6 +725,8 @@ def test_query_many_headers(exp_db, start_uid1):
     assert_docs = set()
     for l in L:
         assert_docs.add(l[0])
+        if l[0] == 'start':
+            assert l[1]['n_hdrs'] == 3
         if l[0] == 'event':
             assert l[1]['data']['hdr_uid'] in list(d['start']['uid'] for d in
                                                    qf(exp_db, 'hi'))

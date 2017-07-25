@@ -736,6 +736,79 @@ class bundle(EventStream):
 union = bundle
 
 
+class bundle_single_stream(EventStream):
+    """Combine multiple headers in a single stream into one"""
+
+    def __init__(self, child, control_stream, **kwargs):
+        """Initialize the Node
+
+        Parameters
+        ----------
+        children: EventStream instances
+            The event streams to be zipped together
+        """
+        self.maxsize = kwargs.pop('maxsize', 100)
+        self.buffers = {}
+        self.desc_start_map = {}
+        self.condition = Condition()
+        self.prior = ()
+        self.control_stream = control_stream
+        EventStream.__init__(self, children=(child + control_stream))
+        self.generate_provenance()
+        self.n_hdrs = None
+        self.uid = None
+
+    def update(self, x, who=None):
+        if who == self.control_stream:
+            self.n_hdrs = x[1]['n_hdrs']
+        else:
+            if x[0] == 'start':
+                self.buffers[x[1]['uid']] = deque()
+                self.uid = x[1]['uid']
+            elif x[0] == 'descriptor':
+                # change the key to the descriptor 'start_uid' when databroker
+                # stops dereference the data
+                self.desc_start_map[self.uid] = x[1]['uid']
+
+
+        # determine if the document comes from an existing data set or not
+        L = self.buffers[self.children.index(who)]
+        L.append(x)
+        if self.n_hdrs:
+            # if all the docs are of the same type and not an event, issue
+            # new documents which are combined
+            rvs = []
+            while all(self.buffers):
+                first_doc_name = self.buffers[0][0][0]
+                if all([b[0][0] == first_doc_name and b[0][0] != 'event'
+                        for b in self.buffers]):
+                    res = self.dispatch(
+                        tuple([b.popleft() for b in self.buffers]))
+                    rvs.append(self.emit(res))
+                elif any([b[0][0] == 'event' for b in self.buffers]):
+                    for b in self.buffers:
+                        while b:
+                            nd_pair = b[0]
+                            # run the buffers down until no events are left
+                            if nd_pair[0] != 'event':
+                                break
+                            else:
+                                nd_pair = b.popleft()
+                                new_nd_pair = super().event(
+                                    self.refresh_event(nd_pair[1]))
+                                rvs.append(self.emit(new_nd_pair))
+
+                else:
+                    raise RuntimeError("There is a mismatch of docs, but none "
+                                       "of them are events so we have reached "
+                                       "a potential deadlock, so we raise "
+                                       "this error instead")
+
+            return rvs
+        elif len(L) > self.maxsize:
+            return self.condition.wait()
+
+
 class combine_latest(EventStream):
     """Combine multiple streams together to a stream of tuples
 
