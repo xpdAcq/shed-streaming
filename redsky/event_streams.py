@@ -50,10 +50,6 @@ def istar(f):
     return wraps
 
 
-class CallStream(Stream):
-    __call__ = Stream.emit
-
-
 class EventStream(Stream):
     """ The EventStream class handles data of the form of an infinite
     sequence of events in the Event Model.

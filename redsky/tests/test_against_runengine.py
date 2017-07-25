@@ -8,18 +8,21 @@ from numpy.testing import assert_allclose
 
 def test_all_add_5(fresh_RE):
     RE = fresh_RE
-    source = es.CallStream()
+    source = es.Stream()
+    source.sink(print)
 
     def add5(img):
         return add(5, img)
 
     dp = es.map(es.dstar(add5), source, input_info={'img': 'det'},
                 output_info=[('det5', {'dtype': 'float', 'source': 'test'})])
+    dp.sink(print)
     L = dp.sink_to_list()
-    s2 = es.CallStream()
+    s2 = es.EventStream()
     L2 = s2.sink_to_list()
-    RE.subscribe('all', es.istar(s2))
-    RE(stepscan(det, motor), subs={'all': es.istar(source)})
+
+    RE.subscribe('all', es.istar(s2.emit))
+    RE(stepscan(det, motor), subs={'all': es.istar(source.emit)})
 
     assert_docs = set()
     for l, s in zip(L, L2):
