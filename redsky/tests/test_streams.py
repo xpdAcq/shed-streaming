@@ -746,6 +746,21 @@ def test_query_many_headers(exp_db):
         assert n in assert_docs
 
 
+@pytest.mark.xfail(raises=RuntimeError)
+def test_query_too_many_headers(exp_db):
+    source = es.EventStream()
+
+    def qf(db, docs):
+        return db(sc_dk_field_uid={'$exists': True})
+
+    s = [('start', None)]
+
+    dp = es.Query(exp_db, source, qf, max_n_hdrs=1)
+
+    for a in s:
+        source.emit(a)
+
+
 def test_bundle_single_stream(exp_db):
     source = es.EventStream()
 
