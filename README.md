@@ -5,7 +5,7 @@
 
 a data processing interface
 
-<img src="https://github.com/xpdAcq/redsky/blob/master/examples/mystream.png" style="width: 200px;"/>
+<img src="https://github.com/xpdAcq/redsky/blob/master/examples/mystream.png" style="width: 400px;"/>
 
 
 ## Current Design/Architecture
