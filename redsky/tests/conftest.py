@@ -21,6 +21,7 @@ import pytest
 from .utils import build_pymongo_backed_broker, insert_imgs
 import tempfile
 from uuid import uuid4
+from bluesky.tests.conftest import fresh_RE
 
 
 @pytest.fixture(scope='module')

@@ -42,6 +42,18 @@ def dstar(f):
     return wraps
 
 
+def istar(f):
+    @ft.wraps(f)
+    def wraps(*args):
+        return f(args)
+
+    return wraps
+
+
+class CallStream(Stream):
+    __call__ = Stream.emit
+
+
 class EventStream(Stream):
     """ The EventStream class handles data of the form of an infinite
     sequence of events in the Event Model.
@@ -482,8 +494,6 @@ class EventStream(Stream):
 
             self.i += 1
             return new_event
-
-    __call__ = emit
 
 
 class map(EventStream):
