@@ -97,20 +97,20 @@ fg_uids = [h['start']['uid'] for h in hdrs if
                'Alginate') and 'sc_dk_field_uid' in h['start'].keys()][0:1]
 
 fg_stream = Stream(name='Foreground')
-fg_dark_stream = es.query_unpacker(db, es.query(db, fg_stream,
-                                                query_function=query_dark,
-                                                query_decider=temporal_prox,
-                                                name='Query for FG Dark'))
+fg_dark_stream = es.QueryUnpacker(db, es.Query(db, fg_stream,
+                                               query_function=query_dark,
+                                               query_decider=temporal_prox,
+                                               name='Query for FG Dark'))
 
-bg_query_stream = es.query(db, fg_stream,
+bg_query_stream = es.Query(db, fg_stream,
                            query_function=query_background,
                            name='Query for Background')
 
-bg_stream = es.query_unpacker(db, bg_query_stream)
-bg_dark_stream = es.query_unpacker(db, es.query(db, bg_stream,
-                                                query_function=query_dark,
-                                                query_decider=temporal_prox,
-                                                name='Query for BG Dark'))
+bg_stream = es.QueryUnpacker(db, bg_query_stream)
+bg_dark_stream = es.QueryUnpacker(db, es.Query(db, bg_stream,
+                                               query_function=query_dark,
+                                               query_decider=temporal_prox,
+                                               name='Query for BG Dark'))
 
 # Perform dark subtraction on everything
 dark_sub_bg = es.map(dstar(subs),

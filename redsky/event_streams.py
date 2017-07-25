@@ -883,9 +883,10 @@ class eventify(EventStream):
         return super().event(self.issue_event(self.val))
 
 
-class query(EventStream):
+class Query(EventStream):
     def __init__(self, db, child, query_function,
-                 query_decider=None, **kwargs):
+                 query_decider=None, max_n_hdrs=10, **kwargs):
+        self.max_n_hdrs = max_n_hdrs
         self.db = db
         self.query_function = query_function
         self.query_decider = query_decider
@@ -901,6 +902,10 @@ class query(EventStream):
         if self.query_decider:
             res = [self.query_decider(res, docs), ]
         self.uid = [next(iter(r.stream(fill=False)))[1]['uid'] for r in res]
+        if len(self.uid) > self.max_n_hdrs:
+            raise RuntimeError("Query returned more headers than the max "
+                               "number of headers, either your query was too "
+                               "broad or you need to up the max_n_hdrs.")
         self.md.update(n_hdrs=len(self.uid))
         return super().start(docs)
 
@@ -916,7 +921,7 @@ class query(EventStream):
             return el
 
 
-class query_unpacker(EventStream):
+class QueryUnpacker(EventStream):
     def __init__(self, db, child, fill=True):
         self.db = db
         EventStream.__init__(self, child)

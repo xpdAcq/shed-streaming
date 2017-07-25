@@ -671,11 +671,11 @@ def test_query(exp_db, start_uid1):
     hdr = exp_db[start_uid1]
     s = hdr.stream()
 
-    dp = es.query(exp_db, source, qf,
+    dp = es.Query(exp_db, source, qf,
                   query_decider=lambda x, y: next(iter(x)))
     L = dp.sink_to_list()
 
-    dp2 = es.query_unpacker(exp_db, dp)
+    dp2 = es.QueryUnpacker(exp_db, dp)
     L2 = dp2.sink_to_list()
 
     for a in s:
@@ -711,10 +711,10 @@ def test_query_many_headers(exp_db):
 
     s = [('start', None)]
 
-    dp = es.query(exp_db, source, qf)
+    dp = es.Query(exp_db, source, qf)
     L = dp.sink_to_list()
 
-    dp2 = es.query_unpacker(exp_db, dp)
+    dp2 = es.QueryUnpacker(exp_db, dp)
     dp2.sink(print)
     L2 = dp2.sink_to_list()
 
@@ -754,9 +754,9 @@ def test_bundle_single_stream(exp_db):
 
     s = [('start', None)]
 
-    dp = es.query(exp_db, source, qf)
+    dp = es.Query(exp_db, source, qf)
 
-    dp2 = es.query_unpacker(exp_db, dp)
+    dp2 = es.QueryUnpacker(exp_db, dp)
 
     dpf = es.bundle_single_stream(dp2, dp)
 
