@@ -719,6 +719,7 @@ class bundle(EventStream):
         elif len(L) > self.maxsize:
             return self.condition.wait()
 
+union = bundle
 
 class combine_latest(EventStream):
     """Combine multiple streams together to a stream of tuples

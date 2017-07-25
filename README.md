@@ -5,6 +5,9 @@
 
 a data processing interface
 
+<img src="https://github.com/xpdAcq/redsky/blob/master/examples/mystream.png" style="width: 200px;"/>
+
+
 ## Current Design/Architecture
 Here are some rough observations/axioms that may prove useful for design and/or
 discussion. (Note that this is restricted to the application of streaming to
