@@ -12,6 +12,7 @@ from pprint import pprint
 from matplotlib.colors import LogNorm
 from itertools import islice
 
+
 def subs(img1, img2):
     return img1 - img2
 
@@ -76,9 +77,16 @@ def query_background(db, docs):
 def temporal_prox(res, docs):
     doc = docs[0]
     t = doc['time']
-    dt_sq = [(t - r['time'])**2 for r in res]
+    dt_sq = [(t - r['time']) ** 2 for r in res]
     i = dt_sq.index(min(dt_sq))
-    return next(islice(dt_sq, i, i+1))
+    return next(islice(dt_sq, i, i + 1))
+
+
+def load_geo(cal_params):
+    from pyFAI.azimuthalIntegrator import AzimuthalIntegrator
+    ai = AzimuthalIntegrator()
+    ai.setPyFAI(**cal_params)
+    return ai
 
 
 db.add_filter(bt_piLast='Billinge')
@@ -94,41 +102,27 @@ fg_dark_stream = es.query_unpacker(db, es.query(db, fg_stream,
                                                 query_decider=temporal_prox,
                                                 name='Query for FG Dark'))
 
+bg_query_stream = es.query(db, fg_stream,
+                           query_function=query_background,
+                           name='Query for Background')
 
-
-# Get all the background headers
-bg_uids = [h['start']['uid'] for h in hdrs if
-           h['start'][
-               'sample_name'] == 'kapton_film_bkgd' and 'sc_dk_field_uid' in h[
-               'start'].keys()]
-
-# And the darks
-bg_dark_uids = [db[db[uid]['start']['sc_dk_field_uid']]['start']['uid'] for uid
-                in bg_uids if 'sc_dk_field_uid' in db[uid]['start']]
-
-bg_uids = list(range(3))
-bg_dark_uids = list(range(3))
-
-# Create streams for all the data sets
-bg_streams = [es.EventStream(
-    md=dict(name='Background {}'.format(i))) for i, uid in enumerate(bg_uids)]
-bg_dark_streams = [es.EventStream(
-    md=dict(name='Background Dark {}'.format(i))) for i, uid in enumerate(bg_dark_uids)]
+bg_stream = es.query_unpacker(db, bg_query_stream)
+bg_dark_stream = es.query_unpacker(db, es.query(db, bg_stream,
+                                                query_function=query_dark,
+                                                query_decider=temporal_prox,
+                                                name='Query for BG Dark'))
 
 # Perform dark subtraction on everything
-dark_sub_bg = [es.map(dstar(subs),
-                      es.zip(bg_stream, bg_dark_stream),
-                      input_info={'img1': 'pe1_image',
-                                  'img2': 'pe1_image'},
-                      output_info=[('img', {'dtype': 'array',
-                                                      'source': 'testing'})])
-               for bg_stream, bg_dark_stream
-               in zip(bg_streams, bg_dark_streams)]
-# [d.sink(pprint) for d in dark_sub_bg]
+dark_sub_bg = es.map(dstar(subs),
+                     es.zip(bg_stream, bg_dark_stream),
+                     input_info={'img1': 'pe1_image',
+                                 'img2': 'pe1_image'},
+                     output_info=[('img', {'dtype': 'array',
+                                           'source': 'testing'})])
+
 # bundle the backgrounds into one stream
-bg_bundle = es.bundle(*dark_sub_bg, name='Background Bundle')
-# bg_bundle.sink(pprint)
-# bg_bundle.sink(star(LiveSliderImage('img', cmap='viridis')))
+bg_bundle = es.bundle_single_stream(dark_sub_bg, bg_query_stream,
+                                    name='Background Bundle')
 
 # sum the backgrounds
 summed_bg = es.accumulate(dstar(add), bg_bundle, start=dstar(pull_array),
@@ -141,6 +135,7 @@ summed_bg = es.accumulate(dstar(add), bg_bundle, start=dstar(pull_array),
 
 def event_count(x):
     return x['count'] + 1
+
 
 count_bg = es.accumulate(event_count, bg_bundle, start=1,
                          state_key='count',
@@ -155,12 +150,6 @@ ave_bg = es.map(dstar(div), es.zip(summed_bg, count_bg),
                     'source': 'testing'})], name='Average Background')
 ave_bg.sink(pprint)
 
-# summed_bg.sink(star(LiveSliderImage('img')))
-# """
-# Create the foreground half
-fg_stream = es.EventStream(md={'name': 'Foreground'})
-fg_dark_stream = es.EventStream(md={'name': 'Foreground Dark'})
-
 dark_sub_fg = es.map(dstar(subs),
                      es.zip(fg_stream,
                             fg_dark_stream),
@@ -169,10 +158,10 @@ dark_sub_fg = es.map(dstar(subs),
                      output_info=[('img', {'dtype': 'array',
                                            'source': 'testing'})],
                      name='Dark Subtracted Foreground')
-# norm_dark_sub_fg.sink(pprint)
+
 # combine the fg with the summed_bg
 fg_bg = es.combine_latest(dark_sub_fg, ave_bg, emit_on=dark_sub_fg)
-# fg_bg.sink(pprint)
+
 # subtract the background images
 fg_sub_bg = es.map(dstar(subs),
                    fg_bg,
@@ -181,13 +170,20 @@ fg_sub_bg = es.map(dstar(subs),
                    output_info=[('img', {'dtype': 'array',
                                          'source': 'testing'})],
                    name='Background Corrected Foreground')
-fg_sub_bg.sink(pprint)
-# fg_sub_bg.sink(star(LiveSliderImage('img')))
 """
 # """
 # """
 # make/get calibration stream
-cal_stream = es.EventStream(md=dict(name='Calibration'))
+cal_md_stream = es.eventify(fg_stream, start_key='calibration_md',
+                            output_info=[('calibration_md',
+                                          {'dtype': 'dict',
+                                           'source': 'workflow'})],
+                            md=dict(name='Calibration'))
+
+cal_stream = es.map(load_geo, cal_md_stream,
+                    input_info={'cal_params': 'calibration_md'},
+                    output_info=[('geo',
+                                  {'dtype': 'object', 'source': 'workflow'})])
 
 # polarization correction
 pfactor = .87
@@ -207,7 +203,8 @@ mask_stream = es.map(dstar(better_mask_img),
                      input_info={'img': 'img',
                                  'geo': 'geo'},
                      output_info=[('mask', {'dtype': 'array',
-                                            'source': 'testing'})], **mask_kwargs)
+                                            'source': 'testing'})],
+                     **mask_kwargs)
 
 # generate binner stream
 binner_stream = es.map(dstar(generate_binner),

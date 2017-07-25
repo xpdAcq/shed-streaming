@@ -857,7 +857,8 @@ class eventify(EventStream):
     """Generate events from data in starts"""
 
     def __init__(self, child, start_key, *, output_info, **kwargs):
-        """Initialize the node
+        """
+        Initialize the node
 
         Parameters
         ----------
