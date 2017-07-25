@@ -26,6 +26,7 @@ from tornado.locks import Condition
 
 
 def star(f):
+    """Take tuple and unpack it into args"""
     @ft.wraps(f)
     def wraps(args):
         return f(*args)
@@ -34,6 +35,7 @@ def star(f):
 
 
 def dstar(f):
+    """Take dict and **kwargs and unpack both it as **kwargs"""
     @ft.wraps(f)
     def wraps(kwargs1, **kwargs2):
         kwargs1.update(kwargs2)
@@ -43,6 +45,7 @@ def dstar(f):
 
 
 def istar(f):
+    """Inverse of star, take *args and turn into tuple"""
     @ft.wraps(f)
     def wraps(*args):
         return f(args)
@@ -676,7 +679,7 @@ class zip(EventStream):
             return self.condition.wait()
 
 
-class bundle(EventStream):
+class Bundle(EventStream):
     """Combine multiple event streams into one"""
 
     def __init__(self, *children, **kwargs):
@@ -732,10 +735,10 @@ class bundle(EventStream):
             return self.condition.wait()
 
 
-union = bundle
+union = Bundle
 
 
-class bundle_single_stream(EventStream):
+class BundleSingleStream(EventStream):
     """Combine multiple headers in a single stream into one"""
 
     def __init__(self, child, control_stream, **kwargs):
@@ -797,6 +800,7 @@ class bundle_single_stream(EventStream):
 
             return rvs
 
+
 class combine_latest(EventStream):
     """Combine multiple streams together to a stream of tuples
 
@@ -853,7 +857,7 @@ class combine_latest(EventStream):
                 return self.emit(tup)
 
 
-class eventify(EventStream):
+class Eventify(EventStream):
     """Generate events from data in starts"""
 
     def __init__(self, child, start_key, *, output_info, **kwargs):

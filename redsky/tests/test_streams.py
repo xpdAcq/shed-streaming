@@ -587,7 +587,7 @@ def test_bundle(exp_db, start_uid1, start_uid3):
     source = Stream()
     source2 = Stream()
 
-    s = es.bundle(source, source2)
+    s = es.Bundle(source, source2)
     s.sink(star(SinkAssertion(False)))
     L = s.sink_to_list()
 
@@ -639,7 +639,7 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
 def test_eventify(exp_db, start_uid1):
     source = Stream()
 
-    dp = es.eventify(source, 'name',
+    dp = es.Eventify(source, 'name',
                      output_info=[('name', {
                          'dtype': 'str',
                          'source': 'testing'})])
@@ -773,7 +773,7 @@ def test_bundle_single_stream(exp_db):
 
     dp2 = es.QueryUnpacker(exp_db, dp)
 
-    dpf = es.bundle_single_stream(dp2, dp)
+    dpf = es.BundleSingleStream(dp2, dp)
 
     L = dpf.sink_to_list()
     dpf.sink(print)

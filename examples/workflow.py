@@ -121,8 +121,8 @@ dark_sub_bg = es.map(dstar(subs),
                                            'source': 'testing'})])
 
 # bundle the backgrounds into one stream
-bg_bundle = es.bundle_single_stream(dark_sub_bg, bg_query_stream,
-                                    name='Background Bundle')
+bg_bundle = es.BundleSingleStream(dark_sub_bg, bg_query_stream,
+                                  name='Background Bundle')
 
 # sum the backgrounds
 summed_bg = es.accumulate(dstar(add), bg_bundle, start=dstar(pull_array),
@@ -174,7 +174,7 @@ fg_sub_bg = es.map(dstar(subs),
 # """
 # """
 # make/get calibration stream
-cal_md_stream = es.eventify(fg_stream, start_key='calibration_md',
+cal_md_stream = es.Eventify(fg_stream, start_key='calibration_md',
                             output_info=[('calibration_md',
                                           {'dtype': 'dict',
                                            'source': 'workflow'})],
