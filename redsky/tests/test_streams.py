@@ -12,7 +12,7 @@
 # See LICENSE.txt for license information.
 #
 ##############################################################################
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal, assert_raises
 from streams.core import Stream
 
 import redsky.event_streams as es
@@ -140,7 +140,7 @@ def test_map_two_runs(exp_db, start_uid1):
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
         assert l[1] != s[1]
-        assert l[1] != ll[1]
+        assert_raises(AssertionError, assert_equal, l[1], ll[1])
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
 
