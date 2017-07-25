@@ -1,5 +1,5 @@
 from bluesky.examples import (motor, det, stepscan)
-from bluesky.plans import scan, sleep, pchain
+from bluesky.plans import sleep, pchain
 
 import redsky.event_streams as es
 
