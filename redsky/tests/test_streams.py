@@ -65,8 +65,9 @@ def test_map(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
-    prov = dict(stream_class='map', function_name=add5.__name__,
-                function_module=add5.__module__,
+    prov = dict(stream_class='map',
+                function=dict(function_module=add5.__module__,
+                              function_name=add5.__name__),
                 stream_class_module=es.map.__module__,
                 input_info=ii, output_info=oi)
     assert_docs = set()
@@ -104,8 +105,9 @@ def test_map_two_runs(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
-    prov = dict(stream_class='map', function_name=add5.__name__,
-                function_module=add5.__module__,
+    prov = dict(stream_class='map',
+                function=dict(function_module=add5.__module__,
+                              function_name=add5.__name__),
                 stream_class_module=es.map.__module__,
                 input_info=ii, output_info=oi)
     assert_docs = set()
@@ -166,8 +168,9 @@ def test_map_full_event(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
-    prov = dict(stream_class='map', function_name=add5.__name__,
-                function_module=add5.__module__,
+    prov = dict(stream_class='map',
+                function=dict(function_module=add5.__module__,
+                              function_name=add5.__name__),
                 stream_class_module=es.map.__module__,
                 input_info=ii, output_info=oi,
                 full_event=True)
@@ -209,8 +212,9 @@ def test_map_stream_input(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
-    prov = dict(stream_class='map', function_name=add5.__name__,
-                function_module=add5.__module__,
+    prov = dict(stream_class='map',
+                function=dict(function_module=add5.__module__,
+                              function_name=add5.__name__),
                 stream_class_module=es.map.__module__,
                 input_info=ii, output_info=oi)
 
@@ -584,7 +588,7 @@ def test_bundle(exp_db, start_uid1, start_uid3):
     source = Stream()
     source2 = Stream()
 
-    s = es.bundle(source, source2)
+    s = es.Bundle(source, source2)
     s.sink(star(SinkAssertion(False)))
     L = s.sink_to_list()
 
@@ -636,14 +640,47 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
 def test_eventify(exp_db, start_uid1):
     source = Stream()
 
-    dp = es.eventify(source, 'name',
+    dp = es.Eventify(source, 'name',
                      output_info=[('name', {
                          'dtype': 'str',
                          'source': 'testing'})])
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert len(L) == 4
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert l[1]['data']['name'] == 'test'
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_query(exp_db, start_uid1):
+    source = es.EventStream()
+
+    def qf(db, docs):
+        return db(uid=docs[0]['uid'])
+
+    hdr = exp_db[start_uid1]
+    s = hdr.stream()
+
+    dp = es.Query(exp_db, source, qf,
+                  query_decider=lambda x, y: next(iter(x)))
+    L = dp.sink_to_list()
+
+    dp2 = es.QueryUnpacker(exp_db, dp)
+    L2 = dp2.sink_to_list()
+
     for a in s:
         source.emit(a)
 
@@ -651,7 +688,107 @@ def test_eventify(exp_db, start_uid1):
     for l in L:
         assert_docs.add(l[0])
         if l[0] == 'event':
-            assert l[1]['data']['name'] == 'test'
+            assert l[1]['data']['hdr_uid'] == start_uid1
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    assert_docs = set()
+    for l, ll in zip(L2, hdr.stream()):
+        assert_docs.add(l[0])
+        assert l[0] == ll[0]
+        if l[0] is 'start':
+            assert l[1] == ll[1]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_query_many_headers(exp_db):
+    source = es.EventStream()
+
+    def qf(db, docs):
+        return db(sc_dk_field_uid={'$exists': True})
+
+    s = [('start', None)]
+
+    dp = es.Query(exp_db, source, qf)
+    L = dp.sink_to_list()
+
+    dp2 = es.QueryUnpacker(exp_db, dp)
+    dp2.sink(print)
+    L2 = dp2.sink_to_list()
+
+    for a in s:
+        source.emit(a)
+
+    assert len(L) == 6
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'start':
+            assert l[1]['n_hdrs'] == 3
+        if l[0] == 'event':
+            assert l[1]['data']['hdr_uid'] in list(d['start']['uid'] for d in
+                                                   qf(exp_db, 'hi'))
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    assert_docs = set()
+    assert len(L2) == 3 * 3 + 5 + 5 + 2
+    for l in L2:
+        assert_docs.add(l[0])
+        assert l[0]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+@pytest.mark.xfail(raises=RuntimeError)
+def test_query_too_many_headers(exp_db):
+    source = es.EventStream()
+
+    def qf(db, docs):
+        return db(sc_dk_field_uid={'$exists': True})
+
+    s = [('start', None)]
+
+    es.Query(exp_db, source, qf, max_n_hdrs=1)
+
+    for a in s:
+        source.emit(a)
+
+
+def test_bundle_single_stream(exp_db):
+    source = es.EventStream()
+
+    def qf(db, docs):
+        return db(sc_dk_field_uid={'$exists': True})
+
+    s = [('start', None)]
+
+    dp = es.Query(exp_db, source, qf)
+
+    dp2 = es.QueryUnpacker(exp_db, dp)
+
+    dpf = es.BundleSingleStream(dp2, dp)
+
+    L = dpf.sink_to_list()
+    dpf.sink(print)
+
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    assert len(L) == 3 + 5 + 5 + 2
+    for l in L:
+        assert_docs.add(l[0])
+        assert l[0]
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
     for n in ['start', 'descriptor', 'event', 'stop']:

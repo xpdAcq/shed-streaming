@@ -18,14 +18,15 @@ import functools as ft
 import time
 import traceback
 import uuid
+from builtins import zip as zzip
 from collections import deque
 
 from streams.core import Stream, no_default
 from tornado.locks import Condition
-from builtins import zip as zzip
 
 
 def star(f):
+    """Take tuple and unpack it into args"""
     @ft.wraps(f)
     def wraps(args):
         return f(*args)
@@ -34,6 +35,7 @@ def star(f):
 
 
 def dstar(f):
+    """Take dict and **kwargs and unpack both it as **kwargs"""
     @ft.wraps(f)
     def wraps(kwargs1, **kwargs2):
         kwargs1.update(kwargs2)
@@ -43,6 +45,7 @@ def dstar(f):
 
 
 def istar(f):
+    """Inverse of star, take *args and turn into tuple"""
     @ft.wraps(f)
     def wraps(*args):
         return f(args)
@@ -160,7 +163,7 @@ class EventStream(Stream):
         self.i = None
         self.run_start_uid = None
         self.provenance = {}
-        self.event_failed = False
+        self.bypass = False
         self.excep = None
 
         # If the stream number is not specified its zero
@@ -254,7 +257,7 @@ class EventStream(Stream):
             docs = (docs,)
         return name, docs
 
-    def generate_provenance(self, func=None):
+    def generate_provenance(self, **kwargs):
         """Generate provenance information about the stream function
 
         Parameters
@@ -274,13 +277,16 @@ class EventStream(Stream):
         if self.output_info:
             d.update(output_info=self.output_info)
         # TODO: support partials?
-        if func:
-            d.update(function_module=func.__module__,
-                     # this line gets more complex with classes
-                     function_name=func.__name__, )
+        d.update(**kwargs)
+        for k, func in d.items():
+            if callable(func):
+                d[k] = dict(function_module=func.__module__,
+                            # this line gets more complex with classes
+                            function_name=func.__name__, )
         full_event = getattr(self, 'full_event', None)
         if full_event:
             d.update(full_event=full_event)
+
         self.provenance = d
 
     def start(self, docs):
@@ -300,8 +306,10 @@ class EventStream(Stream):
         self.run_start_uid = str(uuid.uuid4())
         new_start_doc = dict(uid=self.run_start_uid,
                              time=time.time(),
-                             parents=[doc['uid'] for doc in docs],
                              provenance=self.provenance, **self.md)
+        if all(docs):
+            new_start_doc.update(parents=[doc['uid'] for doc in docs])
+        self.bypass = False
         return 'start', new_start_doc
 
     def descriptor(self, docs):
@@ -318,29 +326,30 @@ class EventStream(Stream):
         doc: dict
             The document
         """
-        if self.run_start_uid is None:
-            raise RuntimeError("Received EventDescriptor before "
-                               "RunStart.")
-        # If we had to describe the output information then we need an all new
-        # descriptor
-        self.outbound_descriptor_uid = str(uuid.uuid4())
-        new_descriptor = dict(uid=self.outbound_descriptor_uid,
-                              time=time.time(),
-                              run_start=self.run_start_uid)
-        if self.output_info:
-            new_descriptor.update(
-                data_keys={k: v for k, v in self.output_info})
+        if not self.bypass:
+            if self.run_start_uid is None:
+                raise RuntimeError("Received EventDescriptor before "
+                                   "RunStart.")
+            # If we had to describe the output information then we need an
+            # all new descriptor
+            self.outbound_descriptor_uid = str(uuid.uuid4())
+            new_descriptor = dict(uid=self.outbound_descriptor_uid,
+                                  time=time.time(),
+                                  run_start=self.run_start_uid)
+            if self.output_info:
+                new_descriptor.update(
+                    data_keys={k: v for k, v in self.output_info})
 
-        # no truly new data needed
-        elif all(d['data_keys'] == docs[0]['data_keys'] for d in docs):
-            new_descriptor.update(data_keys=docs[0]['data_keys'])
+            # no truly new data needed
+            elif all(d['data_keys'] == docs[0]['data_keys'] for d in docs):
+                new_descriptor.update(data_keys=docs[0]['data_keys'])
 
-        else:
-            raise RuntimeError("Descriptor mismatch: "
-                               "you have tried to combine descriptors with "
-                               "different data keys")
-        self.i = 0
-        return 'descriptor', new_descriptor
+            else:
+                raise RuntimeError("Descriptor mismatch: "
+                                   "you have tried to combine descriptors "
+                                   "with different data keys")
+            self.i = 0
+            return 'descriptor', new_descriptor
 
     def event(self, docs):
         """
@@ -356,7 +365,7 @@ class EventStream(Stream):
         doc: dict
             The document
         """
-        if not self.event_failed:
+        if not self.bypass:
             return 'event', docs
 
     def stop(self, docs):
@@ -374,14 +383,14 @@ class EventStream(Stream):
         doc: dict
             The document
         """
-        if not self.event_failed:
+        if not self.bypass:
             if self.run_start_uid is None:
                 raise RuntimeError("Received RunStop before RunStart.")
             new_stop = dict(uid=str(uuid.uuid4()),
                             time=time.time(),
                             run_start=self.run_start_uid)
             if isinstance(docs, Exception):
-                self.event_failed = True
+                self.bypass = True
                 new_stop.update(reason=repr(docs),
                                 trace=traceback.format_exc(),
                                 exit_status='failure')
@@ -437,7 +446,7 @@ class EventStream(Stream):
         If the outputs of the function is an exception no event will be
         created, but a stop document will be issued.
         """
-        if not self.event_failed:
+        if not self.bypass:
             if self.run_start_uid is None:
                 raise RuntimeError("Received Event before RunStart.")
             if isinstance(outputs, Exception):
@@ -476,7 +485,7 @@ class EventStream(Stream):
         new_event: dict
             A new event with the same core data
         """
-        if not self.event_failed:
+        if not self.bypass:
             if self.run_start_uid is None:
                 raise RuntimeError("Received Event before RunStart.")
             if isinstance(event, Exception):
@@ -521,7 +530,7 @@ class map(EventStream):
         EventStream.__init__(self, child, output_info=output_info,
                              input_info=input_info, **kwargs)
         self.full_event = full_event
-        self.generate_provenance(func)
+        self.generate_provenance(function=func)
 
     def event(self, docs):
         try:
@@ -560,7 +569,7 @@ class filter(EventStream):
 
         EventStream.__init__(self, child, input_info=input_info, **kwargs)
         self.full_event = full_event
-        self.generate_provenance(predicate)
+        self.generate_provenance(predicate=predicate)
 
     def event(self, doc):
         g = self.event_guts(doc, self.full_event)
@@ -613,7 +622,7 @@ class accumulate(EventStream):
         EventStream.__init__(self, child, input_info=input_info,
                              output_info=output_info)
         self.full_event = full_event
-        self.generate_provenance(func)
+        self.generate_provenance(function=func)
 
     def event(self, doc):
         doc = self.event_guts(doc, self.full_event)
@@ -670,7 +679,7 @@ class zip(EventStream):
             return self.condition.wait()
 
 
-class bundle(EventStream):
+class Bundle(EventStream):
     """Combine multiple event streams into one"""
 
     def __init__(self, *children, **kwargs):
@@ -726,7 +735,70 @@ class bundle(EventStream):
             return self.condition.wait()
 
 
-union = bundle
+union = Bundle
+
+
+class BundleSingleStream(EventStream):
+    """Combine multiple headers in a single stream into one"""
+
+    def __init__(self, child, control_stream, **kwargs):
+        """Initialize the Node
+
+        Parameters
+        ----------
+        children: EventStream instances
+            The event streams to be zipped together
+        """
+        self.maxsize = kwargs.pop('maxsize', 100)
+        self.buffers = []
+        self.desc_start_map = {}
+        self.condition = Condition()
+        self.prior = ()
+        self.control_stream = control_stream
+        EventStream.__init__(self, children=(child, control_stream))
+        self.generate_provenance()
+        self.n_hdrs = None
+        self.uid = None
+
+    def update(self, x, who=None):
+        if who == self.control_stream:
+            if x[0] == 'start':
+                self.n_hdrs = x[1]['n_hdrs']
+        else:
+            if x[0] == 'start':
+                self.buffers.append(deque())
+            self.buffers[-1].append(x)
+        if len(self.buffers) == self.n_hdrs:
+            # if all the docs are of the same type and not an event, issue
+            # new documents which are combined
+            rvs = []
+            while all(self.buffers):
+                first_doc_name = self.buffers[0][0][0]
+                if all([b[0][0] == first_doc_name and b[0][0] != 'event'
+                        for b in self.buffers]):
+                    res = self.dispatch(
+                        tuple([b.popleft() for b in self.buffers]))
+                    rvs.append(self.emit(res))
+                elif any([b[0][0] == 'event' for b in self.buffers]):
+                    for b in self.buffers:
+                        while b:
+                            nd_pair = b[0]
+                            # run the buffers down until no events are left
+                            if nd_pair[0] != 'event':
+                                break
+                            else:
+                                nd_pair = b.popleft()
+                                new_nd_pair = super().event(
+                                    self.refresh_event(nd_pair[1]))
+                                rvs.append(self.emit(new_nd_pair))
+
+                else:
+                    raise RuntimeError("There is a mismatch of docs, but none "
+                                       "of them are events so we have reached "
+                                       "a potential deadlock, so we raise "
+                                       "this error instead")
+
+            return rvs
 
 
 class combine_latest(EventStream):
@@ -785,11 +857,12 @@ class combine_latest(EventStream):
                 return self.emit(tup)
 
 
-class eventify(EventStream):
+class Eventify(EventStream):
     """Generate events from data in starts"""
 
     def __init__(self, child, start_key, *, output_info, **kwargs):
-        """Initialize the node
+        """
+        Initialize the node
 
         Parameters
         ----------
@@ -803,6 +876,7 @@ class eventify(EventStream):
         # TODO: maybe allow start_key to be a list of relevent keys?
         self.start_key = start_key
         self.val = None
+        self.emit_event = False
 
         EventStream.__init__(self, child, output_info=output_info, **kwargs)
 
@@ -811,4 +885,57 @@ class eventify(EventStream):
         return super().start(docs)
 
     def event(self, docs):
-        return super().event(self.issue_event(self.val))
+        if not self.emit_event:
+            self.emit_event = True
+            return super().event(self.issue_event(self.val))
+
+
+class Query(EventStream):
+    def __init__(self, db, child, query_function,
+                 query_decider=None, max_n_hdrs=10, **kwargs):
+        self.max_n_hdrs = max_n_hdrs
+        self.db = db
+        self.query_function = query_function
+        self.query_decider = query_decider
+        EventStream.__init__(self, child, **kwargs)
+        self.generate_provenance(query_function=query_function,
+                                 query_decider=query_decider)
+        self.uid = None
+        self.output_info = [('hdr_uid', {'dtype': 'str', 'source': 'query'})]
+
+    def start(self, docs):
+        # XXX: If we don't have a decider we return all the results
+        res = self.query_function(self.db, docs)
+        if self.query_decider:
+            res = [self.query_decider(res, docs), ]
+        self.uid = [next(iter(r.stream(fill=False)))[1]['uid'] for r in res]
+        if len(self.uid) > self.max_n_hdrs:
+            raise RuntimeError("Query returned more headers than the max "
+                               "number of headers, either your query was too "
+                               "broad or you need to up the max_n_hdrs.")
+        self.md.update(n_hdrs=len(self.uid))
+        return super().start(docs)
+
+    def update(self, x, who=None):
+        name, docs = self.curate_streams(x)
+        if name == 'start':
+            el = [self.emit(self.start(docs)),
+                  self.emit(self.descriptor(docs))]
+            if isinstance(self.uid, list):
+                for u in self.uid:
+                    el.append(self.emit(super().event(self.issue_event(u))))
+            el.append(self.emit(self.stop(docs)))
+            return el
+
+
+class QueryUnpacker(EventStream):
+    def __init__(self, db, child, fill=True):
+        self.db = db
+        EventStream.__init__(self, child)
+        self.fill = fill
+
+    def update(self, x, who=None):
+        name, doc = x
+        if name == 'event':
+            return [self.emit(nd) for nd in
+                    self.db[doc['data']['hdr_uid']].stream(fill=self.fill)]
