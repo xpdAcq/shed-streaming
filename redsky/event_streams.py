@@ -42,6 +42,14 @@ def dstar(f):
     return wraps
 
 
+def istar(f):
+    @ft.wraps(f)
+    def wraps(*args):
+        return f(args)
+
+    return wraps
+
+
 class EventStream(Stream):
     """ The EventStream class handles data of the form of an infinite
     sequence of events in the Event Model.
@@ -483,8 +491,6 @@ class EventStream(Stream):
             self.i += 1
             return new_event
 
-    __call__ = emit
-
 
 class map(EventStream):
     """Apply a function onto every event in the stream"""
@@ -718,6 +724,9 @@ class bundle(EventStream):
             return rvs
         elif len(L) > self.maxsize:
             return self.condition.wait()
+
+
+union = bundle
 
 
 class combine_latest(EventStream):
