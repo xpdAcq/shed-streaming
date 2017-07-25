@@ -196,6 +196,14 @@
     <span class="k">return</span> <span class="n">wraps</span></div>
 
 
+<div class="viewcode-block" id="istar"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.istar">[docs]</a><span class="k">def</span> <span class="nf">istar</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="nd">@ft</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wraps</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wraps</span></div>
+
+
 <div class="viewcode-block" id="EventStream"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.EventStream">[docs]</a><span class="k">class</span> <span class="nc">EventStream</span><span class="p">(</span><span class="n">Stream</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; The EventStream class handles data of the form of an infinite</span>
 <span class="sd">    sequence of events in the Event Model.</span>
@@ -635,9 +643,7 @@
                                   <span class="n">seq_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">))</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">return</span> <span class="n">new_event</span></div>
-
-    <span class="fm">__call__</span> <span class="o">=</span> <span class="n">emit</span></div>
+            <span class="k">return</span> <span class="n">new_event</span></div></div>
 
 
 <div class="viewcode-block" id="map"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.map">[docs]</a><span class="k">class</span> <span class="nc">map</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -872,6 +878,9 @@
             <span class="k">return</span> <span class="n">rvs</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span></div></div>
+
+
+<span class="n">union</span> <span class="o">=</span> <span class="n">bundle</span>
 
 
 <div class="viewcode-block" id="combine_latest"><a class="viewcode-back" href="../../redsky.html#redsky.event_streams.combine_latest">[docs]</a><span class="k">class</span> <span class="nc">combine_latest</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>

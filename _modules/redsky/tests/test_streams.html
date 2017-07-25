@@ -199,20 +199,6 @@
             <span class="k">assert</span> <span class="ow">not</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;reason&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div></div>
 
 
-<div class="viewcode-block" id="test_call"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_call">[docs]</a><span class="k">def</span> <span class="nf">test_call</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
-    <span class="n">source</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">EventStream</span><span class="p">()</span>
-
-    <span class="n">L</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
-
-    <span class="n">ih1</span> <span class="o">=</span> <span class="n">exp_db</span><span class="p">[</span><span class="n">start_uid1</span><span class="p">]</span>
-    <span class="n">s</span> <span class="o">=</span> <span class="n">exp_db</span><span class="o">.</span><span class="n">restream</span><span class="p">(</span><span class="n">ih1</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
-        <span class="n">source</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">exp_db</span><span class="o">.</span><span class="n">restream</span><span class="p">(</span><span class="n">ih1</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
-        <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
-
-
 <div class="viewcode-block" id="test_map"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_map">[docs]</a><span class="k">def</span> <span class="nf">test_map</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
