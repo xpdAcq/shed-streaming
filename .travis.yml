@@ -65,11 +65,7 @@ script:
   - cd docs
   - make html
   - cd ..
-  - if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
-      doctr deploy . --built-docs ./docs/_build/html;
-    else
-      doctr deploy . --no-require-master --built-docs ./docs/_build/html;
-    fi
+  - doctr deploy . --built-docs ./docs/_build/html;
 
 after_success:
   - codecov
