@@ -758,7 +758,7 @@ def test_query_too_many_headers(exp_db):
 
     s = [('start', None)]
 
-    dp = es.Query(exp_db, source, qf, max_n_hdrs=1)
+    es.Query(exp_db, source, qf, max_n_hdrs=1)
 
     for a in s:
         source.emit(a)
