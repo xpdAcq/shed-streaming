@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>redsky.tests.conftest &mdash; redsky  documentation</title>
+  <title>shed.tests.conftest &mdash; SHED  documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="redsky  documentation" href="../../../index.html"/>
+    <link rel="top" title="SHED  documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -55,7 +55,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> redsky
+            <a href="../../../index.html" class="icon icon-home"> SHED
           
 
           
@@ -87,7 +87,7 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../redsky.html">redsky package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../shed.html">shed package</a></li>
 </ul>
 
             
@@ -102,7 +102,7 @@
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">redsky</a>
+          <a href="../../../index.html">SHED</a>
         
       </nav>
 
@@ -134,7 +134,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>redsky.tests.conftest</li>
+      <li>shed.tests.conftest</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -151,7 +151,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for redsky.tests.conftest</h1><div class="highlight"><pre>
+  <h1>Source code for shed.tests.conftest</h1><div class="highlight"><pre>
 <span></span><span class="c1">##############################################################################</span>
 <span class="c1">#</span>
 <span class="c1"># xpdan            by Billinge Group</span>
@@ -178,28 +178,28 @@
 <span class="kn">from</span> <span class="nn">bluesky.tests.conftest</span> <span class="k">import</span> <span class="n">fresh_RE</span>
 
 
-<div class="viewcode-block" id="start_uid1"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.conftest.start_uid1">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="start_uid1"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.start_uid1">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">start_uid1</span><span class="p">():</span>
     <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="start_uid2"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.conftest.start_uid2">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="start_uid2"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.start_uid2">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">start_uid2</span><span class="p">():</span>
     <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="start_uid3"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.conftest.start_uid3">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="start_uid3"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.start_uid3">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">start_uid3</span><span class="p">():</span>
     <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="img_size"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.conftest.img_size">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="img_size"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.img_size">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">img_size</span><span class="p">():</span>
     <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
     <span class="k">yield</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="db"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.conftest.db">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="p">[</span>
+<div class="viewcode-block" id="db"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.db">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="p">[</span>
     <span class="c1"># &#39;sqlite&#39;,</span>
     <span class="s1">&#39;mongo&#39;</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">db</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
@@ -210,7 +210,7 @@
     <span class="k">return</span> <span class="n">param_map</span><span class="p">[</span><span class="n">request</span><span class="o">.</span><span class="n">param</span><span class="p">](</span><span class="n">request</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="exp_db"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.conftest.exp_db">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="exp_db"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.exp_db">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">exp_db</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">,</span> <span class="n">start_uid2</span><span class="p">,</span> <span class="n">start_uid3</span><span class="p">):</span>
     <span class="n">db2</span> <span class="o">=</span> <span class="n">db</span>
     <span class="n">mds</span> <span class="o">=</span> <span class="n">db2</span><span class="o">.</span><span class="n">mds</span>
@@ -225,7 +225,7 @@
     <span class="n">fs</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">drop_database</span><span class="p">(</span><span class="n">fs</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">])</span></div>
 
 
-<div class="viewcode-block" id="tmp_dir"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.conftest.tmp_dir">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="tmp_dir"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.tmp_dir">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">tmp_dir</span><span class="p">():</span>
     <span class="n">td</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
     <span class="k">yield</span> <span class="n">td</span>

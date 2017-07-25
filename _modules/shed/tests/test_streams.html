@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>redsky.tests.test_streams &mdash; redsky  documentation</title>
+  <title>shed.tests.test_streams &mdash; SHED  documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="redsky  documentation" href="../../../index.html"/>
+    <link rel="top" title="SHED  documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -55,7 +55,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> redsky
+            <a href="../../../index.html" class="icon icon-home"> SHED
           
 
           
@@ -87,7 +87,7 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../redsky.html">redsky package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../shed.html">shed package</a></li>
 </ul>
 
             
@@ -102,7 +102,7 @@
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">redsky</a>
+          <a href="../../../index.html">SHED</a>
         
       </nav>
 
@@ -134,7 +134,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>redsky.tests.test_streams</li>
+      <li>shed.tests.test_streams</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -151,7 +151,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for redsky.tests.test_streams</h1><div class="highlight"><pre>
+  <h1>Source code for shed.tests.test_streams</h1><div class="highlight"><pre>
 <span></span><span class="c1">##############################################################################</span>
 <span class="c1">#</span>
 <span class="c1"># xpdan            by Billinge Group</span>
@@ -169,13 +169,13 @@
 <span class="kn">from</span> <span class="nn">numpy.testing</span> <span class="k">import</span> <span class="n">assert_allclose</span><span class="p">,</span> <span class="n">assert_equal</span><span class="p">,</span> <span class="n">assert_raises</span>
 <span class="kn">from</span> <span class="nn">streams.core</span> <span class="k">import</span> <span class="n">Stream</span>
 
-<span class="kn">import</span> <span class="nn">redsky.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
+<span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="kn">from</span> <span class="nn">..event_streams</span> <span class="k">import</span> <span class="n">dstar</span><span class="p">,</span> <span class="n">star</span>
 <span class="kn">import</span> <span class="nn">pytest</span>
 <span class="kn">from</span> <span class="nn">bluesky.callbacks.core</span> <span class="k">import</span> <span class="n">CallbackBase</span>
 
 
-<div class="viewcode-block" id="SinkAssertion"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.SinkAssertion">[docs]</a><span class="k">class</span> <span class="nc">SinkAssertion</span><span class="p">(</span><span class="n">CallbackBase</span><span class="p">):</span>
+<div class="viewcode-block" id="SinkAssertion"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.SinkAssertion">[docs]</a><span class="k">class</span> <span class="nc">SinkAssertion</span><span class="p">(</span><span class="n">CallbackBase</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fail</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fail</span> <span class="o">=</span> <span class="n">fail</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">docs</span> <span class="o">=</span> <span class="p">[]</span>
@@ -189,7 +189,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">docs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)(</span><span class="n">doc</span><span class="p">)</span>
 
-<div class="viewcode-block" id="SinkAssertion.stop"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.SinkAssertion.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">):</span>
+<div class="viewcode-block" id="SinkAssertion.stop"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.SinkAssertion.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">):</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_docs</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">docs</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fail</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;failure&#39;</span>
@@ -199,7 +199,7 @@
             <span class="k">assert</span> <span class="ow">not</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;reason&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div></div>
 
 
-<div class="viewcode-block" id="test_map"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_map">[docs]</a><span class="k">def</span> <span class="nf">test_map</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_map"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_map">[docs]</a><span class="k">def</span> <span class="nf">test_map</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">add5</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
@@ -219,8 +219,9 @@
     <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
         <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
 
-    <span class="n">prov</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">stream_class</span><span class="o">=</span><span class="s1">&#39;map&#39;</span><span class="p">,</span> <span class="n">function_name</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
-                <span class="n">function_module</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+    <span class="n">prov</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">stream_class</span><span class="o">=</span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+                <span class="n">function</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">function_module</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+                              <span class="n">function_name</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__name__</span><span class="p">),</span>
                 <span class="n">stream_class_module</span><span class="o">=</span><span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
                 <span class="n">input_info</span><span class="o">=</span><span class="n">ii</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="n">oi</span><span class="p">)</span>
     <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -238,7 +239,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_map_two_runs"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_map_two_runs">[docs]</a><span class="k">def</span> <span class="nf">test_map_two_runs</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_map_two_runs"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_map_two_runs">[docs]</a><span class="k">def</span> <span class="nf">test_map_two_runs</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">add5</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
@@ -258,8 +259,9 @@
     <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
         <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
 
-    <span class="n">prov</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">stream_class</span><span class="o">=</span><span class="s1">&#39;map&#39;</span><span class="p">,</span> <span class="n">function_name</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
-                <span class="n">function_module</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+    <span class="n">prov</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">stream_class</span><span class="o">=</span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+                <span class="n">function</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">function_module</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+                              <span class="n">function_name</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__name__</span><span class="p">),</span>
                 <span class="n">stream_class_module</span><span class="o">=</span><span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
                 <span class="n">input_info</span><span class="o">=</span><span class="n">ii</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="n">oi</span><span class="p">)</span>
     <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -299,7 +301,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_map_full_event"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_map_full_event">[docs]</a><span class="k">def</span> <span class="nf">test_map_full_event</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_map_full_event"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_map_full_event">[docs]</a><span class="k">def</span> <span class="nf">test_map_full_event</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">add5</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
@@ -320,8 +322,9 @@
     <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
         <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
 
-    <span class="n">prov</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">stream_class</span><span class="o">=</span><span class="s1">&#39;map&#39;</span><span class="p">,</span> <span class="n">function_name</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
-                <span class="n">function_module</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+    <span class="n">prov</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">stream_class</span><span class="o">=</span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+                <span class="n">function</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">function_module</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+                              <span class="n">function_name</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__name__</span><span class="p">),</span>
                 <span class="n">stream_class_module</span><span class="o">=</span><span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
                 <span class="n">input_info</span><span class="o">=</span><span class="n">ii</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="n">oi</span><span class="p">,</span>
                 <span class="n">full_event</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -343,7 +346,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_map_stream_input"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_map_stream_input">[docs]</a><span class="k">def</span> <span class="nf">test_map_stream_input</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_map_stream_input"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_map_stream_input">[docs]</a><span class="k">def</span> <span class="nf">test_map_stream_input</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">add5</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
@@ -363,8 +366,9 @@
     <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
         <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
 
-    <span class="n">prov</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">stream_class</span><span class="o">=</span><span class="s1">&#39;map&#39;</span><span class="p">,</span> <span class="n">function_name</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
-                <span class="n">function_module</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+    <span class="n">prov</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">stream_class</span><span class="o">=</span><span class="s1">&#39;map&#39;</span><span class="p">,</span>
+                <span class="n">function</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">function_module</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+                              <span class="n">function_name</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__name__</span><span class="p">),</span>
                 <span class="n">stream_class_module</span><span class="o">=</span><span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
                 <span class="n">input_info</span><span class="o">=</span><span class="n">ii</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="n">oi</span><span class="p">)</span>
 
@@ -382,7 +386,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_double_map"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_double_map">[docs]</a><span class="k">def</span> <span class="nf">test_double_map</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_double_map"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_double_map">[docs]</a><span class="k">def</span> <span class="nf">test_double_map</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
     <span class="n">source2</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
@@ -418,7 +422,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_double_internal_map"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_double_internal_map">[docs]</a><span class="k">def</span> <span class="nf">test_double_internal_map</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_double_internal_map"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_double_internal_map">[docs]</a><span class="k">def</span> <span class="nf">test_double_internal_map</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">div</span><span class="p">(</span><span class="n">img1</span><span class="p">,</span> <span class="n">ct</span><span class="p">):</span>
@@ -451,7 +455,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_map_fail"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_map_fail">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">xfail</span><span class="p">(</span><span class="n">raises</span><span class="o">=</span><span class="ne">TypeError</span><span class="p">)</span>
+<div class="viewcode-block" id="test_map_fail"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_map_fail">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">xfail</span><span class="p">(</span><span class="n">raises</span><span class="o">=</span><span class="ne">TypeError</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">test_map_fail</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
@@ -472,7 +476,7 @@
         <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="test_map_fail_dont_except"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_map_fail_dont_except">[docs]</a><span class="k">def</span> <span class="nf">test_map_fail_dont_except</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_map_fail_dont_except"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_map_fail_dont_except">[docs]</a><span class="k">def</span> <span class="nf">test_map_fail_dont_except</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">add5</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
@@ -502,7 +506,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_filter"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_filter">[docs]</a><span class="k">def</span> <span class="nf">test_filter</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_filter"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_filter">[docs]</a><span class="k">def</span> <span class="nf">test_filter</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">img1</span><span class="p">):</span>
@@ -530,7 +534,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_filter_fail"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_filter_fail">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">xfail</span><span class="p">(</span><span class="n">raises</span><span class="o">=</span><span class="ne">TypeError</span><span class="p">)</span>
+<div class="viewcode-block" id="test_filter_fail"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_filter_fail">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">xfail</span><span class="p">(</span><span class="n">raises</span><span class="o">=</span><span class="ne">TypeError</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">test_filter_fail</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
@@ -547,7 +551,7 @@
         <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="test_filter_full_event"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_filter_full_event">[docs]</a><span class="k">def</span> <span class="nf">test_filter_full_event</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_filter_full_event"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_filter_full_event">[docs]</a><span class="k">def</span> <span class="nf">test_filter_full_event</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
@@ -575,7 +579,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_scan"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_scan">[docs]</a><span class="k">def</span> <span class="nf">test_scan</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_scan"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_scan">[docs]</a><span class="k">def</span> <span class="nf">test_scan</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">img1</span><span class="p">,</span> <span class="n">img2</span><span class="p">):</span>
@@ -611,7 +615,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_scan_fail"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_scan_fail">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">xfail</span><span class="p">(</span><span class="n">raises</span><span class="o">=</span><span class="ne">TypeError</span><span class="p">)</span>
+<div class="viewcode-block" id="test_scan_fail"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_scan_fail">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">xfail</span><span class="p">(</span><span class="n">raises</span><span class="o">=</span><span class="ne">TypeError</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">test_scan_fail</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
@@ -634,7 +638,7 @@
         <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="test_scan_start_func"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_scan_start_func">[docs]</a><span class="k">def</span> <span class="nf">test_scan_start_func</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_scan_start_func"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_scan_start_func">[docs]</a><span class="k">def</span> <span class="nf">test_scan_start_func</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">img1</span><span class="p">,</span> <span class="n">img2</span><span class="p">):</span>
@@ -674,7 +678,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_scan_full_event"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_scan_full_event">[docs]</a><span class="k">def</span> <span class="nf">test_scan_full_event</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_scan_full_event"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_scan_full_event">[docs]</a><span class="k">def</span> <span class="nf">test_scan_full_event</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
@@ -712,7 +716,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_zip"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_zip">[docs]</a><span class="k">def</span> <span class="nf">test_zip</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">,</span> <span class="n">start_uid3</span><span class="p">):</span>
+<div class="viewcode-block" id="test_zip"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_zip">[docs]</a><span class="k">def</span> <span class="nf">test_zip</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">,</span> <span class="n">start_uid3</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
     <span class="n">source2</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
@@ -734,11 +738,11 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_bundle"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_bundle">[docs]</a><span class="k">def</span> <span class="nf">test_bundle</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">,</span> <span class="n">start_uid3</span><span class="p">):</span>
+<div class="viewcode-block" id="test_bundle"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_bundle">[docs]</a><span class="k">def</span> <span class="nf">test_bundle</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">,</span> <span class="n">start_uid3</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
     <span class="n">source2</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
-    <span class="n">s</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">bundle</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">source2</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Bundle</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">source2</span><span class="p">)</span>
     <span class="n">s</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="n">star</span><span class="p">(</span><span class="n">SinkAssertion</span><span class="p">(</span><span class="kc">False</span><span class="p">)))</span>
     <span class="n">L</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
 
@@ -763,7 +767,7 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_combine_latest"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_combine_latest">[docs]</a><span class="k">def</span> <span class="nf">test_combine_latest</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">,</span> <span class="n">start_uid3</span><span class="p">):</span>
+<div class="viewcode-block" id="test_combine_latest"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_combine_latest">[docs]</a><span class="k">def</span> <span class="nf">test_combine_latest</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">,</span> <span class="n">start_uid3</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
     <span class="n">source2</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
@@ -787,20 +791,23 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_eventify"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_eventify">[docs]</a><span class="k">def</span> <span class="nf">test_eventify</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_eventify"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_eventify">[docs]</a><span class="k">def</span> <span class="nf">test_eventify</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
-    <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">eventify</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span>
+    <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Eventify</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span>
                      <span class="n">output_info</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="p">{</span>
                          <span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span>
                          <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;testing&#39;</span><span class="p">})])</span>
     <span class="n">L</span> <span class="o">=</span> <span class="n">dp</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
     <span class="n">dp</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="n">star</span><span class="p">(</span><span class="n">SinkAssertion</span><span class="p">(</span><span class="kc">False</span><span class="p">)))</span>
+    <span class="n">dp</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+
     <span class="n">ih1</span> <span class="o">=</span> <span class="n">exp_db</span><span class="p">[</span><span class="n">start_uid1</span><span class="p">]</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">exp_db</span><span class="o">.</span><span class="n">restream</span><span class="p">(</span><span class="n">ih1</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
         <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
 
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
     <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
         <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -812,7 +819,137 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
-<div class="viewcode-block" id="test_workflow"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_workflow">[docs]</a><span class="k">def</span> <span class="nf">test_workflow</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+<div class="viewcode-block" id="test_query"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_query">[docs]</a><span class="k">def</span> <span class="nf">test_query</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">EventStream</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">qf</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">db</span><span class="p">(</span><span class="n">uid</span><span class="o">=</span><span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;uid&#39;</span><span class="p">])</span>
+
+    <span class="n">hdr</span> <span class="o">=</span> <span class="n">exp_db</span><span class="p">[</span><span class="n">start_uid1</span><span class="p">]</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">stream</span><span class="p">()</span>
+
+    <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Query</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">qf</span><span class="p">,</span>
+                  <span class="n">query_decider</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">dp</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+
+    <span class="n">dp2</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">QueryUnpacker</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">dp</span><span class="p">)</span>
+    <span class="n">L2</span> <span class="o">=</span> <span class="n">dp2</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
+        <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;hdr_uid&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">start_uid1</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span>
+
+    <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">ll</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">L2</span><span class="p">,</span> <span class="n">hdr</span><span class="o">.</span><span class="n">stream</span><span class="p">()):</span>
+        <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">ll</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="s1">&#39;start&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">ll</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
+
+
+<div class="viewcode-block" id="test_query_many_headers"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_query_many_headers">[docs]</a><span class="k">def</span> <span class="nf">test_query_many_headers</span><span class="p">(</span><span class="n">exp_db</span><span class="p">):</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">EventStream</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">qf</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">db</span><span class="p">(</span><span class="n">sc_dk_field_uid</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;$exists&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span>
+
+    <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Query</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">qf</span><span class="p">)</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">dp</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+
+    <span class="n">dp2</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">QueryUnpacker</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">dp</span><span class="p">)</span>
+    <span class="n">dp2</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+    <span class="n">L2</span> <span class="o">=</span> <span class="n">dp2</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span>
+    <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
+        <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;start&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;n_hdrs&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;hdr_uid&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">][</span><span class="s1">&#39;uid&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span>
+                                                   <span class="n">qf</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="s1">&#39;hi&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span>
+
+    <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">2</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">L2</span><span class="p">:</span>
+        <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
+
+
+<div class="viewcode-block" id="test_query_too_many_headers"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_query_too_many_headers">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">xfail</span><span class="p">(</span><span class="n">raises</span><span class="o">=</span><span class="ne">RuntimeError</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">test_query_too_many_headers</span><span class="p">(</span><span class="n">exp_db</span><span class="p">):</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">EventStream</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">qf</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">db</span><span class="p">(</span><span class="n">sc_dk_field_uid</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;$exists&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span>
+
+    <span class="n">es</span><span class="o">.</span><span class="n">Query</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">qf</span><span class="p">,</span> <span class="n">max_n_hdrs</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="test_bundle_single_stream"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_bundle_single_stream">[docs]</a><span class="k">def</span> <span class="nf">test_bundle_single_stream</span><span class="p">(</span><span class="n">exp_db</span><span class="p">):</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">EventStream</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">qf</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">db</span><span class="p">(</span><span class="n">sc_dk_field_uid</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;$exists&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span>
+
+    <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Query</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">qf</span><span class="p">)</span>
+
+    <span class="n">dp2</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">QueryUnpacker</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">dp</span><span class="p">)</span>
+
+    <span class="n">dpf</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">BundleSingleStream</span><span class="p">(</span><span class="n">dp2</span><span class="p">,</span> <span class="n">dp</span><span class="p">)</span>
+
+    <span class="n">L</span> <span class="o">=</span> <span class="n">dpf</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+    <span class="n">dpf</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">2</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
+        <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
+
+
+<div class="viewcode-block" id="test_workflow"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_workflow">[docs]</a><span class="k">def</span> <span class="nf">test_workflow</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">subs</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">x1</span> <span class="o">-</span> <span class="n">x2</span>
 
