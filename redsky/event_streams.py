@@ -876,6 +876,7 @@ class Eventify(EventStream):
         # TODO: maybe allow start_key to be a list of relevent keys?
         self.start_key = start_key
         self.val = None
+        self.emit_event = False
 
         EventStream.__init__(self, child, output_info=output_info, **kwargs)
 
@@ -884,7 +885,9 @@ class Eventify(EventStream):
         return super().start(docs)
 
     def event(self, docs):
-        return super().event(self.issue_event(self.val))
+        if not self.emit_event:
+            self.emit_event = True
+            return super().event(self.issue_event(self.val))
 
 
 class Query(EventStream):
