@@ -129,10 +129,6 @@ def test_map_two_runs(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
-    prov = dict(stream_class='map', function_name=add5.__name__,
-                function_module=add5.__module__,
-                stream_class_module=es.map.__module__,
-                input_info=ii, output_info=oi)
     assert_docs = set()
     for l, s, ll in zip(L, exp_db.restream(ih1, fill=True), L_original):
         assert_docs.add(l[0])
@@ -144,6 +140,7 @@ def test_map_two_runs(exp_db, start_uid1):
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
         assert l[1] != s[1]
+        assert l[1] != ll[1]
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
 
