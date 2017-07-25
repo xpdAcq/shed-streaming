@@ -166,7 +166,7 @@
 <span class="c1"># See LICENSE.txt for license information.</span>
 <span class="c1">#</span>
 <span class="c1">##############################################################################</span>
-<span class="kn">from</span> <span class="nn">numpy.testing</span> <span class="k">import</span> <span class="n">assert_allclose</span>
+<span class="kn">from</span> <span class="nn">numpy.testing</span> <span class="k">import</span> <span class="n">assert_allclose</span><span class="p">,</span> <span class="n">assert_equal</span><span class="p">,</span> <span class="n">assert_raises</span>
 <span class="kn">from</span> <span class="nn">streams.core</span> <span class="k">import</span> <span class="n">Stream</span>
 
 <span class="kn">import</span> <span class="nn">redsky.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
@@ -234,6 +234,67 @@
         <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
         <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
+
+
+<div class="viewcode-block" id="test_map_two_runs"><a class="viewcode-back" href="../../../redsky.tests.html#redsky.tests.test_streams.test_map_two_runs">[docs]</a><span class="k">def</span> <span class="nf">test_map_two_runs</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">add5</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">img</span> <span class="o">+</span> <span class="mi">5</span>
+
+    <span class="n">ii</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;img&#39;</span><span class="p">:</span> <span class="s1">&#39;pe1_image&#39;</span><span class="p">}</span>
+    <span class="n">oi</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;image&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;array&#39;</span><span class="p">,</span> <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;testing&#39;</span><span class="p">})]</span>
+    <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">dstar</span><span class="p">(</span><span class="n">add5</span><span class="p">),</span>
+                <span class="n">source</span><span class="p">,</span>
+                <span class="n">input_info</span><span class="o">=</span><span class="n">ii</span><span class="p">,</span>
+                <span class="n">output_info</span><span class="o">=</span><span class="n">oi</span><span class="p">)</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">dp</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+    <span class="n">dp</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="n">star</span><span class="p">(</span><span class="n">SinkAssertion</span><span class="p">(</span><span class="kc">False</span><span class="p">)))</span>
+
+    <span class="n">ih1</span> <span class="o">=</span> <span class="n">exp_db</span><span class="p">[</span><span class="n">start_uid1</span><span class="p">]</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">exp_db</span><span class="o">.</span><span class="n">restream</span><span class="p">(</span><span class="n">ih1</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="n">prov</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">stream_class</span><span class="o">=</span><span class="s1">&#39;map&#39;</span><span class="p">,</span> <span class="n">function_name</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                <span class="n">function_module</span><span class="o">=</span><span class="n">add5</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+                <span class="n">stream_class_module</span><span class="o">=</span><span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
+                <span class="n">input_info</span><span class="o">=</span><span class="n">ii</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="n">oi</span><span class="p">)</span>
+    <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">exp_db</span><span class="o">.</span><span class="n">restream</span><span class="p">(</span><span class="n">ih1</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
+        <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;start&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;provenance&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">prov</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span>
+            <span class="n">assert_allclose</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;image&#39;</span><span class="p">],</span>
+                            <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;pe1_image&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
+        <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span>
+
+    <span class="n">L_original</span> <span class="o">=</span> <span class="n">L</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">del</span> <span class="n">L</span><span class="p">[:]</span>
+    <span class="n">ih1</span> <span class="o">=</span> <span class="n">exp_db</span><span class="p">[</span><span class="n">start_uid1</span><span class="p">]</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">exp_db</span><span class="o">.</span><span class="n">restream</span><span class="p">(</span><span class="n">ih1</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">ll</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">exp_db</span><span class="o">.</span><span class="n">restream</span><span class="p">(</span><span class="n">ih1</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">L_original</span><span class="p">):</span>
+        <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;start&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;provenance&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ll</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;provenance&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span>
+            <span class="n">assert_allclose</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;image&#39;</span><span class="p">],</span>
+                            <span class="n">ll</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;image&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
+        <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">assert_raises</span><span class="p">(</span><span class="ne">AssertionError</span><span class="p">,</span> <span class="n">assert_equal</span><span class="p">,</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ll</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
