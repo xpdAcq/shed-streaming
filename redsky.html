@@ -1,0 +1,662 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>redsky package &mdash; redsky  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="redsky  documentation" href="index.html"/>
+        <link rel="next" title="redsky.tests package" href="redsky.tests.html"/>
+        <link rel="prev" title="Welcome to redsky’s documentation!" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> redsky
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">redsky package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="redsky.tests.html">redsky.tests package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-redsky.event_streams">redsky.event_streams module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-redsky.unused_streams">redsky.unused_streams module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-redsky">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">redsky</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>redsky package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/redsky.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="redsky-package">
+<h1>redsky package<a class="headerlink" href="#redsky-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="redsky.tests.html">redsky.tests package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="redsky.tests.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redsky.tests.html#module-redsky.tests.conftest">redsky.tests.conftest module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redsky.tests.html#module-redsky.tests.test_streams">redsky.tests.test_streams module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redsky.tests.html#module-redsky.tests.utils">redsky.tests.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redsky.tests.html#module-redsky.tests">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-redsky.event_streams">
+<span id="redsky-event-streams-module"></span><h2>redsky.event_streams module<a class="headerlink" href="#module-redsky.event_streams" title="Permalink to this headline">¶</a></h2>
+<p>Stream functions (actually classes) for building pipelines for the Event
+Model</p>
+<dl class="class">
+<dt id="redsky.event_streams.EventStream">
+<em class="property">class </em><code class="descclassname">redsky.event_streams.</code><code class="descname">EventStream</code><span class="sig-paren">(</span><em>child=None</em>, <em>children=None</em>, <em>*</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>md=None</em>, <em>name=None</em>, <em>raise_upon_error=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">streams.core.Stream</span></code></p>
+<p>The EventStream class handles data of the form of an infinite
+sequence of events in the Event Model.</p>
+<p>In the Event model, the data-stream is a series of fortunate events.
+Each event consists of a name-document pair
+where the dictionary contains the data and metadata associated with the
+event.
+More information here:
+<a class="reference external" href="https://nsls-ii.github.io/architecture-overview.html">https://nsls-ii.github.io/architecture-overview.html</a></p>
+<p>EventStreams subscribe to each other passing and transforming data between
+them. An EventStream object listens for updates from upstream, reacts to
+these updates, and then emits more data to flow downstream to all
+EventStream objects that subscribe to it. Downstream EventStream objects
+may connect at any point of an EventStream graph to get a full view of the
+data coming off of that point to do with as they will.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>md</strong> (<em>dict</em>) – Each event stream has a Start document that contains metadata about
+the stream</li>
+<li><strong>input_info</strong> (<em>dict</em><em>, </em><em>optional</em>) – Input info for an operation. Operations are callables that will apply
+operations to the data streams. Not always needed. The input_info
+provides a map between event data keys and the callable (function)
+args/kwargs</li>
+<li><strong>output_info</strong> (<em>list of tuples</em><em>, </em><em>optional</em>) – <p>Output info from the operation, not needed for all cases
+This:</p>
+<blockquote>
+<div>Creates a map between function returns and event data keys
+Provides information for building a descriptor for the output
+event stream. Each event stream has a descriptor which contains
+information about what is in the events in the stream.</div></blockquote>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">my_new_stream</span> <span class="o">=</span> <span class="n">EventStream</span><span class="p">()</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>This is intended as a base class for the stream functions (map, filter,
+etc.).</p>
+<p>Most implementations of the subclasses will:
+a) override update for flow control based classes
+b) override event for operator based classes
+c) override multiple document methods (see eventify) although this is rare</p>
+<p>It is important for the overridden document methods that the return
+follows the pattern of <code class="docutils literal"><span class="pre">super().document_name(new_document)</span></code>. This way
+the EventStream properly issues the new document with its name and other
+needed internal flow control.</p>
+<dl class="method">
+<dt id="redsky.event_streams.EventStream.curate_streams">
+<code class="descname">curate_streams</code><span class="sig-paren">(</span><em>nds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream.curate_streams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream.curate_streams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standardize name document pairs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nds</strong> (<em>tuple, or tuple of tuples</em>) – The name document pair(s)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li><strong>name</strong> (<em>str</em>) – The name of the output doc(s)</li>
+<li><strong>docs</strong> (<em>tuple</em>) – The document(s)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>If we get multiple streams make (name, (doc, doc, doc, …))
+Otherwise (name, (doc,))</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="redsky.event_streams.EventStream.descriptor">
+<code class="descname">descriptor</code><span class="sig-paren">(</span><em>docs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream.descriptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream.descriptor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Issue new descriptor document for input documents</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>docs</strong> (<em>tuple of dicts or dict</em>)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li><strong>name</strong> (<em>‘descriptor’</em>)</li>
+<li><strong>doc</strong> (<em>dict</em>) – The document</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="redsky.event_streams.EventStream.dispatch">
+<code class="descname">dispatch</code><span class="sig-paren">(</span><em>nds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream.dispatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream.dispatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dispatch to methods expecting particular doc types.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nds</strong> (<em>tuple</em>) – Name document pair</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New name document pair</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">tuple</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="redsky.event_streams.EventStream.emit">
+<code class="descname">emit</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream.emit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream.emit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Push data into the stream at this point</p>
+<p>Events will not automatically propagate down a stream unless they are
+emitted, so for example, one could take every second event returned
+from a node function and emit it into a subsampled output stream.
+(for this specific example see <code class="docutils literal"><span class="pre">filter</span></code>)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="redsky.event_streams.EventStream.event">
+<code class="descname">event</code><span class="sig-paren">(</span><em>docs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream.event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Issue event document for input documents</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>docs</strong> (<em>tuple of dicts or dict</em>)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li><strong>name</strong> (<em>‘event’</em>)</li>
+<li><strong>doc</strong> (<em>dict</em>) – The document</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="redsky.event_streams.EventStream.event_guts">
+<code class="descname">event_guts</code><span class="sig-paren">(</span><em>docs</em>, <em>full_event=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream.event_guts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream.event_guts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide some of the event data as a dict, which may be used as kwargs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>docs</strong> (<em>tuple of dicts</em>)</li>
+<li><strong>full_event</strong> (<em>bool, optional</em>) – If True expose the data from full event, else only expose data
+from the ‘data’ dictionary inside the event, defaults to False</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="redsky.event_streams.EventStream.generate_provenance">
+<code class="descname">generate_provenance</code><span class="sig-paren">(</span><em>func=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream.generate_provenance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream.generate_provenance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate provenance information about the stream function</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>func</strong> (<em>callable</em>) – The function used inside the stream class (see map, filter, etc.)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="redsky.event_streams.EventStream.issue_event">
+<code class="descname">issue_event</code><span class="sig-paren">(</span><em>outputs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream.issue_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream.issue_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event document based off of function returns</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>outputs</strong> (<em>tuple, dict, or other</em>) – Data returned from some external functon</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>new_event</strong> – The new event</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>If the outputs of the function is an exception no event will be
+created, but a stop document will be issued.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="redsky.event_streams.EventStream.refresh_event">
+<code class="descname">refresh_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream.refresh_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream.refresh_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event with the same data, but new metadata
+(uid, timestamp, etc.)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<em>tuple, dict, or other</em>) – The event document</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>new_event</strong> – A new event with the same core data</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="redsky.event_streams.EventStream.start">
+<code class="descname">start</code><span class="sig-paren">(</span><em>docs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Issue new start document for input documents</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>docs</strong> (<em>tuple of dicts or dict</em>)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li><strong>name</strong> (<em>‘start’</em>)</li>
+<li><strong>doc</strong> (<em>dict</em>) – The document</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="redsky.event_streams.EventStream.stop">
+<code class="descname">stop</code><span class="sig-paren">(</span><em>docs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Issue new stop document</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>docs</strong> (<em>tuple of dicts or dict or Exception</em>) – If Exception issue a stop which notes the failure</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li><strong>name</strong> (<em>‘stop’</em>)</li>
+<li><strong>doc</strong> (<em>dict</em>) – The document</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="redsky.event_streams.EventStream.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>x</em>, <em>who=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#EventStream.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.EventStream.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Emit the new name document pair</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> (<em>tuple</em>) – Name document pair</li>
+<li><strong>who</strong> (<em>stream instance, optional</em>) – This is mostly used internally for emit</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The list of issued documents, used for back pressure</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="redsky.event_streams.accumulate">
+<em class="property">class </em><code class="descclassname">redsky.event_streams.</code><code class="descname">accumulate</code><span class="sig-paren">(</span><em>func</em>, <em>child</em>, <em>state_key=None</em>, <em>*</em>, <em>full_event=False</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>start=’–no-default–’</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#accumulate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.accumulate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#redsky.event_streams.EventStream" title="redsky.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">redsky.event_streams.EventStream</span></code></a></p>
+<p>Accumulate results with previous state</p>
+<p>This preforms running or cumulative reductions, applying the function
+to the previous total and the new element.  The function should take
+two arguments, the previous accumulated state and the next element and
+it should return a new accumulated state.</p>
+<dl class="method">
+<dt id="redsky.event_streams.accumulate.event">
+<code class="descname">event</code><span class="sig-paren">(</span><em>doc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#accumulate.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.accumulate.event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="redsky.event_streams.bundle">
+<em class="property">class </em><code class="descclassname">redsky.event_streams.</code><code class="descname">bundle</code><span class="sig-paren">(</span><em>*children</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#bundle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.bundle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#redsky.event_streams.EventStream" title="redsky.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">redsky.event_streams.EventStream</span></code></a></p>
+<p>Combine multiple event streams into one</p>
+<dl class="method">
+<dt id="redsky.event_streams.bundle.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>x</em>, <em>who=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#bundle.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.bundle.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="redsky.event_streams.combine_latest">
+<em class="property">class </em><code class="descclassname">redsky.event_streams.</code><code class="descname">combine_latest</code><span class="sig-paren">(</span><em>*children</em>, <em>emit_on=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#combine_latest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.combine_latest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#redsky.event_streams.EventStream" title="redsky.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">redsky.event_streams.EventStream</span></code></a></p>
+<p>Combine multiple streams together to a stream of tuples</p>
+<p>This will emit a new tuple of all of the most recent elements seen from
+any stream.</p>
+<dl class="method">
+<dt id="redsky.event_streams.combine_latest.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>x</em>, <em>who=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#combine_latest.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.combine_latest.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="redsky.event_streams.dstar">
+<code class="descclassname">redsky.event_streams.</code><code class="descname">dstar</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#dstar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.dstar" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="redsky.event_streams.eventify">
+<em class="property">class </em><code class="descclassname">redsky.event_streams.</code><code class="descname">eventify</code><span class="sig-paren">(</span><em>child</em>, <em>start_key</em>, <em>*</em>, <em>output_info</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#eventify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.eventify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#redsky.event_streams.EventStream" title="redsky.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">redsky.event_streams.EventStream</span></code></a></p>
+<p>Generate events from data in starts</p>
+<dl class="method">
+<dt id="redsky.event_streams.eventify.event">
+<code class="descname">event</code><span class="sig-paren">(</span><em>docs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#eventify.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.eventify.event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redsky.event_streams.eventify.start">
+<code class="descname">start</code><span class="sig-paren">(</span><em>docs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#eventify.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.eventify.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="redsky.event_streams.filter">
+<em class="property">class </em><code class="descclassname">redsky.event_streams.</code><code class="descname">filter</code><span class="sig-paren">(</span><em>predicate</em>, <em>child</em>, <em>*</em>, <em>input_info</em>, <em>full_event=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#redsky.event_streams.EventStream" title="redsky.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">redsky.event_streams.EventStream</span></code></a></p>
+<p>Only pass through events that satisfy the predicate</p>
+<dl class="method">
+<dt id="redsky.event_streams.filter.event">
+<code class="descname">event</code><span class="sig-paren">(</span><em>doc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#filter.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.filter.event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="redsky.event_streams.map">
+<em class="property">class </em><code class="descclassname">redsky.event_streams.</code><code class="descname">map</code><span class="sig-paren">(</span><em>func</em>, <em>child</em>, <em>*</em>, <em>full_event=False</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#redsky.event_streams.EventStream" title="redsky.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">redsky.event_streams.EventStream</span></code></a></p>
+<p>Apply a function onto every event in the stream</p>
+<dl class="method">
+<dt id="redsky.event_streams.map.event">
+<code class="descname">event</code><span class="sig-paren">(</span><em>docs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#map.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.map.event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="redsky.event_streams.star">
+<code class="descclassname">redsky.event_streams.</code><code class="descname">star</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#star"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.star" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="redsky.event_streams.zip">
+<em class="property">class </em><code class="descclassname">redsky.event_streams.</code><code class="descname">zip</code><span class="sig-paren">(</span><em>*children</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.zip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#redsky.event_streams.EventStream" title="redsky.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">redsky.event_streams.EventStream</span></code></a></p>
+<p>Combine multiple streams together into a stream of tuples</p>
+<dl class="method">
+<dt id="redsky.event_streams.zip.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>x</em>, <em>who=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/redsky/event_streams.html#zip.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#redsky.event_streams.zip.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-redsky.unused_streams">
+<span id="redsky-unused-streams-module"></span><h2>redsky.unused_streams module<a class="headerlink" href="#module-redsky.unused_streams" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-redsky">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-redsky" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="redsky.tests.html" class="btn btn-neutral float-right" title="redsky.tests package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to redsky’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Author.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
