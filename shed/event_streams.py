@@ -1042,10 +1042,11 @@ class combine_latest(EventStream):
     >>> assert len(L) == 6
     """
 
+    special_docs_names = ['start', 'descriptor', 'stop']
+
     def __init__(self, *children, emit_on=None):
         self.last = [None for _ in children]
-        self.special_docs_names = ['start', 'descriptor', 'stop']
-        self.special_docs = {k: [None for _ in children] for k in
+        self.special_last = {k: [None for _ in children] for k in
                              self.special_docs_names}
         self.missing = set(children)
         self.special_missing = {k: set(children) for k in
@@ -1060,25 +1061,22 @@ class combine_latest(EventStream):
 
     def update(self, x, who=None):
         name, doc = x
+        idx = self.children.index(who)
         if name in self.special_docs_names:
-            idx = self.children.index(who)
-            self.special_docs[name][idx] = x
-            if self.special_missing[name] and who in \
-                    self.special_missing[name]:
-                self.special_missing[name].remove(who)
+            local_missing = self.special_missing[name]
+            local_last = self.special_last[name]
 
-            self.special_docs[name][self.children.index(who)] = x
-            if not self.special_missing[name] and who in self.emit_on:
-                tup = tuple(self.special_docs[name])
-                return self.emit(tup)
         else:
-            if self.missing and who in self.missing:
-                self.missing.remove(who)
+            local_missing = self.missing
+            local_last = self.last
 
-            self.last[self.children.index(who)] = x
-            if not self.missing and who in self.emit_on:
-                tup = tuple(self.last)
-                return self.emit(tup)
+        local_last[idx] = x
+        if local_missing and who in local_missing:
+            local_missing.remove(who)
+
+        if not local_missing and who in self.emit_on:
+            tup = tuple(local_last)
+            return self.emit(tup)
 
 
 class Eventify(EventStream):
