@@ -846,11 +846,18 @@ class combine_latest(EventStream):
             local_missing = self.missing
             local_last = self.last
 
+
+
         local_last[idx] = x
         if local_missing and who in local_missing:
             local_missing.remove(who)
 
-        if not local_missing and who in self.emit_on:
+        if (not local_missing  # we have a document from every one
+            and who in self.emit_on  # we are on the emitting stream
+            # check start and descriptors emitted
+            and all(
+                [not self.special_missing[k] for k in ['start', 'descriptor']])
+            ):
             tup = tuple(local_last)
             return self.emit(tup)
 
