@@ -637,6 +637,30 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
         assert n in assert_docs
 
 
+def test_lossless_combine_latest(exp_db, start_uid1, start_uid3):
+    source = Stream()
+    source2 = Stream()
+
+    L = es.lossless_combine_latest(source, source2).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    ih2 = exp_db[start_uid3]
+    s = exp_db.restream(ih1)
+    s2 = exp_db.restream(ih2)
+    for b in s2:
+        source2.emit(b)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l1, l2 in L:
+        assert l1[0] == l2[0]
+        assert_docs.add(l1[0])
+        assert l1 != l2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+    assert len(L) == len(list(exp_db.restream(ih1)))
+
+
 def test_lossless_combine_latest_reverse(exp_db, start_uid1, start_uid3):
     source = Stream()
     source2 = Stream()

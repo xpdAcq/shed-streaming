@@ -860,8 +860,8 @@ class combine_latest(EventStream):
 class lossless_combine_latest(EventStream):
     """Combine multiple streams together to a stream of tuples
 
-    This will emit a new tuple of all of the most recent elements seen from
-    any stream.
+    This will emit a new tuple of the elements from the lossless stream paired
+    with the latest elements from the other streams.
     """
 
     special_docs_names = ['start', 'descriptor', 'stop']
@@ -871,6 +871,8 @@ class lossless_combine_latest(EventStream):
 
         Parameters
         ----------
+        lossless : EventStream instance
+            The stream who's documents will always be emitted
         children: EventStream instances
             The streams to combine
         """
