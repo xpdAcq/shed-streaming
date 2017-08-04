@@ -1070,20 +1070,75 @@ class combine_latest(EventStream):
             local_missing = self.missing
             local_last = self.last
 
-
-
         local_last[idx] = x
         if local_missing and who in local_missing:
             local_missing.remove(who)
 
         if (not local_missing  # we have a document from every one
             and who in self.emit_on  # we are on the emitting stream
-            # check start and descriptors emitted
-            and all(
-                [not self.special_missing[k] for k in ['start', 'descriptor']])
             ):
             tup = tuple(local_last)
             return self.emit(tup)
+
+
+class lossless_combine_latest(EventStream):
+    """Combine multiple streams together to a stream of tuples
+
+    This will emit a new tuple of all of the most recent elements seen from
+    any stream.
+    """
+
+    special_docs_names = ['start', 'descriptor', 'stop']
+
+    def __init__(self, lossless, *children):
+        """Initialize the node
+
+        Parameters
+        ----------
+        children: EventStream instances
+            The streams to combine
+        """
+        children = (lossless, ) + children
+        self.last = [None for _ in children]
+        self.special_last = {k: [None for _ in children] for k in
+                             self.special_docs_names}
+        self.missing = set(children)
+        self.special_missing = {k: set(children) for k in
+                                self.special_docs_names}
+        self.lossless = lossless
+        self.lossless_buffer = deque()
+        EventStream.__init__(self, children=children)
+
+    def update(self, x, who=None):
+        name, doc = x
+        idx = self.children.index(who)
+        if name in self.special_docs_names:
+            local_missing = self.special_missing[name]
+            local_last = self.special_last[name]
+            local_type = 'special'
+
+        else:
+            local_missing = self.missing
+            local_last = self.last
+            local_type = 'event'
+            if who is self.lossless:
+                self.lossless_buffer.append(x)
+
+        local_last[idx] = x
+        if local_missing and who in local_missing:
+            local_missing.remove(who)
+
+        if not local_missing:
+            if local_type == 'special':
+                return self.emit(tuple(local_last))
+            # check start and descriptors emitted if not buffer
+            if not all([self.special_missing[k] for
+                         k in ['start', 'descriptor']]):
+                L = []
+                while self.lossless_buffer:
+                    local_last[0] = self.lossless_buffer.popleft()
+                    L.append(self.emit(tuple(local_last)))
+                return L
 
 
 class Eventify(EventStream):
