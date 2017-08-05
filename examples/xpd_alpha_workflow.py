@@ -4,7 +4,7 @@ from pprint import pprint
 
 import numpy as np
 from bluesky.callbacks.broker import LiveImage
-from bluesky.callbacks.core import LiveTable
+from bluesky.callbacks.core import LiveTable, LivePlot
 from skbeam.core.accumulators.binned_statistic import BinnedStatistic1D
 from streams.core import Stream
 import matplotlib.pyplot as plt
@@ -22,6 +22,7 @@ import tzlocal
 import os
 from pprint import pprint
 from xpdan.tools import better_mask_img
+from xpdview.callbacks import LiveWaterfall
 
 d = {'directory': '/home/christopher/live_demo_data',
      'timezone': tzlocal.get_localzone().zone,
@@ -37,10 +38,6 @@ db = Broker(mds=mds, fs=fs)
 
 
 def iq_to_pdf(stuff):
-    pass
-
-
-def LiveWaterfall(stuff):
     pass
 
 
@@ -64,8 +61,7 @@ def pull_array(img2):
     return img2
 
 
-def generate_binner(geo, mask):
-    img_shape = mask.shape
+def generate_binner(geo, img_shape, mask=None):
     r = geo.rArray(img_shape)
     q = geo.qArray(img_shape) / 10
     q_dq = geo.deltaQ(img_shape) / 10
@@ -78,20 +74,29 @@ def generate_binner(geo, mask):
     qbin_sizes = rbinned(q_dq.ravel())
     qbin_sizes = np.nan_to_num(qbin_sizes)
     qbin = np.cumsum(qbin_sizes)
-    return BinnedStatistic1D(q.flatten, bins=qbin, mask=mask.flatten())
+    if mask:
+        mask = mask.flatten()
+    return BinnedStatistic1D(q.flatten(), bins=qbin, mask=mask)
 
 
-def z_score_image(img, binner):
-    xy = binner.xy
-    for i in np.unique(xy):
-        tv = (xy == i)
-        img[tv] -= np.mean(img[tv])
-        img[tv] /= np.std(img[tv])
-    return img
+# def z_score_image(img, binner):
+#     img_shape = img.shape
+#     img = img.flatten()
+#     xy = binner.xy
+#     binner.statistic = 'mean'
+#     means = binner(img)
+#     binner.statistic = 'std'
+#     stds = binner(img)
+#     for i in np.unique(xy):
+#         tv = (xy == i)
+#         img[tv] -= means[i]
+#         img[tv] /= stds[i]
+#     img = img.reshape(img_shape)
+#     return img
 
 
 def integrate(img, binner):
-    return binner(img)
+    return binner.bin_centers, binner(img.flatten())
 
 
 def polarization_correction(img, geo, polarization_factor=.99):
@@ -151,6 +156,8 @@ def live_image_factory(field='pe1_image', window_title='Raw'):
 
 
 source = Stream(name='Foreground')
+# source.sink(print)
+source.sink(star(LivePlot('pe1_stats1_total', 'temperature')))
 # source.sink(star(live_image_factory()))
 # source.sink(star(
 #     LiveTable(['temperature_setpoint', 'temperature', 'pe1_stats1_total'])))
@@ -270,73 +277,74 @@ cal_stream = es.map(dstar(load_geo), cal_md_stream,
 # polarization correction
 # SPLIT INTO TWO NODES
 pfactor = .99
-z = es.combine_latest(fg_sub_bg, cal_stream, emit_on=fg_sub_bg)
-z.sink(lambda x: print(x[0][0]))
-"""
 p_corrected_stream = es.map(dstar(polarization_correction),
-                            z,
+                            es.lossless_combine_latest(fg_sub_bg, cal_stream),
                             input_info={'img': ('img', 0),
                                         'geo': ('geo', 1)},
                             output_info=[('img', {'dtype': 'array',
                                                   'source': 'testing'})],
                             polarization_factor=pfactor)
 
-p_corrected_stream.sink(pprint)
-"""
-"""
-p_corrected_stream.sink(star(LiveImage('img',
-                                limit_func=lambda x: (
-                                np.max(x) * .1, np.max(x) * .01),
-                                cmap='viridis',
-                                window_title='Polarization Corrected Foreground')))
+# p_corrected_stream.sink(pprint)
+# p_corrected_stream.sink(star(LiveImage('img',
+#                                        limit_func=lambda x: (
+#                                        0, np.max(x) * .1),
+#                                        cmap='viridis',
+#                                        window_title='Polarization Corrected Foreground')))
 # fg_sub_bg.sink(StubSinkToDB)
 
 # generate masks
-mask_kwargs = {'bs_width': None}
-mask_stream = es.map(dstar(better_mask_img),
-                     es.zip(p_corrected_stream, cal_stream,
-                                       # emit_on=p_corrected_stream
-                            ),
-                     input_info={'img': ('img', 0),
-                                 'geo': ('geo', 1)},
-                     output_info=[('mask', {'dtype': 'array',
-                                            'source': 'testing'})],
-                     **mask_kwargs)
-mask_stream.sink(pprint)
-mask_stream.sink(star(LiveImage('mask',
-                                # limit_func=lambda x: (
-                                # np.max(x) * .1, np.max(x) * .01),
-                                # cmap='viridis',
-                                window_title='Mask')))
+# mask_kwargs = {'bs_width': None}
+# mask_stream = es.map(dstar(better_mask_img),
+#                      es.lossless_combine_latest(p_corrected_stream, cal_stream,
+#                                        # emit_on=p_corrected_stream
+#                             ),
+#                      input_info={'img': ('img', 0),
+#                                  'geo': ('geo', 1)},
+#                      output_info=[('mask', {'dtype': 'array',
+#                                             'source': 'testing'})],
+#                      **mask_kwargs)
+# mask_stream.sink(pprint)
+# mask_stream.sink(star(LiveImage('mask',
+#                                 # limit_func=lambda x: (
+#                                 # np.max(x) * .1, np.max(x) * .01),
+#                                 # cmap='viridis',
+#                                 window_title='Mask')))
 # generate binner stream
 binner_stream = es.map(dstar(generate_binner),
-                       es.combine_latest(mask_stream, cal_stream,
-                                         emit_on=mask_stream),
-                       input_info={'mask': 'mask',
-                                   'geo': 'geo'},
+                       cal_stream,
+                       input_info={'geo': 'geo'},
                        output_info=[('binner', {'dtype': 'function',
-                                                'source': 'testing'})])
+                                                'source': 'testing'})],
+                       img_shape=(2048, 2048))
 
 # binner_stream.sink(StubSinkToDB)
 
+
+iq_stream = es.map(dstar(integrate),
+                   es.lossless_combine_latest(p_corrected_stream, binner_stream),
+                   input_info={'img': ('img', 0),
+                               'binner': ('binner', 1)},
+                   output_info=[('iq', {'dtype': 'array',
+                                        'source': 'testing'})])
+iq_stream.sink(star(LiveWaterfall('iq')))
+# iq_stream.sink(SinkToDB)
+
+
+"""
 # z-score the data
 z_score_stream = es.map(dstar(z_score_image),
-                        es.zip(p_corrected_stream, binner_stream),
-                        input_info={'img': 'img',
-                                    'binner': 'binner'},
+                        es.lossless_combine_latest(p_corrected_stream,
+                                                   binner_stream),
+                        input_info={'img': ('img', 0),
+                                    'binner': ('binner', 1)},
                         output_info=[('z_score_img', {'dtype': 'array',
                                                       'source': 'testing'})])
 
-z_score_stream.sink(LiveImage('z_score_img'))
-
-iq_stream = es.map(dstar(integrate),
-                   es.zip(p_corrected_stream, binner_stream),
-                   input_info={'img': 'img',
-                               'binner': 'binner'},
-                   output_info=[('iq', {'dtype': 'array',
-                                        'source': 'testing'})])
-iq_stream.sink(star(LiveWaterfall))
-# iq_stream.sink(SinkToDB)
+z_score_stream.sink(star(LiveImage('z_score_img',
+                                   limit_func=lambda x: (-3, 3),
+                                   cmap='viridis',
+                                   window_title='Background Corrected Foreground')))
 
 
 pdf_stream = es.map(dstar(iq_to_pdf), es.zip(iq_stream, source))
@@ -354,8 +362,8 @@ structure.sink(LiveStructure)
 
 # """
 for e in db[-1].stream(fill=True):
-    # plt.pause(1)
+    plt.pause(.5)
     # print(e)
     source.emit(e)
 
-input('finished run')
+plt.show()
