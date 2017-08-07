@@ -158,9 +158,9 @@ def live_image_factory(field='pe1_image', window_title='Raw'):
 source = Stream(name='Foreground')
 # source.sink(print)
 source.sink(star(LivePlot('pe1_stats1_total', 'temperature')))
-# source.sink(star(live_image_factory()))
-# source.sink(star(
-#     LiveTable(['temperature_setpoint', 'temperature', 'pe1_stats1_total'])))
+source.sink(star(live_image_factory()))
+source.sink(star(
+    LiveTable(['temperature_setpoint', 'temperature', 'pe1_stats1_total'])))
 
 fg_dark_stream = es.QueryUnpacker(db, es.Query(db, source,
                                                query_function=query_dark,
@@ -174,7 +174,7 @@ bg_query_stream = es.Query(db, source,
                            name='Query for Background')
 
 bg_stream = es.QueryUnpacker(db, bg_query_stream)
-# bg_stream.sink(star(live_image_factory(window_title='Raw Background')))
+bg_stream.sink(star(live_image_factory(window_title='Raw Background')))
 bg_dark_stream = es.QueryUnpacker(db, es.Query(db, bg_stream,
                                                query_function=query_dark,
                                                query_decider=temporal_prox,
@@ -189,11 +189,11 @@ dark_sub_bg = es.map(dstar(subs),
                      output_info=[('img', {'dtype': 'array',
                                            'source': 'testing'})])
 # dark_sub_bg.sink(pprint)
-# dark_sub_bg.sink(star(LiveImage('img',
-#                                 limit_func=lambda x: (
-#                                 np.max(x) * .1, np.max(x) * .01),
-#                                 cmap='viridis',
-#                                 window_title='Dark Corrected Background')))
+dark_sub_bg.sink(star(LiveImage('img',
+                                limit_func=lambda x: (
+                                np.max(x) * .1, np.max(x) * .01),
+                                cmap='viridis',
+                                window_title='Dark Corrected Background')))
 # bundle the backgrounds into one stream
 bg_bundle = es.BundleSingleStream(dark_sub_bg, bg_query_stream,
                                   name='Background Bundle')
@@ -254,11 +254,11 @@ fg_sub_bg = es.map(dstar(subs),
                    # name='Background Corrected Foreground'
                    )
 
-# fg_sub_bg.sink(star(LiveImage('img',
-#                                 limit_func=lambda x: (
-#                                 np.max(x) * .1, np.max(x) * .01),
-#                                 cmap='viridis',
-#                                 window_title='Background Corrected Foreground')))
+fg_sub_bg.sink(star(LiveImage('img',
+                                limit_func=lambda x: (
+                                np.max(x) * .1, np.max(x) * .01),
+                                cmap='viridis',
+                                window_title='Background Corrected Foreground')))
 # fg_sub_bg.sink(SinkToDB)
 # fg_sub_bg.sink(pprint)
 
@@ -286,11 +286,11 @@ p_corrected_stream = es.map(dstar(polarization_correction),
                             polarization_factor=pfactor)
 
 # p_corrected_stream.sink(pprint)
-# p_corrected_stream.sink(star(LiveImage('img',
-#                                        limit_func=lambda x: (
-#                                        0, np.max(x) * .1),
-#                                        cmap='viridis',
-#                                        window_title='Polarization Corrected Foreground')))
+p_corrected_stream.sink(star(LiveImage('img',
+                                       limit_func=lambda x: (
+                                       0, np.max(x) * .1),
+                                       cmap='viridis',
+                                       window_title='Polarization Corrected Foreground')))
 # fg_sub_bg.sink(StubSinkToDB)
 
 # generate masks
@@ -353,14 +353,14 @@ pdf_stream.sink(star(LiveWaterfall))
 structure = es.map(dstar(refine_structure), es.zip(pdf_stream, source))
 structure.sink(LiveStructure)
 
-# source.visualize('mystream.png',
-#                  arrowsize='0.6', arrowhead='vee',
-#                  center='true',
-#                  margin='0.2',
-#                  nodesep='0.1',
-#                  ranksep='0.1')
-
 # """
+source.visualize('mystream.png',
+                 arrowsize='0.6', arrowhead='vee',
+                 center='true',
+                 margin='0.2',
+                 nodesep='0.1',
+                 ranksep='0.1')
+
 for e in db[-1].stream(fill=True):
     plt.pause(.5)
     # print(e)
