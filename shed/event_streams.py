@@ -1074,9 +1074,8 @@ class combine_latest(EventStream):
         if local_missing and who in local_missing:
             local_missing.remove(who)
 
-        if (not local_missing  # we have a document from every one
-            and who in self.emit_on  # we are on the emitting stream
-            ):
+        # we have a document from every one or we are on the emitting stream
+        if not local_missing and who in self.emit_on:
             tup = tuple(local_last)
             return self.emit(tup)
 
@@ -1134,8 +1133,8 @@ class lossless_combine_latest(EventStream):
             if local_type == 'special':
                 return self.emit(tuple(local_last))
             # check start and descriptors emitted if not buffer
-            if not all([self.special_missing[k] for
-                         k in ['start', 'descriptor']]):
+            if not all([self.special_missing[k] for k in ['start',
+                                                          'descriptor']]):
                 L = []
                 while self.lossless_buffer:
                     local_last[0] = self.lossless_buffer.popleft()
