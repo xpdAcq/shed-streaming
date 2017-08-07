@@ -341,7 +341,7 @@ class EventStream(Stream):
                     data_keys={k: v for k, v in self.output_info})
 
             # no truly new data needed
-            elif all(d['data_keys'] == docs[0]['data_keys'] for d in docs):
+            elif all(d['data_keys'] == docs[0].get('data_keys') for d in docs):
                 new_descriptor.update(data_keys=docs[0]['data_keys'])
 
             else:
@@ -502,7 +502,13 @@ class EventStream(Stream):
 
 
 class map(EventStream):
-    """Apply a function onto every event in the stream"""
+    """Apply a function onto every event in the stream
+
+    Examples
+    --------
+    >>> a = [1, 2, 3]  # base data
+    >>> b =
+    """
 
     def __init__(self, func, child, *,
                  full_event=False,
