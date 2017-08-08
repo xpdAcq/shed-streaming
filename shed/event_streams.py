@@ -1085,20 +1085,36 @@ class lossless_combine_latest(EventStream):
 
     This will emit a new tuple of the elements from the lossless stream paired
     with the latest elements from the other streams.
+
+    Parameters
+    ----------
+    lossless : EventStream instance
+        The stream who's documents will always be emitted
+    children: EventStream instances
+        The streams to combine
+
+    Examples
+    --------
+    >>> from shed.utils import to_event_model
+    >>> from streams import Stream
+    >>> import shed.event_streams as es
+    >>> a = [1, 2, 3]  # base data
+    >>> b = [4, 5, 6]
+    >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
+    >>> gg = to_event_model(b, [('det', {'dtype': 'float'})])
+    >>> source = Stream()
+    >>> source2 = Stream()
+    >>> m = es.lossless_combine_latest(source, source2)
+    >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
+    >>> for doc1 in g: zz = source.emit(doc1)
+    >>> for doc2 in gg: z = source2.emit(doc2)
+    >>> assert len(L) == 6
     """
 
     special_docs_names = ['start', 'descriptor', 'stop']
 
     def __init__(self, lossless, *children):
-        """Initialize the node
-
-        Parameters
-        ----------
-        lossless : EventStream instance
-            The stream who's documents will always be emitted
-        children: EventStream instances
-            The streams to combine
-        """
         children = (lossless, ) + children
         self.last = [None for _ in children]
         self.special_last = {k: [None for _ in children] for k in
