@@ -130,7 +130,7 @@ class EventStream(Stream):
         ------
         input_info is designed to map keys in streams to kwargs in functions.
         It is critical for the internal data from the events to be returned,
-        upon `event_guts`.
+        upon `event_contents`.
         input_info = {'input_kwarg': ('data_key', stream_number)}
         Note that the stream number is assumed to be zero if not specified
 
@@ -403,7 +403,7 @@ class EventStream(Stream):
         elif self.raise_upon_error:
             raise self.excep
 
-    def event_guts(self, docs, full_event=False):
+    def event_contents(self, docs, full_event=False):
         """
         Provide some of the event data as a dict, which may be used as kwargs
 
@@ -535,7 +535,7 @@ class map(EventStream):
     def event(self, docs):
         try:
             # we need to expose the event data
-            res = self.event_guts(docs, self.full_event)
+            res = self.event_contents(docs, self.full_event)
             result = self.func(res, **self.kwargs)
             # Now we must massage the raw return into a new event
             result = self.issue_event(result)
@@ -572,7 +572,7 @@ class filter(EventStream):
         self.generate_provenance(predicate=predicate)
 
     def event(self, doc):
-        g = self.event_guts(doc, self.full_event)
+        g = self.event_contents(doc, self.full_event)
         try:
             if self.predicate(g):
                 return super().event(doc[0])
@@ -625,7 +625,7 @@ class accumulate(EventStream):
         self.generate_provenance(function=func)
 
     def event(self, doc):
-        doc = self.event_guts(doc, self.full_event)
+        doc = self.event_contents(doc, self.full_event)
 
         if self.state is no_default:
             self.state = {}
