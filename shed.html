@@ -192,6 +192,34 @@ Model</p>
 <em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">Bundle</code><span class="sig-paren">(</span><em>*children</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Bundle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Bundle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Combine multiple event streams into one</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>children</strong> (<em>EventStream instances</em>) – The event streams to be zipped together</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">builtins</span> <span class="k">import</span> <span class="nb">zip</span> <span class="k">as</span> <span class="n">zzip</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gg</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source2</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Bundle</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">source2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">L</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">doc1</span><span class="p">,</span> <span class="n">doc2</span> <span class="ow">in</span> <span class="n">zzip</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">gg</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">z</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">doc1</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">zz</span> <span class="o">=</span> <span class="n">source2</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">doc2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">9</span>
+</pre></div>
+</div>
 <dl class="method">
 <dt id="shed.event_streams.Bundle.update">
 <code class="descname">update</code><span class="sig-paren">(</span><em>x</em>, <em>who=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Bundle.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Bundle.update" title="Permalink to this definition">¶</a></dt>
@@ -204,6 +232,37 @@ Model</p>
 <em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">BundleSingleStream</code><span class="sig-paren">(</span><em>child</em>, <em>control_stream</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#BundleSingleStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.BundleSingleStream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Combine multiple headers in a single stream into one</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>child</strong> (<em>EventStream instances</em>) – The event stream containing the data to be zipped together</li>
+<li><strong>control_stream</strong> (<em>{EventStream, int}</em>) – Information to control the buffering. If int, bundle that many
+header together. If an EventStream, pull from the start document
+<code class="docutils literal"><span class="pre">n_hdrs</span></code> to determine the number of headers to bundle</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gg</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">BundleSingleStream</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">L</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">doc1</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span> <span class="n">zz</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">doc1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">doc2</span> <span class="ow">in</span> <span class="n">gg</span><span class="p">:</span> <span class="n">z</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">doc2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">9</span>
+</pre></div>
+</div>
 <dl class="method">
 <dt id="shed.event_streams.BundleSingleStream.update">
 <code class="descname">update</code><span class="sig-paren">(</span><em>x</em>, <em>who=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#BundleSingleStream.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.BundleSingleStream.update" title="Permalink to this definition">¶</a></dt>
@@ -253,10 +312,6 @@ information about what is in the events in the stream.</div></blockquote>
 </tr>
 </tbody>
 </table>
-<p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">my_new_stream</span> <span class="o">=</span> <span class="n">EventStream</span><span class="p">()</span>
-</pre></div>
-</div>
 <p class="rubric">Notes</p>
 <p>This is intended as a base class for the stream functions (map, filter,
 etc.).</p>
@@ -503,6 +558,35 @@ created, but a stop document will be issued.</p>
 <em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">Eventify</code><span class="sig-paren">(</span><em>child</em>, <em>start_key</em>, <em>*</em>, <em>output_info</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Eventify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Eventify" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Generate events from data in starts</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>child</strong> (<em>EventStream instance</em>) – The event stream to eventify</li>
+<li><strong>start_key</strong> (<em>str</em>) – The run start key to use to create the events</li>
+<li><strong>output_info</strong> (<em>list of tuples, optional</em>) – describes the resulting stream</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Eventify</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s1">&#39;uid&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">output_info</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;start_uid&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;str&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">L</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">doc1</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">zz</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">doc1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
+</pre></div>
+</div>
 <dl class="method">
 <dt id="shed.event_streams.Eventify.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>docs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Eventify.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Eventify.event" title="Permalink to this definition">¶</a></dt>
@@ -551,6 +635,44 @@ created, but a stop document will be issued.</p>
 to the previous total and the new element.  The function should take
 two arguments, the previous accumulated state and the next element and
 it should return a new accumulated state.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>func</strong> (<em>callable</em>) – The function to map on the event data</li>
+<li><strong>child</strong> (<em>EventStream instance</em>) – The source of the data</li>
+<li><strong>state_key</strong> (<em>str</em>) – The keyword for current accumulated state in the func</li>
+<li><strong>full_event</strong> (<em>bool, optional</em>) – If True expose the full event dict to the predicate, if False
+only expose the data from the event</li>
+<li><strong>input_info</strong> (<em>dict</em>) – describe the incoming streams
+Note that only one key allowed since the func only takes two inputs</li>
+<li><strong>output_info</strong> (<em>list of tuples</em>) – describe the resulting stream</li>
+<li><strong>start</strong> (<em>any or callable, optional</em>) – Starting value for accumulation, if no_default use the event data
+dictionary, if callable run that callable on the event data, else
+use <cite>start</cite> as the starting data, defaults to no_default</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">accumulate</span><span class="p">(</span><span class="n">es</span><span class="o">.</span><span class="n">dstar</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">),</span> <span class="n">source</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">input_info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="s1">&#39;det&#39;</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="n">output_info</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;res&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;docstring&#39;</span><span class="p">,</span> <span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})],</span>
+<span class="gp">... </span>    <span class="n">state_key</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">L</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span> <span class="n">z</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span>
+</pre></div>
+</div>
 <dl class="method">
 <dt id="shed.event_streams.accumulate.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>doc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#accumulate.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.accumulate.event" title="Permalink to this definition">¶</a></dt>
@@ -565,6 +687,37 @@ it should return a new accumulated state.</p>
 <p>Combine multiple streams together to a stream of tuples</p>
 <p>This will emit a new tuple of all of the most recent elements seen from
 any stream.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>children</strong> (<em>EventStream instances</em>) – The streams to combine</li>
+<li><strong>emit_on</strong> (<em>EventStream, list of EventStreams or None</em>) – Only emit upon update of the streams listed.
+If None, emit on update from any stream</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gg</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source2</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">combine_latest</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">source2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">L</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">doc1</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span> <span class="n">zz</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">doc1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">doc2</span> <span class="ow">in</span> <span class="n">gg</span><span class="p">:</span> <span class="n">z</span> <span class="o">=</span> <span class="n">source2</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">doc2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span>
+</pre></div>
+</div>
 <dl class="method">
 <dt id="shed.event_streams.combine_latest.update">
 <code class="descname">update</code><span class="sig-paren">(</span><em>x</em>, <em>who=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#combine_latest.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.combine_latest.update" title="Permalink to this definition">¶</a></dt>
@@ -583,6 +736,36 @@ any stream.</p>
 <em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">filter</code><span class="sig-paren">(</span><em>predicate</em>, <em>child</em>, <em>*</em>, <em>input_info</em>, <em>full_event=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Only pass through events that satisfy the predicate</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>predicate</strong> (<em>callable</em>) – The function which returns True if the event is to propagate
+further in the pipeline</li>
+<li><strong>child</strong> (<em>EventStream instance</em>) – The source of the data</li>
+<li><strong>input_info</strong> (<em>dict</em>) – describe the incoming streams</li>
+<li><strong>full_event</strong> (<em>bool, optional</em>) – If True expose the full event dict to the predicate, if False
+only expose the data from the event</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">es</span><span class="o">.</span><span class="n">dstar</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">),</span> <span class="n">source</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;det&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">L</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span> <span class="n">z</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">5</span>
+</pre></div>
+</div>
 <dl class="method">
 <dt id="shed.event_streams.filter.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>doc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#filter.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.filter.event" title="Permalink to this definition">¶</a></dt>
@@ -601,6 +784,38 @@ any stream.</p>
 <em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">map</code><span class="sig-paren">(</span><em>func</em>, <em>child</em>, <em>*</em>, <em>full_event=False</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Apply a function onto every event in the stream</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>func</strong> (<em>callable</em>) – The function to map on the event data</li>
+<li><strong>child</strong> (<em>EventStream instance</em>) – The source of the data</li>
+<li><strong>full_event</strong> (<em>bool, optional</em>) – If True expose the full event dict to the function, if False
+only expose the data from the event</li>
+<li><strong>input_info</strong> (<em>dict</em>) – describe the incoming streams</li>
+<li><strong>output_info</strong> (<em>list of tuples</em>) – describe the resulting stream</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">es</span><span class="o">.</span><span class="n">dstar</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">+</span><span class="mi">5</span><span class="p">),</span> <span class="n">source</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">input_info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;det&#39;</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="n">output_info</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;res&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;docstring&#39;</span><span class="p">,</span> <span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">L</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span> <span class="n">z</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+<span class="go">&gt;&gt; assert len(L) == 6</span>
+</pre></div>
+</div>
 <dl class="method">
 <dt id="shed.event_streams.map.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>docs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#map.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.map.event" title="Permalink to this definition">¶</a></dt>
@@ -625,6 +840,34 @@ any stream.</p>
 <em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">zip</code><span class="sig-paren">(</span><em>*children</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.zip" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Combine multiple streams together into a stream of tuples</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>children</strong> (<em>EventStream instances</em>) – The event streams to be zipped together</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">builtins</span> <span class="k">import</span> <span class="nb">zip</span> <span class="k">as</span> <span class="n">zzip</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gg</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source2</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">source2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">L</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">doc1</span><span class="p">,</span> <span class="n">doc2</span> <span class="ow">in</span> <span class="n">zzip</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">gg</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">z</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">doc1</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">zz</span> <span class="o">=</span> <span class="n">source2</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">doc2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span>
+</pre></div>
+</div>
 <dl class="method">
 <dt id="shed.event_streams.zip.update">
 <code class="descname">update</code><span class="sig-paren">(</span><em>x</em>, <em>who=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#zip.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.zip.update" title="Permalink to this definition">¶</a></dt>

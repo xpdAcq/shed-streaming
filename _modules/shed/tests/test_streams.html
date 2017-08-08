@@ -924,7 +924,7 @@
     <span class="k">def</span> <span class="nf">qf</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">db</span><span class="p">(</span><span class="n">sc_dk_field_uid</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;$exists&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
 
-    <span class="n">s</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="p">{})]</span>
 
     <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Query</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">qf</span><span class="p">)</span>
 
@@ -940,6 +940,37 @@
 
     <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">2</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
+        <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
+
+
+<div class="viewcode-block" id="test_bundle_single_stream_control_int"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_bundle_single_stream_control_int">[docs]</a><span class="k">def</span> <span class="nf">test_bundle_single_stream_control_int</span><span class="p">(</span><span class="n">exp_db</span><span class="p">):</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">EventStream</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">qf</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">db</span><span class="p">(</span><span class="n">sc_dk_field_uid</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;$exists&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="p">{})]</span>
+
+    <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Query</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">qf</span><span class="p">)</span>
+
+    <span class="n">dp2</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">QueryUnpacker</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">dp</span><span class="p">)</span>
+
+    <span class="n">dpf</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">BundleSingleStream</span><span class="p">(</span><span class="n">dp2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">L</span> <span class="o">=</span> <span class="n">dpf</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+    <span class="n">dpf</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">5</span>
     <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
         <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
