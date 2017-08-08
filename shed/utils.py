@@ -21,5 +21,5 @@ def to_event_model(data, output_info):
     yield es.dispatch(('descriptor', None))
     for d in data:
         e = es.issue_event(d)
-        yield es.dispatch(('event', e))
+        yield es.event(e)
     yield es.dispatch(('stop', None))
