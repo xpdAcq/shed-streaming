@@ -27,5 +27,6 @@ def test_to_event_model():
 
     source = Stream()
     source.sink(star(AssertCallback()))
+    source.sink(print)
     for e in g:
         source.emit(e)

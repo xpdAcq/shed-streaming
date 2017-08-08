@@ -7,6 +7,9 @@ def to_event_model(data, output_info):
     Parameters
     ----------
     data: iterable
+        The data to be inserted
+    output_info: list of tuple
+        The name of the data and information to put into the descriptor
 
 
     Yields
@@ -15,6 +18,10 @@ def to_event_model(data, output_info):
         Name of doc
     document: dict
         Document of data
+
+    Notes
+    -----
+    This is only for demonstration/example use, do not use for production.
     """
     es = EventStream(md={'source': 'to_event_model'}, output_info=output_info)
     yield es.dispatch(('start', None))
