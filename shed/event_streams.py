@@ -997,7 +997,8 @@ class Eventify(EventStream):
     >>> a = [1, 2, 3]  # base data
     >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
     >>> source = Stream()
-    >>> m = es.Eventify(source, 'uid', output_info=[('start_uid', {'dtype': 'str'})])
+    >>> m = es.Eventify(source, 'uid',
+    ...     output_info=[('start_uid', {'dtype': 'str'})])
     >>> l = m.sink(print)
     >>> L = m.sink_to_list()
     >>> for doc1 in g:
