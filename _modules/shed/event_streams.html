@@ -284,7 +284,7 @@
 <span class="sd">        ------</span>
 <span class="sd">        input_info is designed to map keys in streams to kwargs in functions.</span>
 <span class="sd">        It is critical for the internal data from the events to be returned,</span>
-<span class="sd">        upon `event_guts`.</span>
+<span class="sd">        upon `event_contents`.</span>
 <span class="sd">        input_info = {&#39;input_kwarg&#39;: (&#39;data_key&#39;, stream_number)}</span>
 <span class="sd">        Note that the stream number is assumed to be zero if not specified</span>
 
@@ -557,7 +557,7 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">raise_upon_error</span><span class="p">:</span>
             <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">excep</span></div>
 
-<div class="viewcode-block" id="EventStream.event_guts"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.event_guts">[docs]</a>    <span class="k">def</span> <span class="nf">event_guts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">,</span> <span class="n">full_event</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="EventStream.event_contents"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.event_contents">[docs]</a>    <span class="k">def</span> <span class="nf">event_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">,</span> <span class="n">full_event</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Provide some of the event data as a dict, which may be used as kwargs</span>
 
@@ -689,7 +689,7 @@
 <div class="viewcode-block" id="map.event"><a class="viewcode-back" href="../../shed.html#shed.event_streams.map.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># we need to expose the event data</span>
-            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_guts</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_contents</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span><span class="p">)</span>
             <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="c1"># Now we must massage the raw return into a new event</span>
             <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">issue_event</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
@@ -726,7 +726,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">generate_provenance</span><span class="p">(</span><span class="n">predicate</span><span class="o">=</span><span class="n">predicate</span><span class="p">)</span>
 
 <div class="viewcode-block" id="filter.event"><a class="viewcode-back" href="../../shed.html#shed.event_streams.filter.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">):</span>
-        <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_guts</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span><span class="p">)</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_contents</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predicate</span><span class="p">(</span><span class="n">g</span><span class="p">):</span>
                 <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -779,7 +779,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">generate_provenance</span><span class="p">(</span><span class="n">function</span><span class="o">=</span><span class="n">func</span><span class="p">)</span>
 
 <div class="viewcode-block" id="accumulate.event"><a class="viewcode-back" href="../../shed.html#shed.event_streams.accumulate.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">):</span>
-        <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_guts</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span><span class="p">)</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_contents</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="n">no_default</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="p">{}</span>
