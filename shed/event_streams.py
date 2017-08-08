@@ -90,10 +90,6 @@ class EventStream(Stream):
             event stream. Each event stream has a descriptor which contains
             information about what is in the events in the stream.
 
-    Examples
-    --------
-    >>> my_new_stream = EventStream()
-
     Notes
     -----
     This is intended as a base class for the stream functions (map, filter,
@@ -341,7 +337,7 @@ class EventStream(Stream):
                     data_keys={k: v for k, v in self.output_info})
 
             # no truly new data needed
-            elif all(d['data_keys'] == docs[0]['data_keys'] for d in docs):
+            elif all(d['data_keys'] == docs[0].get('data_keys') for d in docs):
                 new_descriptor.update(data_keys=docs[0]['data_keys'])
 
             else:
@@ -502,28 +498,43 @@ class EventStream(Stream):
 
 
 class map(EventStream):
-    """Apply a function onto every event in the stream"""
+    """Apply a function onto every event in the stream
+
+    Parameters
+    ----------
+    func: callable
+        The function to map on the event data
+    child: EventStream instance
+        The source of the data
+    full_event: bool, optional
+        If True expose the full event dict to the function, if False
+        only expose the data from the event
+    input_info: dict
+        describe the incoming streams
+    output_info: list of tuples
+        describe the resulting stream
+
+    Examples
+    --------
+    >>> from shed.utils import to_event_model
+    >>> from streams import Stream
+    >>> import shed.event_streams as es
+    >>> a = [1, 2, 3]  # base data
+    >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
+    >>> source = Stream()
+    >>> m = es.map(es.dstar(lambda x: x+5), source,
+    ...     input_info={'x': 'det'},
+    ...     output_info=[('res', {'source': 'docstring', 'dtype': 'float'})])
+    >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
+    >>> for doc in g: z = source.emit(doc)
+    >> assert len(L) == 6
+    """
 
     def __init__(self, func, child, *,
                  full_event=False,
                  output_info=None, input_info=None,
                  **kwargs):
-        """Initialize the node
-
-        Parameters
-        ----------
-        func: callable
-            The function to map on the event data
-        child: EventStream instance
-            The source of the data
-        full_event: bool, optional
-            If True expose the full event dict to the function, if False
-            only expose the data from the event
-        input_info: dict
-            describe the incoming streams
-        output_info: list of tuples
-            describe the resulting stream
-        """
         self.func = func
         self.kwargs = kwargs
 
@@ -546,24 +557,39 @@ class map(EventStream):
 
 
 class filter(EventStream):
-    """Only pass through events that satisfy the predicate"""
+    """Only pass through events that satisfy the predicate
+
+    Parameters
+    ----------
+    predicate: callable
+        The function which returns True if the event is to propagate
+        further in the pipeline
+    child: EventStream instance
+        The source of the data
+    input_info: dict
+        describe the incoming streams
+    full_event: bool, optional
+        If True expose the full event dict to the predicate, if False
+        only expose the data from the event
+
+    Examples
+    --------
+    >>> from shed.utils import to_event_model
+    >>> from streams import Stream
+    >>> import shed.event_streams as es
+    >>> a = [1, 2, 3]  # base data
+    >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
+    >>> source = Stream()
+    >>> m = es.filter(es.dstar(lambda x: x>1), source, input_info={'x': 'det'})
+    >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
+    >>> for doc in g: z = source.emit(doc)
+    >>> assert len(L) == 5
+    """
 
     def __init__(self, predicate, child, *, input_info,
                  full_event=False, **kwargs):
         """Initialize the node
-
-        Parameters
-        ----------
-        predicate: callable
-            The function which returns True if the event is to propagate
-            further in the pipeline
-        child: EventStream instance
-            The source of the data
-        input_info: dict
-            describe the incoming streams
-        full_event: bool, optional
-            If True expose the full event dict to the predicate, if False
-            only expose the data from the event
         """
         self.predicate = predicate
 
@@ -587,35 +613,51 @@ class accumulate(EventStream):
     to the previous total and the new element.  The function should take
     two arguments, the previous accumulated state and the next element and
     it should return a new accumulated state.
+
+
+    Parameters
+    ----------
+    func: callable
+        The function to map on the event data
+    child: EventStream instance
+        The source of the data
+    state_key: str
+        The keyword for current accumulated state in the func
+    full_event: bool, optional
+        If True expose the full event dict to the predicate, if False
+        only expose the data from the event
+    input_info: dict
+        describe the incoming streams
+        Note that only one key allowed since the func only takes two inputs
+    output_info: list of tuples
+        describe the resulting stream
+    start: any or callable, optional
+        Starting value for accumulation, if no_default use the event data
+        dictionary, if callable run that callable on the event data, else
+        use `start` as the starting data, defaults to no_default
+
+    Examples
+    --------
+    >>> from shed.utils import to_event_model
+    >>> from streams import Stream
+    >>> import shed.event_streams as es
+    >>> a = [1, 2, 3]  # base data
+    >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
+    >>> source = Stream()
+    >>> m = es.accumulate(es.dstar(lambda a, b: a + b), source,
+    ...     input_info={'b': 'det'},
+    ...     output_info=[('res', {'source': 'docstring', 'dtype': 'float'})],
+    ...     state_key='a')
+    >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
+    >>> for doc in g: z = source.emit(doc)
+    >>> assert len(L) == 6
     """
 
     def __init__(self, func, child, state_key=None, *,
                  full_event=False,
                  output_info=None,
                  input_info=None, start=no_default):
-        """Initialize the node
-
-        Parameters
-        ----------
-        func: callable
-            The function to map on the event data
-        child: EventStream instance
-            The source of the data
-        state_key: str
-            The keyword for current accumulated state in the func
-        full_event: bool, optional
-            If True expose the full event dict to the predicate, if False
-            only expose the data from the event
-        input_info: dict
-            describe the incoming streams
-            Note that only one key allowed since the func only takes two inputs
-        output_info: list of tuples
-            describe the resulting stream
-        start: any or callable, optional
-            Starting value for accumulation, if no_default use the event data
-            dictionary, if callable run that callable on the event data, else
-            use `start` as the starting data, defaults to no_default
-        """
         self.state_key = state_key
         self.func = func
         self.state = start
@@ -625,20 +667,20 @@ class accumulate(EventStream):
         self.generate_provenance(function=func)
 
     def event(self, doc):
-        doc = self.event_contents(doc, self.full_event)
+        data = self.event_contents(doc, self.full_event)
 
         if self.state is no_default:
             self.state = {}
             # Note that there is only one input_info key allowed for this
             # stream function so this works
-            self.state = doc[next(iter(self.input_info.keys()))]
+            self.state = data[next(iter(self.input_info.keys()))]
         # in case we need a bit more flexibility eg lambda x: np.empty(x.shape)
         elif hasattr(self.state, '__call__'):
-            self.state = self.state(doc)
+            self.state = self.state(data)
         else:
-            doc[self.state_key] = self.state
+            data[self.state_key] = self.state
             try:
-                result = self.func(doc)
+                result = self.func(data)
             except Exception as e:
                 return super().stop(e)
             self.state = result
@@ -646,16 +688,35 @@ class accumulate(EventStream):
 
 
 class zip(EventStream):
-    """Combine multiple streams together into a stream of tuples"""
+    """Combine multiple streams together into a stream of tuples
+
+    Parameters
+    ----------
+    children: EventStream instances
+        The event streams to be zipped together
+
+    Examples
+    --------
+    >>> from shed.utils import to_event_model
+    >>> from streams import Stream
+    >>> import shed.event_streams as es
+    >>> from builtins import zip as zzip
+    >>> a = [1, 2, 3]  # base data
+    >>> b = [4, 5, 6]
+    >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
+    >>> gg = to_event_model(b, [('det', {'dtype': 'float'})])
+    >>> source = Stream()
+    >>> source2 = Stream()
+    >>> m = es.zip(source, source2)
+    >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
+    >>> for doc1, doc2 in zzip(g, gg):
+    ...     z = source.emit(doc1),
+    ...     zz = source2.emit(doc2)
+    >>> assert len(L) == 6
+    """
 
     def __init__(self, *children, **kwargs):
-        """Initialize the Node
-
-        Parameters
-        ----------
-        children: EventStream instances
-            The event streams to be zipped together
-        """
         self.maxsize = kwargs.pop('maxsize', 10)
         self.buffers = [deque() for _ in children]
         self.condition = Condition()
@@ -680,16 +741,35 @@ class zip(EventStream):
 
 
 class Bundle(EventStream):
-    """Combine multiple event streams into one"""
+    """Combine multiple event streams into one
+
+    Parameters
+    ----------
+    children: EventStream instances
+        The event streams to be zipped together
+
+    Examples
+    --------
+    >>> from shed.utils import to_event_model
+    >>> from streams import Stream
+    >>> import shed.event_streams as es
+    >>> from builtins import zip as zzip
+    >>> a = [1, 2, 3]  # base data
+    >>> b = [4, 5, 6]
+    >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
+    >>> gg = to_event_model(b, [('det', {'dtype': 'float'})])
+    >>> source = Stream()
+    >>> source2 = Stream()
+    >>> m = es.Bundle(source, source2)
+    >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
+    >>> for doc1, doc2 in zzip(g, gg):
+    ...     z = source.emit(doc1)
+    ...     zz = source2.emit(doc2)
+    >>> assert len(L) == 9
+    """
 
     def __init__(self, *children, **kwargs):
-        """Initialize the Node
-
-        Parameters
-        ----------
-        children: EventStream instances
-            The event streams to be zipped together
-        """
         self.maxsize = kwargs.pop('maxsize', 100)
         self.buffers = [deque() for _ in children]
         self.condition = Condition()
@@ -739,25 +819,49 @@ union = Bundle
 
 
 class BundleSingleStream(EventStream):
-    """Combine multiple headers in a single stream into one"""
+    """Combine multiple headers in a single stream into one
+
+    Parameters
+    ----------
+    child: EventStream instances
+        The event stream containing the data to be zipped together
+    control_stream: {EventStream, int}
+        Information to control the buffering. If int, bundle that many
+        header together. If an EventStream, pull from the start document
+        ``n_hdrs`` to determine the number of headers to bundle
+
+    Examples
+    --------
+    >>> from shed.utils import to_event_model
+    >>> from streams import Stream
+    >>> import shed.event_streams as es
+    >>> a = [1, 2, 3]  # base data
+    >>> b = [4, 5, 6]
+    >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
+    >>> gg = to_event_model(b, [('det', {'dtype': 'float'})])
+    >>> source = Stream()
+    >>> m = es.BundleSingleStream(source, 2)
+    >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
+    >>> for doc1 in g: zz = source.emit(doc1)
+    >>> for doc2 in gg: z = source.emit(doc2)
+    >>> assert len(L) == 9
+    """
 
     def __init__(self, child, control_stream, **kwargs):
-        """Initialize the Node
-
-        Parameters
-        ----------
-        children: EventStream instances
-            The event streams to be zipped together
-        """
         self.maxsize = kwargs.pop('maxsize', 100)
         self.buffers = []
         self.desc_start_map = {}
         self.condition = Condition()
         self.prior = ()
         self.control_stream = control_stream
-        EventStream.__init__(self, children=(child, control_stream))
+        if isinstance(control_stream, int):
+            EventStream.__init__(self, child=child)
+            self.n_hdrs = control_stream
+        else:
+            EventStream.__init__(self, children=(child, control_stream))
+            self.n_hdrs = None
         self.generate_provenance()
-        self.n_hdrs = None
         self.uid = None
 
     def update(self, x, who=None):
@@ -806,19 +910,35 @@ class combine_latest(EventStream):
 
     This will emit a new tuple of all of the most recent elements seen from
     any stream.
+
+    Parameters
+    ----------
+    children: EventStream instances
+        The streams to combine
+    emit_on: EventStream, list of EventStreams or None
+        Only emit upon update of the streams listed.
+        If None, emit on update from any stream
+
+    Examples
+    --------
+    >>> from shed.utils import to_event_model
+    >>> from streams import Stream
+    >>> import shed.event_streams as es
+    >>> a = [1, 2, 3]  # base data
+    >>> b = [4, 5, 6]
+    >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
+    >>> gg = to_event_model(b, [('det', {'dtype': 'float'})])
+    >>> source = Stream()
+    >>> source2 = Stream()
+    >>> m = es.combine_latest(source, source2)
+    >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
+    >>> for doc1 in g: zz = source.emit(doc1)
+    >>> for doc2 in gg: z = source2.emit(doc2)
+    >>> assert len(L) == 6
     """
 
     def __init__(self, *children, emit_on=None):
-        """Initialize the node
-
-        Parameters
-        ----------
-        children: EventStream instances
-            The streams to combine
-        emit_on: EventStream, list of EventStreams or None
-            Only emit upon update of the streams listed.
-            If None, emit on update from any stream
-        """
         self.last = [None for _ in children]
         self.special_docs_names = ['start', 'descriptor', 'stop']
         self.special_docs = {k: [None for _ in children] for k in
@@ -858,21 +978,35 @@ class combine_latest(EventStream):
 
 
 class Eventify(EventStream):
-    """Generate events from data in starts"""
+    """Generate events from data in starts
+
+    Parameters
+    ----------
+    child: EventStream instance
+        The event stream to eventify
+    start_key: str
+        The run start key to use to create the events
+    output_info: list of tuples, optional
+        describes the resulting stream
+
+    Examples
+    --------
+    >>> from shed.utils import to_event_model
+    >>> from streams import Stream
+    >>> import shed.event_streams as es
+    >>> a = [1, 2, 3]  # base data
+    >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
+    >>> source = Stream()
+    >>> m = es.Eventify(source, 'uid',
+    ...     output_info=[('start_uid', {'dtype': 'str'})])
+    >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
+    >>> for doc1 in g:
+    ...     zz = source.emit(doc1)
+    >>> assert len(L) == 4
+    """
 
     def __init__(self, child, start_key, *, output_info, **kwargs):
-        """
-        Initialize the node
-
-        Parameters
-        ----------
-        child: EventStream instance
-            The event stream to eventify
-        start_key: str
-            The run start key to use to create the events
-        output_info: list of tuples, optional
-            describes the resulting stream
-        """
         # TODO: maybe allow start_key to be a list of relevent keys?
         self.start_key = start_key
         self.val = None
