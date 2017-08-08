@@ -795,7 +795,7 @@ def test_bundle_single_stream(exp_db):
         assert n in assert_docs
 
 
-def test_bundle_single_stream(exp_db):
+def test_bundle_single_stream_control_int(exp_db):
     source = es.EventStream()
 
     def qf(db, docs):

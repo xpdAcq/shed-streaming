@@ -508,9 +508,13 @@ class map(EventStream):
     >>> a = [1, 2, 3]  # base data
     >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
     >>> source = Stream()
-    >>> m = es.map(es.dstar(lambda x: x+5), source, input_info={'x': 'det'}, output_info=[('res', {'source': 'docstring', 'dtype': 'float'})])
+    >>> m = es.map(es.dstar(lambda x: x+5), source,
+    ...     input_info={'x': 'det'},
+    ...     output_info=[('res', {'source': 'docstring', 'dtype': 'float'})])
     >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
     >>> for doc in g: z = source.emit(doc)
+    >> assert len(L) == 6
     """
 
     def __init__(self, func, child, *,
@@ -567,7 +571,9 @@ class filter(EventStream):
     >>> source = Stream()
     >>> m = es.filter(es.dstar(lambda x: x>1), source, input_info={'x': 'det'})
     >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
     >>> for doc in g: z = source.emit(doc)
+    >>> assert len(L) == 5
     """
 
     def __init__(self, predicate, child, *, input_info,
@@ -618,15 +624,14 @@ class accumulate(EventStream):
     >>> a = [1, 2, 3]  # base data
     >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
     >>> source = Stream()
-    >>> m = es.accumulate(es.dstar(lambda a, b: a + b), source, input_info={'b': 'det'}, output_info=[('res', {'source': 'docstring', 'dtype': 'float'})], state_key='a')
+    >>> m = es.accumulate(es.dstar(lambda a, b: a + b), source,
+    ...     input_info={'b': 'det'},
+    ...     output_info=[('res', {'source': 'docstring', 'dtype': 'float'})],
+    ...     state_key='a')
     >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
     >>> for doc in g: z = source.emit(doc)
-    ('start', ...)
-    ('descriptor', ...)
-    ('event', ...)
-    ('event', ...)
-    ('event', ...)
-    ('stop', ...)
+    >>> assert len(L) == 6
     """
 
     def __init__(self, func, child, state_key=None, *,
@@ -702,7 +707,11 @@ class zip(EventStream):
     >>> source2 = Stream()
     >>> m = es.zip(source, source2)
     >>> l = m.sink(print)
-    >>> for doc1, doc2 in zzip(g, gg): z, zz = source.emit(doc1), source2.emit(doc2)
+    >>> L = m.sink_to_list()
+    >>> for doc1, doc2 in zzip(g, gg):
+    ...     z = source.emit(doc1),
+    ...     zz = source2.emit(doc2)
+    >>> assert len(L) == 6
     """
 
     def __init__(self, *children, **kwargs):
@@ -753,7 +762,11 @@ class Bundle(EventStream):
     >>> source2 = Stream()
     >>> m = es.Bundle(source, source2)
     >>> l = m.sink(print)
-    >>> for doc1, doc2 in zzip(g, gg): z, zz = source.emit(doc1), source2.emit(doc2)
+    >>> L = m.sink_to_list()
+    >>> for doc1, doc2 in zzip(g, gg):
+    ...     z = source.emit(doc1)
+    ...     zz = source2.emit(doc2)
+    >>> assert len(L) == 9
     """
 
     def __init__(self, *children, **kwargs):
@@ -827,8 +840,10 @@ class BundleSingleStream(EventStream):
     >>> source = Stream()
     >>> m = es.BundleSingleStream(source, 2)
     >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
     >>> for doc1 in g: zz = source.emit(doc1)
     >>> for doc2 in gg: z = source.emit(doc2)
+    >>> assert len(L) == 9
     """
 
     def __init__(self, child, control_stream, **kwargs):
@@ -918,8 +933,10 @@ class combine_latest(EventStream):
     >>> source2 = Stream()
     >>> m = es.combine_latest(source, source2)
     >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
     >>> for doc1 in g: zz = source.emit(doc1)
     >>> for doc2 in gg: z = source2.emit(doc2)
+    >>> assert len(L) == 6
     """
 
     def __init__(self, *children, emit_on=None):
@@ -984,7 +1001,10 @@ class Eventify(EventStream):
     >>> source = Stream()
     >>> m = es.Eventify(source, 'uid', output_info=[('start_uid', {'dtype': 'str'})])
     >>> l = m.sink(print)
-    >>> for doc1 in g: zz = source.emit(doc1)
+    >>> L = m.sink_to_list()
+    >>> for doc1 in g:
+    ...     zz = source.emit(doc1)
+    >>> assert len(L) == 4
     """
 
     def __init__(self, child, start_key, *, output_info, **kwargs):
