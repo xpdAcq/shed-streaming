@@ -770,7 +770,7 @@ def test_bundle_single_stream(exp_db):
     def qf(db, docs):
         return db(sc_dk_field_uid={'$exists': True})
 
-    s = [('start', None)]
+    s = [('start', {})]
 
     dp = es.Query(exp_db, source, qf)
 
@@ -786,6 +786,37 @@ def test_bundle_single_stream(exp_db):
 
     assert_docs = set()
     assert len(L) == 3 + 5 + 5 + 2
+    for l in L:
+        assert_docs.add(l[0])
+        assert l[0]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_bundle_single_stream(exp_db):
+    source = es.EventStream()
+
+    def qf(db, docs):
+        return db(sc_dk_field_uid={'$exists': True})
+
+    s = [('start', {})]
+
+    dp = es.Query(exp_db, source, qf)
+
+    dp2 = es.QueryUnpacker(exp_db, dp)
+
+    dpf = es.BundleSingleStream(dp2, 2)
+
+    L = dpf.sink_to_list()
+    dpf.sink(print)
+
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    assert len(L) == 3 + 5 + 5
     for l in L:
         assert_docs.add(l[0])
         assert l[0]

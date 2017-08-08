@@ -859,7 +859,7 @@ class BundleSingleStream(EventStream):
         self.uid = None
 
     def update(self, x, who=None):
-        if who == self.control_stream and self.n_hdrs is None:
+        if who == self.control_stream:
             if x[0] == 'start':
                 self.n_hdrs = x[1]['n_hdrs']
         else:
