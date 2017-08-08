@@ -301,8 +301,7 @@ class EventStream(Stream):
         """
         self.run_start_uid = str(uuid.uuid4())
         new_start_doc = dict(uid=self.run_start_uid,
-                             time=time.time(),
-                             provenance=self.provenance, **self.md)
+                             time=time.time(), **self.md)
         if all(docs):
             new_start_doc.update(parents=[doc['uid'] for doc in docs])
         self.bypass = False
@@ -384,7 +383,9 @@ class EventStream(Stream):
                 raise RuntimeError("Received RunStop before RunStart.")
             new_stop = dict(uid=str(uuid.uuid4()),
                             time=time.time(),
-                            run_start=self.run_start_uid)
+                            run_start=self.run_start_uid,
+                            provenance=self.provenance
+                            )
             if isinstance(docs, Exception):
                 self.bypass = True
                 new_stop.update(reason=repr(docs),
