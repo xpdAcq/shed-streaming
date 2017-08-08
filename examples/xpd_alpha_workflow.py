@@ -174,7 +174,7 @@ bg_query_stream = es.Query(db, source,
                            name='Query for Background')
 
 bg_stream = es.QueryUnpacker(db, bg_query_stream)
-bg_stream.sink(star(live_image_factory(window_title='Raw Background')))
+# bg_stream.sink(star(live_image_factory(window_title='Raw Background')))
 bg_dark_stream = es.QueryUnpacker(db, es.Query(db, bg_stream,
                                                query_function=query_dark,
                                                query_decider=temporal_prox,
@@ -254,11 +254,11 @@ fg_sub_bg = es.map(dstar(subs),
                    # name='Background Corrected Foreground'
                    )
 
-fg_sub_bg.sink(star(LiveImage('img',
-                                limit_func=lambda x: (
-                                np.max(x) * .1, np.max(x) * .01),
-                                cmap='viridis',
-                                window_title='Background Corrected Foreground')))
+# fg_sub_bg.sink(star(LiveImage('img',
+#                                 limit_func=lambda x: (
+#                                 np.max(x) * .1, np.max(x) * .01),
+#                                 cmap='viridis',
+#                                 window_title='Background Corrected Foreground')))
 # fg_sub_bg.sink(SinkToDB)
 # fg_sub_bg.sink(pprint)
 
