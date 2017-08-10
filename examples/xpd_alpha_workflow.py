@@ -156,7 +156,9 @@ def live_image_factory(field='pe1_image', window_title='Raw'):
 
 
 source = Stream(name='Foreground')
-# source.sink(print)
+source.sink(pprint)
+"""
+
 source.sink(star(LivePlot('pe1_stats1_total', 'temperature')))
 source.sink(star(live_image_factory()))
 source.sink(star(
@@ -330,8 +332,6 @@ iq_stream = es.map(dstar(integrate),
 iq_stream.sink(star(LiveWaterfall('iq')))
 # iq_stream.sink(SinkToDB)
 
-
-"""
 # z-score the data
 z_score_stream = es.map(dstar(z_score_image),
                         es.lossless_combine_latest(p_corrected_stream,
@@ -354,15 +354,16 @@ structure = es.map(dstar(refine_structure), es.zip(pdf_stream, source))
 structure.sink(LiveStructure)
 
 # """
-source.visualize('mystream.png',
-                 arrowsize='0.6', arrowhead='vee',
-                 center='true',
-                 margin='0.2',
-                 nodesep='0.1',
-                 ranksep='0.1')
+# source.visualize('mystream.png',
+#                  arrowsize='0.6', arrowhead='vee',
+#                  center='true',
+#                  margin='0.2',
+#                  nodesep='0.1',
+#                  ranksep='0.1')
 
 for e in db[-1].stream(fill=True):
-    plt.pause(.5)
+    if e[0] == 'event':
+        plt.pause(.5)
     # print(e)
     source.emit(e)
 
