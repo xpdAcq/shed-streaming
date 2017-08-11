@@ -519,7 +519,7 @@ class EventStream(Stream):
                                        for (output_name, desc), output in
                                        zzip(self.output_info, outputs)})
             else:
-                new_event.update(data=outputs['data'])
+                new_event.update(data=outputs)
             self.i += 1
             return new_event
 
