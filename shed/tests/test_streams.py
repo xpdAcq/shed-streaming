@@ -1176,3 +1176,19 @@ def test_curate_streams():
 
     assert doc5_curated == ('start', ({}, {}))
     assert doc5_curated2 == ('start', ({}, {}))
+
+
+def test_outputinfo_default(exp_db, start_uid1):
+    def empty_function(x):
+        return None
+
+    hdr = exp_db[start_uid1]
+
+    raw_data = list(hdr.stream(fill=True))
+    s = Stream()
+    s2 = es.map(empty_function, s, input_info={'x':'pe1_image'})
+
+
+    # should not raise any exception
+    for d in raw_data:
+        s.emit(d)
