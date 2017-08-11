@@ -1186,8 +1186,7 @@ def test_outputinfo_default(exp_db, start_uid1):
 
     raw_data = list(hdr.stream(fill=True))
     s = Stream()
-    s2 = es.map(empty_function, s, input_info={'x':'pe1_image'})
-
+    es.map(empty_function, s, input_info={'x': 'pe1_image'})
 
     # should not raise any exception
     for d in raw_data:
