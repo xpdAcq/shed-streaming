@@ -519,6 +519,15 @@ class EventStream(Stream):
                                        for (output_name, desc), output in
                                        zzip(self.output_info, outputs)})
             else:
+                if outputs is None:
+                    outputs = {}
+                elif not isinstance(outputs, dict):
+                    errormsg = "Error, outputs is not a dict. Can't continue"
+                    errormsg += "\n This typically comes from a function"
+                    errormsg += " whose output is not nothing or a dict."
+                    errormsg += " When dealing with such outputs, please "
+                    errormsg += "use the output_info keyword argument."
+                    raise TypeError(errormsg)
                 new_event.update(data=outputs)
             self.i += 1
             return new_event
