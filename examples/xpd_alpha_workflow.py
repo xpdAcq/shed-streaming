@@ -32,6 +32,8 @@ fs = FileStoreRO(d, version=1)
 fs.register_handler('AD_TIFF', AreaDetectorTiffHandler)
 db = Broker(mds=mds, fs=fs)
 
+print(db[-1]['start']['uid'])
+AAA
 
 # def better_mask_img(geo, img, binner):
 #     pass
@@ -156,8 +158,7 @@ def live_image_factory(field='pe1_image', window_title='Raw'):
 
 
 source = Stream(name='Foreground')
-source.sink(pprint)
-"""
+# source.sink(pprint)
 
 source.sink(star(LivePlot('pe1_stats1_total', 'temperature')))
 source.sink(star(live_image_factory()))
@@ -332,6 +333,7 @@ iq_stream = es.map(dstar(integrate),
 iq_stream.sink(star(LiveWaterfall('iq')))
 # iq_stream.sink(SinkToDB)
 
+"""
 # z-score the data
 z_score_stream = es.map(dstar(z_score_image),
                         es.lossless_combine_latest(p_corrected_stream,
