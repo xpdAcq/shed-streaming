@@ -27,6 +27,7 @@ from tornado.locks import Condition
 
 def star(f):
     """Take tuple and unpack it into args"""
+
     @ft.wraps(f)
     def wraps(args):
         return f(*args)
@@ -36,6 +37,7 @@ def star(f):
 
 def dstar(f):
     """Take dict and **kwargs and unpack both it as **kwargs"""
+
     @ft.wraps(f)
     def wraps(kwargs1, **kwargs2):
         kwargs1.update(kwargs2)
@@ -46,6 +48,7 @@ def dstar(f):
 
 def istar(f):
     """Inverse of star, take *args and turn into tuple"""
+
     @ft.wraps(f)
     def wraps(*args):
         return f(args)
@@ -306,7 +309,7 @@ class EventStream(Stream):
             The document
         """
         self.run_start_uid = str(uuid.uuid4())
-        self.parent_uids=[doc['uid'] for doc in docs if doc]
+        self.parent_uids = [doc['uid'] for doc in docs if doc]
         new_start_doc = dict(uid=self.run_start_uid,
                              time=time.time(), **self.md)
 
