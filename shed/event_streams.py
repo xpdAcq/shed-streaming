@@ -147,7 +147,10 @@ class EventStream(Stream):
             output_info = {}
         if input_info is None:
             input_info = {}
+
+        self.parent_uids = None
         self.outbound_descriptor_uid = None
+
         self.md = md
         self.md.update(**kwargs)
         self.output_info = output_info
@@ -272,8 +275,11 @@ class EventStream(Stream):
             d.update(input_info=self.input_info)
         if self.output_info:
             d.update(output_info=self.output_info)
+
         # TODO: support partials?
         d.update(**kwargs)
+
+        # Get all the callables and put them as their own dict inside the main
         for k, func in d.items():
             if callable(func):
                 d[k] = dict(function_module=func.__module__,
@@ -300,10 +306,10 @@ class EventStream(Stream):
             The document
         """
         self.run_start_uid = str(uuid.uuid4())
+        self.parent_uids=[doc['uid'] for doc in docs if doc]
         new_start_doc = dict(uid=self.run_start_uid,
                              time=time.time(), **self.md)
-        if all(docs):
-            new_start_doc.update(parents=[doc['uid'] for doc in docs])
+
         self.bypass = False
         return 'start', new_start_doc
 
@@ -384,7 +390,8 @@ class EventStream(Stream):
             new_stop = dict(uid=str(uuid.uuid4()),
                             time=time.time(),
                             run_start=self.run_start_uid,
-                            provenance=self.provenance
+                            provenance=self.provenance,
+                            parents=self.parent_uids
                             )
             if isinstance(docs, Exception):
                 self.bypass = True
