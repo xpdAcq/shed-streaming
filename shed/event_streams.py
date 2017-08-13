@@ -514,6 +514,7 @@ class EventStream(Stream):
                              filled={k[0]: True for k in self.output_info},
                              seq_num=self.i)
 
+            # if output_info is not empty dict
             if self.output_info:
                 new_event.update(data={output_name: output
                                        for (output_name, desc), output in
@@ -522,11 +523,12 @@ class EventStream(Stream):
                 if outputs is None:
                     outputs = {}
                 elif not isinstance(outputs, dict):
-                    errormsg = "Error, outputs is not a dict. Can't continue"
-                    errormsg += "\n This typically comes from a function"
-                    errormsg += " whose output is not nothing or a dict."
-                    errormsg += " When dealing with such outputs, please "
-                    errormsg += "use the output_info keyword argument."
+                    print('outputs not dict! raising  a type errror')
+                    errormsg = "Error, outputs is not a dict. Can't continue\n"
+                    errormsg += "This typically comes from a function\n"
+                    errormsg += "whose output is not nothing or a dict.\n"
+                    errormsg += "When dealing with such outputs, please \n"
+                    errormsg += "use the output_info keyword argument.\n"
                     raise TypeError(errormsg)
                 new_event.update(data=outputs)
             self.i += 1

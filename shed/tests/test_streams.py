@@ -1182,12 +1182,32 @@ def test_outputinfo_default(exp_db, start_uid1):
     def empty_function(x):
         return None
 
+    def bad_function(x):
+        # it doesn't return None or a dict,
+        # and when used by stream, output_info is not defined
+        return (1,)
+
     hdr = exp_db[start_uid1]
 
     raw_data = list(hdr.stream(fill=True))
     s = Stream()
     es.map(empty_function, s, input_info={'x': 'pe1_image'})
 
+    s2 = Stream()
+    s2_1 = es.map(bad_function, s2, input_info={'x': 'pe1_image'})
+    L = list()
+    es.map(L.append, s2_1)
+
     # should not raise any exception
     for d in raw_data:
         s.emit(d)
+
+    for d in raw_data:
+        # the Exception should be raised in the stop document, not in the
+        # events themselves
+        if d[0] == 'stop':
+            with pytest.raises(TypeError):
+                print("please raise me a type errorr")
+                s2.emit(d)
+        else:
+            s2.emit(d)
