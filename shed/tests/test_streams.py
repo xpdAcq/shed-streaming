@@ -1207,7 +1207,6 @@ def test_outputinfo_default(exp_db, start_uid1):
         # events themselves
         if d[0] == 'stop':
             with pytest.raises(TypeError):
-                print("please raise me a type errorr")
                 s2.emit(d)
         else:
             s2.emit(d)
