@@ -1015,3 +1015,39 @@ def test_event_contents_fail(exp_db, start_uid1):
     s = exp_db.restream(ih1, fill=True)
     for a in s:
         source.emit(a)
+
+
+def test_ingest_streams():
+    """ Ensure that stream curation works as intended"""
+    s = es.EventStream()
+    # try both dict and None type
+    doc1 = ('start', None)
+    doc2 = ('start', {})
+
+    doc3 = (('start', {}), ('start', {}))
+
+    doc4 = (('start', {}), ('start', ({}, {})))
+
+    doc1_curated = s.ingest_streams(doc1)
+    doc2_curated = s.ingest_streams(doc2)
+    doc3_curated = s.ingest_streams(doc3)
+    doc4_curated = s.ingest_streams(doc4)
+
+    # try nesting
+    doc1_curated2 = s.outgest_streams(doc1_curated)
+    doc2_curated2 = s.outgest_streams(doc2_curated)
+    doc3_curated2 = s.outgest_streams(doc3_curated)
+    doc4_curated2 = s.outgest_streams(doc4_curated)
+
+    print(doc3_curated)
+    assert doc1_curated == ('start', (None, ))
+    assert doc1_curated2 == ('start', None, )
+
+    assert doc2_curated == ('start', ({}, ))
+    assert doc2_curated2 == ('start', {})
+
+    assert doc3_curated == ('start', ({}, {}))
+    assert doc3_curated2 == ('start', ({}, {}))
+
+    assert doc4_curated == ('start', ({}, {}, {}))
+    assert doc4_curated2 == ('start', ({}, {}, {}))
