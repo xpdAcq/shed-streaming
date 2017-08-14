@@ -1078,22 +1078,26 @@ class Eventify(EventStream):
     >>> assert len(L) == 4
     """
 
-    def __init__(self, child, start_key, *, output_info, **kwargs):
+    def __init__(self, child, *start_keys, output_info, **kwargs):
         # TODO: maybe allow start_key to be a list of relevent keys?
-        self.start_key = start_key
-        self.val = None
+        self.start_keys = start_keys
+        self.vals = list()
         self.emit_event = False
 
         EventStream.__init__(self, child, output_info=output_info, **kwargs)
 
     def start(self, docs):
-        self.val = docs[0][self.start_key]
+        for start_key in self.start_keys:
+            self.vals.append(docs[0][start_key])
+
+        if len(self.output_info) == 1:
+            self.vals = self.vals[0]
         return super().start(docs)
 
     def event(self, docs):
         if not self.emit_event:
             self.emit_event = True
-            return super().event(self.issue_event(self.val))
+            return super().event(self.issue_event(self.vals))
 
 
 class Query(EventStream):

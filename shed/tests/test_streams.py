@@ -771,13 +771,23 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
 def test_eventify(exp_db, start_uid1):
     source = Stream()
 
-    dp = es.Eventify(source, 'name',
+    dp = es.Eventify(source, 'name', 'name',
                      output_info=[('name', {
                          'dtype': 'str',
                          'source': 'testing'})])
+    # try two outputs
+    dp2 = es.Eventify(source, 'name', 'name',
+                     output_info=[('name', {
+                         'dtype': 'str',
+                         'source': 'testing'}),
+                         ('name2',
+                          {'dtype': 'str', 'source': 'testing'})])
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
     dp.sink(print)
+    L2 = dp2.sink_to_list()
+    dp2.sink(star(SinkAssertion(False)))
+    dp2.sink(print)
 
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
@@ -785,13 +795,20 @@ def test_eventify(exp_db, start_uid1):
         source.emit(a)
 
     assert len(L) == 4
+    assert len(L2) == 4
     assert_docs = set()
-    for l in L:
+    assert_docs2 = set()
+    # zip them since we know they're same length and order
+    for l, l2 in zip(L, L2):
         assert_docs.add(l[0])
+        assert_docs2.add(l2[0])
         if l[0] == 'event':
             assert l[1]['data']['name'] == 'test'
+            assert l2[1]['data']['name'] == 'test'
+            assert l2[1]['data']['name2'] == 'test'
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+            assert l2[1]['exit_status'] == 'success'
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
 
