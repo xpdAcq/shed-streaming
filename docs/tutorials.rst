@@ -199,6 +199,102 @@ There are some extra details involving ``input_info`` and ``output_info`` that
 we can ignore for now. The take home message here is that SHED allows one to
 treat streams that follow the event model, without much boilerplate code.
 
+What's Happening to the Stream?
+*******************************
+(Optional tutorial)
+
+At any point in time during these tutorials, you may be wondering what's
+going on with the elements in the stream. During debugging, this
+connection to the raw data is especially useful. At any point, it's possible to
+probe the raw output of the stream by simply using the parent ``Stream``
+class. 
+
+SHED and ``Stream`` are fully interchangeable and compatible
+(so long as you know what you're doing and you adhere to SHED's name
+document pair format).
+
+Here is a typical way to intercept your output::
+
+    from streams import Stream
+    import shed.event_streams as es
+    import streams.core as sc
+
+    def addmydata(x):
+        data = x['data']
+        return data + 1
+    
+    s = Stream()
+    # this time, we pass the stream to event_stream's
+    # map method
+    s2 = es.map(lambda x : x['data'] + 1, s, input_info={'data' : 'data'},
+               output_info=(('data', {}),))
+    s3 = es.map(print, s2, input_info={'data' : 'data'},
+                output_info=(('data',{'dtype' : 'array'}),))
+    # add these two lines
+    L = list()
+    s4 = sc.map(L.append, s2)
+    
+    event_streams = gen_imgs([data1, data2], name="Alex", sample="FeO")
+    # generate the event streams again since generator is exhausted
+    #event_streams = gen_imgs([data1, data2], name="Alex", sample="FeO")
+    for namedocpair in event_streams:
+        s.emit(namedocpair)
+
+Where all we've added is a ``streams.core`` import and the creation of a
+list ``L`` and the map from a ``streams.core.map`` onto the stream.
+You may print the outputs of this list by typing::
+    for item in L:
+        print(item)
+
+Which in this case would give something like::
+
+    ('start', {'uid': 'be352ef0-fc20-4175-b137-c7ce4111160d', 'time':
+    1502716320.1736734, 'provenance': {'stream_class': 'map',
+    'stream_class_module': 'shed.event_streams', 'input_info': {'data':
+    ('data', 0)}, 'output_info': (('data', {}),), 'function':
+    {'function_module': '__main__', 'function_name': '<lambda>'}},
+    'parents': ['e82e5162-991b-4d5d-a06e-a5f34ded4960']})
+
+    ('descriptor', {'uid': 'ae12e047-4549-46ff-9d02-5c1dc6e51359', 'time':
+    1502716320.173751, 'run_start': 'be352ef0-fc20-4175-b137-c7ce4111160d',
+    'data_keys': {'data': {}}})
+
+    ('event', {'uid': 'd3728862-5bca-4bac-8f19-05da6e5fed7d', 'time':
+    1502716320.174018, 'timestamps': {}, 'descriptor':
+    'ae12e047-4549-46ff-9d02-5c1dc6e51359', 'filled': {'data': True},
+    'seq_num': 0, 'data': {'data': array([[1, 1, 1, ..., 1, 1, 1],
+           [1, 1, 1, ..., 1, 1, 1],
+           [1, 1, 1, ..., 1, 1, 1],
+           ..., 
+           [1, 1, 1, ..., 1, 1, 1],
+           [1, 1, 1, ..., 1, 1, 1],
+           [1, 1, 1, ..., 1, 1, 1]])}})
+
+    ('event', {'uid': '7aa7e146-aa2b-4369-a072-89d5b3e72b3c', 'time':
+    1502716320.1746032, 'timestamps': {}, 'descriptor':
+    'ae12e047-4549-46ff-9d02-5c1dc6e51359', 'filled': {'data': True},
+    'seq_num': 1, 'data': {'data': array([[1, 1, 1, ..., 1, 1, 1],
+           [1, 1, 1, ..., 1, 1, 1],
+           [1, 1, 1, ..., 1, 1, 1],
+           ..., 
+           [1, 1, 1, ..., 1, 1, 1],
+           [1, 1, 1, ..., 1, 1, 1],
+           [1, 1, 1, ..., 1, 1, 1]])}})
+
+    ('stop', {'uid': '12b8338c-b1c8-42b2-99dc-fbaaf2447975', 'time':
+    1502716320.1751397, 'run_start': 'be352ef0-fc20-4175-b137-c7ce4111160d',
+    'exit_status': 'success'})
+    
+
+
+Note that the output is as we expect, a series of ``(name, doc)`` pairs
+where ``name`` is one of the strings ``'start'``, ``'decriptor'``,
+``'event'`` or ``'stop'``. From here on, we won't dig further into the
+structure of the events. But we encourage you to output intermediate
+steps like this as much as you can.
+
+
+
 Tutorial 3 : Mapping inputs and outputs
 ------------------------------------
 
