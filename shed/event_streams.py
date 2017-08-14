@@ -27,6 +27,7 @@ from tornado.locks import Condition
 
 def star(f):
     """Take tuple and unpack it into args"""
+
     @ft.wraps(f)
     def wraps(args):
         return f(*args)
@@ -36,6 +37,7 @@ def star(f):
 
 def dstar(f):
     """Take dict and **kwargs and unpack both it as **kwargs"""
+
     @ft.wraps(f)
     def wraps(kwargs1, **kwargs2):
         kwargs1.update(kwargs2)
@@ -46,6 +48,7 @@ def dstar(f):
 
 def istar(f):
     """Inverse of star, take *args and turn into tuple"""
+
     @ft.wraps(f)
     def wraps(*args):
         return f(args)
@@ -147,7 +150,10 @@ class EventStream(Stream):
             output_info = {}
         if input_info is None:
             input_info = {}
+
+        self.parent_uids = None
         self.outbound_descriptor_uid = None
+
         self.md = md
         self.md.update(**kwargs)
         self.output_info = output_info
@@ -272,8 +278,11 @@ class EventStream(Stream):
             d.update(input_info=self.input_info)
         if self.output_info:
             d.update(output_info=self.output_info)
+
         # TODO: support partials?
         d.update(**kwargs)
+
+        # Get all the callables and put them as their own dict inside the main
         for k, func in d.items():
             if callable(func):
                 d[k] = dict(function_module=func.__module__,
@@ -300,11 +309,10 @@ class EventStream(Stream):
             The document
         """
         self.run_start_uid = str(uuid.uuid4())
+        self.parent_uids = [doc['uid'] for doc in docs if doc]
         new_start_doc = dict(uid=self.run_start_uid,
-                             time=time.time(),
-                             provenance=self.provenance, **self.md)
-        if all(docs):
-            new_start_doc.update(parents=[doc['uid'] for doc in docs])
+                             time=time.time(), **self.md)
+
         self.bypass = False
         return 'start', new_start_doc
 
@@ -384,7 +392,10 @@ class EventStream(Stream):
                 raise RuntimeError("Received RunStop before RunStart.")
             new_stop = dict(uid=str(uuid.uuid4()),
                             time=time.time(),
-                            run_start=self.run_start_uid)
+                            run_start=self.run_start_uid,
+                            provenance=self.provenance,
+                            parents=self.parent_uids
+                            )
             if isinstance(docs, Exception):
                 self.bypass = True
                 new_stop.update(reason=repr(docs),

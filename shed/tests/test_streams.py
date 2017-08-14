@@ -73,13 +73,12 @@ def test_map(exp_db, start_uid1):
     assert_docs = set()
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
         assert_docs.add(l[0])
-        if l[0] == 'start':
-            assert l[1]['provenance'] == prov
         if l[0] == 'event':
             assert_allclose(l[1]['data']['image'],
                             s[1]['data']['pe1_image'] + 5)
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+            assert l[1]['provenance'] == prov
         assert l[1] != s[1]
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -113,13 +112,12 @@ def test_map_two_runs(exp_db, start_uid1):
     assert_docs = set()
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
         assert_docs.add(l[0])
-        if l[0] == 'start':
-            assert l[1]['provenance'] == prov
         if l[0] == 'event':
             assert_allclose(l[1]['data']['image'],
                             s[1]['data']['pe1_image'] + 5)
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+            assert l[1]['provenance'] == prov
         assert l[1] != s[1]
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -134,13 +132,12 @@ def test_map_two_runs(exp_db, start_uid1):
     assert_docs = set()
     for l, s, ll in zip(L, exp_db.restream(ih1, fill=True), L_original):
         assert_docs.add(l[0])
-        if l[0] == 'start':
-            assert l[1]['provenance'] == ll[1]['provenance']
         if l[0] == 'event':
             assert_allclose(l[1]['data']['image'],
                             ll[1]['data']['image'])
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+            assert l[1]['provenance'] == ll[1]['provenance']
         assert l[1] != s[1]
         assert_raises(AssertionError, assert_equal, l[1], ll[1])
     for n in ['start', 'descriptor', 'event', 'stop']:
@@ -178,8 +175,6 @@ def test_map_full_event(exp_db, start_uid1):
     assert_docs = set()
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
         assert_docs.add(l[0])
-        if l[0] == 'start':
-            assert l[1]['provenance'] == prov
         if l[0] == 'event':
             print(l[1])
             print(s[1]['seq_num'])
@@ -187,6 +182,7 @@ def test_map_full_event(exp_db, start_uid1):
                             s[1]['seq_num'] + 5)
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+            assert l[1]['provenance'] == prov
         assert l[1] != s[1]
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -221,12 +217,11 @@ def test_map_stream_input(exp_db, start_uid1):
     assert_docs = set()
     for l, s in zip(L, exp_db.restream(ih1, fill=True)):
         assert_docs.add(l[0])
-        if l[0] == 'start':
-            assert l[1]['provenance'] == prov
         if l[0] == 'event':
             assert_allclose(l[1]['data']['img'], s[1]['data']['pe1_image'] + 5)
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
+            assert l[1]['provenance'] == prov
         assert l[1] != s[1]
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
