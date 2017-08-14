@@ -181,6 +181,7 @@
 
 <div class="viewcode-block" id="star"><a class="viewcode-back" href="../../shed.html#shed.event_streams.star">[docs]</a><span class="k">def</span> <span class="nf">star</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Take tuple and unpack it into args&quot;&quot;&quot;</span>
+
     <span class="nd">@ft</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">wraps</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
@@ -190,6 +191,7 @@
 
 <div class="viewcode-block" id="dstar"><a class="viewcode-back" href="../../shed.html#shed.event_streams.dstar">[docs]</a><span class="k">def</span> <span class="nf">dstar</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Take dict and **kwargs and unpack both it as **kwargs&quot;&quot;&quot;</span>
+
     <span class="nd">@ft</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">wraps</span><span class="p">(</span><span class="n">kwargs1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs2</span><span class="p">):</span>
         <span class="n">kwargs1</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs2</span><span class="p">)</span>
@@ -200,6 +202,7 @@
 
 <div class="viewcode-block" id="istar"><a class="viewcode-back" href="../../shed.html#shed.event_streams.istar">[docs]</a><span class="k">def</span> <span class="nf">istar</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Inverse of star, take *args and turn into tuple&quot;&quot;&quot;</span>
+
     <span class="nd">@ft</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">wraps</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
@@ -301,7 +304,10 @@
             <span class="n">output_info</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">input_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">input_info</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_uids</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outbound_descriptor_uid</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">md</span> <span class="o">=</span> <span class="n">md</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">output_info</span> <span class="o">=</span> <span class="n">output_info</span>
@@ -426,8 +432,11 @@
             <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">input_info</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_info</span><span class="p">:</span>
             <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">output_info</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output_info</span><span class="p">)</span>
+
         <span class="c1"># TODO: support partials?</span>
         <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Get all the callables and put them as their own dict inside the main</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
                 <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">function_module</span><span class="o">=</span><span class="n">func</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span>
@@ -454,11 +463,10 @@
 <span class="sd">            The document</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_uids</span> <span class="o">=</span> <span class="p">[</span><span class="n">doc</span><span class="p">[</span><span class="s1">&#39;uid&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">docs</span> <span class="k">if</span> <span class="n">doc</span><span class="p">]</span>
         <span class="n">new_start_doc</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">uid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span><span class="p">,</span>
-                             <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
-                             <span class="n">provenance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">provenance</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">docs</span><span class="p">):</span>
-            <span class="n">new_start_doc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="n">doc</span><span class="p">[</span><span class="s1">&#39;uid&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">])</span>
+                             <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">bypass</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">new_start_doc</span></div>
 
@@ -538,7 +546,10 @@
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Received RunStop before RunStart.&quot;</span><span class="p">)</span>
             <span class="n">new_stop</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">uid</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
                             <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
-                            <span class="n">run_start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span><span class="p">)</span>
+                            <span class="n">run_start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span><span class="p">,</span>
+                            <span class="n">provenance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">provenance</span><span class="p">,</span>
+                            <span class="n">parents</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_uids</span>
+                            <span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">bypass</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="n">new_stop</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="nb">repr</span><span class="p">(</span><span class="n">docs</span><span class="p">),</span>
