@@ -256,7 +256,20 @@ class EventStream(Stream):
         else:
             names, docs = nds
             name = names
-            docs = (docs,)
+            # make sure it's a dict not tuple
+            if not isinstance(nds[1], tuple):
+                docs = (docs,)
+        # this is needed in case some elements of docs were a list
+        # here we assume doc is always a dict and the list of docs a tuple
+        newdocs = list()
+        for doc in docs:
+            # for case of ((name, ({}, {})), (name, ({}, {})))
+            if isinstance(doc, tuple):
+                newdocs.extend(doc)
+            else:
+                newdocs.append(doc)
+
+        docs = tuple(newdocs)
         return name, docs
 
     def generate_provenance(self, **kwargs):
@@ -746,7 +759,7 @@ class zip(EventStream):
             tup = tuple(buf.popleft() for buf in self.buffers)
             self.condition.notify_all()
             self.prior = tup
-            return self.emit(tup)
+            return self.emit(self.curate_streams(tup))
         elif len(L) > self.maxsize:
             return self.condition.wait()
 
