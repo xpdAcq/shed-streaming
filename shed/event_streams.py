@@ -253,6 +253,17 @@ class EventStream(Stream):
             # make sure it's a dict not tuple
             if not isinstance(nds[1], tuple):
                 docs = (docs,)
+        # this is needed in case some elements of docs were a list
+        # here we assume doc is always a dict and the list of docs a tuple
+        newdocs = list()
+        for doc in docs:
+            # for case of ((name, ({}, {})), (name, ({}, {})))
+            if isinstance(doc, tuple):
+                newdocs.extend(doc)
+            else:
+                newdocs.append(doc)
+
+        docs = tuple(newdocs)
         return name, docs
 
     def generate_provenance(self, **kwargs):

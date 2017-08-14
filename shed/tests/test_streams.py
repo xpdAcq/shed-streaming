@@ -873,13 +873,17 @@ def test_curate_streams():
 
     doc3 = (('start', {}), ('start', {}))
 
+    doc4 = (('start', {}), ('start', ({}, {})))
+
     doc1_curated = s.curate_streams(doc1)
     doc2_curated = s.curate_streams(doc2)
     doc3_curated = s.curate_streams(doc3)
+    doc4_curated = s.curate_streams(doc4)
     # try nesting
     doc1_curated2 = s.curate_streams(doc1_curated)
     doc2_curated2 = s.curate_streams(doc2_curated)
     doc3_curated2 = s.curate_streams(doc3_curated)
+    doc4_curated2 = s.curate_streams(doc4_curated)
 
     print(doc3_curated)
     assert doc1_curated == ('start', (None, ))
@@ -890,3 +894,6 @@ def test_curate_streams():
 
     assert doc3_curated == ('start', ({}, {}))
     assert doc3_curated2 == ('start', ({}, {}))
+
+    assert doc4_curated == ('start', ({}, {}, {}))
+    assert doc4_curated2 == ('start', ({}, {}, {}))
