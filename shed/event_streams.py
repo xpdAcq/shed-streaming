@@ -432,20 +432,20 @@ class EventStream(Stream):
         # TODO: address inner dicts, not just data or everything
         if full_event:
             kwargs = {input_kwarg: docs[position][data_key] for
-                 input_kwarg, (data_key, position) in
-                 self.input_info.items()}
+                      input_kwarg, (data_key, position) in
+                      self.input_info.items()}
         else:
             kwargs = {input_kwarg: docs[position]['data'][data_key] for
-                 input_kwarg, (data_key, position) in
-                 self.input_info.items()}
+                      input_kwarg, (data_key, position) in
+                      self.input_info.items()}
         args_positions = [k for k in kwargs.keys() if isinstance(k, int)]
         args_positions.sort()
 
         n_args = len(args_positions)
         if args_positions and (args_positions[-1] != n_args - 1 or
                                args_positions[0] != 0):
-            errormsg = """Error, arguments supplied must be a set of integers 
-            ranging from 0 to number of arguments\n 
+            errormsg = """Error, arguments supplied must be a set of integers
+            ranging from 0 to number of arguments\n
             Got {} instead""".format(args_positions)
             raise ValueError(errormsg)
 
