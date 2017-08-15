@@ -83,7 +83,11 @@ class EventStream(Stream):
         Input info for an operation. Operations are callables that will apply
         operations to the data streams. Not always needed. The input_info
         provides a map between event data keys and the callable (function)
-        args/kwargs
+        args/kwargs.
+        Note that the keys for `input_info` can either be strings or integers.
+        If a string, then the data associated with the value will be mapped to
+        that kwarg in the funciton. If an int then the data will be placed in
+        the position in the args matching the numerical value.
 
     output_info : list of tuples, optional
         Output info from the operation, not needed for all cases
@@ -427,18 +431,25 @@ class EventStream(Stream):
         """
         # TODO: address inner dicts, not just data or everything
         if full_event:
-            m = {input_kwarg: docs[position][data_key] for
+            kwargs = {input_kwarg: docs[position][data_key] for
                  input_kwarg, (data_key, position) in
                  self.input_info.items()}
         else:
-            m = {input_kwarg: docs[position]['data'][data_key] for
+            kwargs = {input_kwarg: docs[position]['data'][data_key] for
                  input_kwarg, (data_key, position) in
                  self.input_info.items()}
-        args_positions = [k for k in m.keys() if isinstance(k, int)]
+        args_positions = [k for k in kwargs.keys() if isinstance(k, int)]
         args_positions.sort()
 
-        args = [m.pop(k) for k in args_positions]
-        return args, m
+        n_args = len(args_positions)
+        if args_positions[n_args - 1] != n_args - 1 and args_positions[0] != 0:
+            errormsg = """Error, arguments supplied must be a set of integers 
+            ranging from 0 to number of arguments\n 
+            Got {} instead""".format(args_positions)
+            raise ValueError(errormsg)
+
+        args = [kwargs.pop(k) for k in args_positions]
+        return args, kwargs
 
     def issue_event(self, outputs):
         """Create a new event document based off of function returns
@@ -522,6 +533,8 @@ class map(EventStream):
         The function to map on the event data
     child: EventStream instance
         The source of the data
+    *args: tuple
+        args to be passed to the function
     full_event: bool, optional
         If True expose the full event dict to the function, if False
         only expose the data from the event
@@ -529,6 +542,8 @@ class map(EventStream):
         describe the incoming streams
     output_info: list of tuples
         describe the resulting stream
+    **kwargs: dict
+        kwargs to be passed to the function
 
     Examples
     --------
@@ -585,11 +600,15 @@ class filter(EventStream):
         further in the pipeline
     child: EventStream instance
         The source of the data
+    *args: tuple
+        args to be passed to the function
     input_info: dict
         describe the incoming streams
     full_event: bool, optional
         If True expose the full event dict to the predicate, if False
         only expose the data from the event
+    **kwargs: dict
+        kwargs to be passed to the function
 
     Examples
     --------
@@ -606,20 +625,23 @@ class filter(EventStream):
     >>> assert len(L) == 5
     """
 
-    def __init__(self, predicate, child, *, input_info,
+    def __init__(self, predicate, child, *args, input_info,
                  full_event=False, **kwargs):
         """Initialize the node
         """
         self.predicate = predicate
 
         EventStream.__init__(self, child, input_info=input_info, **kwargs)
+        self.kwargs = kwargs
+        self.args = args
         self.full_event = full_event
         self.generate_provenance(predicate=predicate)
 
     def event(self, doc):
-        g = self.event_contents(doc, self.full_event)
+        res_args, res_kwargs = self.event_contents(doc, self.full_event)
         try:
-            if self.predicate(g):
+            if self.predicate(*res_args, *self.args,
+                              **res_kwargs, **self.kwargs):
                 return super().event(doc[0])
         except Exception as e:
             return super().stop(e)
@@ -673,7 +695,7 @@ class accumulate(EventStream):
     >>> assert len(L) == 6
     """
 
-    def __init__(self, func, child, state_key=None, *,
+    def __init__(self, func, child, state_key=None,
                  full_event=False,
                  output_info=None,
                  input_info=None, start=no_default):
@@ -686,7 +708,8 @@ class accumulate(EventStream):
         self.generate_provenance(function=func)
 
     def event(self, doc):
-        data = self.event_contents(doc, self.full_event)
+        # TODO: can accumulate support args/kwargs?
+        args, data = self.event_contents(doc, self.full_event)
 
         if self.state is no_default:
             self.state = {}

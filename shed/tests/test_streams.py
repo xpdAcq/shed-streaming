@@ -53,7 +53,7 @@ def test_map(exp_db, start_uid1):
 
     ii = {'img': 'pe1_image'}
     oi = [('image', {'dtype': 'array', 'source': 'testing'})]
-    dp = es.map(dstar(add5),
+    dp = es.map(add5,
                 source,
                 input_info=ii,
                 output_info=oi)
@@ -171,7 +171,7 @@ def test_map_two_runs(exp_db, start_uid1):
 
     ii = {'img': 'pe1_image'}
     oi = [('image', {'dtype': 'array', 'source': 'testing'})]
-    dp = es.map(dstar(add5),
+    dp = es.map(add5,
                 source,
                 input_info=ii,
                 output_info=oi)
@@ -231,7 +231,7 @@ def test_map_full_event(exp_db, start_uid1):
 
     ii = {'i': 'seq_num'}
     oi = [('i', {'dtype': 'array', 'source': 'testing'})]
-    dp = es.map(dstar(add5),
+    dp = es.map(add5,
                 source,
                 input_info=ii,
                 output_info=oi,
@@ -275,7 +275,7 @@ def test_map_stream_input(exp_db, start_uid1):
 
     ii = {'img': ('pe1_image', source)}
     oi = [('img', {'dtype': 'array', 'source': 'testing'})]
-    dp = es.map(dstar(add5),
+    dp = es.map((add5),
                 source,
                 input_info=ii,
                 output_info=oi)
@@ -313,7 +313,7 @@ def test_double_map(exp_db, start_uid1):
     def add_imgs(img1, img2):
         return img1 + img2
 
-    dp = es.map(dstar(add_imgs), es.zip(source, source2),
+    dp = es.map((add_imgs), es.zip(source, source2),
                 input_info={'img1': ('pe1_image', 0),
                             'img2': ('pe1_image', 1)},
                 output_info=[
@@ -348,7 +348,7 @@ def test_double_internal_map(exp_db, start_uid1):
     def div(img1, ct):
         return img1 / ct
 
-    dp = es.map(dstar(div), source,
+    dp = es.map((div), source,
                 input_info={'img1': 'pe1_image', 'ct': 'I0'},
                 output_info=[
                     ('img',
@@ -384,7 +384,7 @@ def test_map_fail(exp_db, start_uid1):
 
     ii = {'i': 'pe1_image'}
     oi = [('image', {'dtype': 'array', 'source': 'testing'})]
-    dp = es.map(dstar(add5),
+    dp = es.map((add5),
                 source,
                 input_info=ii,
                 output_info=oi)
@@ -404,7 +404,7 @@ def test_map_fail_dont_except(exp_db, start_uid1):
 
     ii = {'i': 'pe1_image'}
     oi = [('image', {'dtype': 'array', 'source': 'testing'})]
-    dp = es.map(dstar(add5),
+    dp = es.map(add5,
                 source,
                 input_info=ii,
                 output_info=oi, raise_upon_error=False)
@@ -432,8 +432,64 @@ def test_filter(exp_db, start_uid1):
     def f(img1):
         return img1 is not None
 
-    dp = es.filter(dstar(f), source,
+    dp = es.filter(f, source,
                    input_info={'img1': 'pe1_image'})
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert_allclose(l[1]['data']['pe1_image'],
+                            s[1]['data']['pe1_image'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_filter_args_kwargs(exp_db, start_uid1):
+    source = Stream()
+
+    def f(img1, a):
+        return img1 is not None and a == 1
+
+    dp = es.filter(f, source,
+                   input_info={0: 'pe1_image'}, a=1)
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert_allclose(l[1]['data']['pe1_image'],
+                            s[1]['data']['pe1_image'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_filter_args(exp_db, start_uid1):
+    source = Stream()
+
+    def f(img1):
+        return img1 is not None
+
+    dp = es.filter(f, source,
+                   input_info={0: 'pe1_image'})
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -461,7 +517,7 @@ def test_filter_fail(exp_db, start_uid1):
     def f(img1):
         return img1 is not None
 
-    dp = es.filter(dstar(f), source,
+    dp = es.filter(f, source,
                    input_info={'i': 'pe1_image'})
     dp.sink(star(SinkAssertion()))
 
@@ -477,7 +533,7 @@ def test_filter_full_event(exp_db, start_uid1):
     def f(i):
         return i > 1
 
-    dp = es.filter(dstar(f), source,
+    dp = es.filter(f, source,
                    input_info={'i': 'seq_num'},
                    full_event=True)
     L = dp.sink_to_list()
@@ -912,7 +968,7 @@ def test_workflow(exp_db, start_uid1):
     dark_data_stream = Stream()
 
     z = es.combine_latest(rds, dark_data_stream, emit_on=rds)
-    img_stream = es.map(dstar(subs),
+    img_stream = es.map((subs),
                         z,
                         input_info={'x1': 'pe1_image',
                                     'x2': 'pe1_image'},
