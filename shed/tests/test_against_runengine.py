@@ -15,7 +15,7 @@ def test_all_add_5(fresh_RE):
     def add5(img):
         return add(5, img)
 
-    dp = es.map(es.dstar(add5), source, input_info={'img': 'det'},
+    dp = es.map(add5, source, input_info={'img': 'det'},
                 output_info=[('det5', {'dtype': 'float', 'source': 'test'})])
     dp.sink(print)
     L = dp.sink_to_list()
