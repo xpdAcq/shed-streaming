@@ -535,7 +535,8 @@ class map(EventStream):
     child: EventStream instance
         The source of the data
     *args: tuple
-        args to be passed to the function
+        args to be passed to the function,
+        which are appended to the args from `input_info`
     full_event: bool, optional
         If True expose the full event dict to the function, if False
         only expose the data from the event
@@ -602,7 +603,8 @@ class filter(EventStream):
     child: EventStream instance
         The source of the data
     *args: tuple
-        args to be passed to the function
+        args to be passed to the function,
+        which are appended to the args from `input_info`
     input_info: dict
         describe the incoming streams
     full_event: bool, optional
