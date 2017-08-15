@@ -27,17 +27,18 @@ from bluesky.examples import ReaderWithRegistryHandler
 
 @pytest.fixture(scope='function')
 def start_uid1(exp_db):
-    return str(exp_db[0]['start']['uid'])
-
-
-@pytest.fixture(scope='function')
-def start_uid2(exp_db):
+    print(exp_db[1])
     return str(exp_db[1]['start']['uid'])
 
 
 @pytest.fixture(scope='function')
-def start_uid3(exp_db):
+def start_uid2(exp_db):
     return str(exp_db[2]['start']['uid'])
+
+
+@pytest.fixture(scope='function')
+def start_uid3(exp_db):
+    return str(exp_db[3]['start']['uid'])
 
 
 @pytest.fixture(scope='module')
@@ -72,7 +73,7 @@ def exp_db(db, tmp_dir, img_size, fresh_RE):
                        pi_name='tim', bt_safN=1)
     uid3 = insert_imgs(RE, fs, 2, img_size, tmp_dir,
                        pi_name='chris', bt_safN=2)
-    yield db2, uid1, uid2, uid3
+    yield db2
 
 
 @pytest.fixture(scope='module')
