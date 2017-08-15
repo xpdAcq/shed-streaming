@@ -36,13 +36,13 @@ class SinkAssertion(CallbackBase):
         return getattr(self, name)(doc)
 
     def stop(self, doc):
-        assert self.expected_docs == set(self.docs)
         if self.fail:
             assert doc['exit_status'] == 'failure'
             assert doc.get('reason')
         else:
             assert doc['exit_status']
             assert not doc.get('reason', None)
+        assert self.expected_docs == set(self.docs)
 
 
 def test_map(exp_db, start_uid1):
@@ -68,6 +68,85 @@ def test_map(exp_db, start_uid1):
     prov = dict(stream_class='map',
                 function=dict(function_module=add5.__module__,
                               function_name=add5.__name__),
+                stream_class_module=es.map.__module__,
+                input_info=ii, output_info=oi)
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert_allclose(l[1]['data']['image'],
+                            s[1]['data']['pe1_image'] + 5)
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+            assert l[1]['provenance'] == prov
+        assert l[1] != s[1]
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_map_args(exp_db, start_uid1):
+    source = Stream()
+
+    from operator import add
+
+    ii = {0: 'pe1_image'}
+    oi = [('image', {'dtype': 'array', 'source': 'testing'})]
+    dp = es.map(add,
+                source,
+                5,
+                input_info=ii,
+                output_info=oi)
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    prov = dict(stream_class='map',
+                function=dict(function_module=add.__module__,
+                              function_name=add.__name__),
+                stream_class_module=es.map.__module__,
+                input_info=ii, output_info=oi)
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert_allclose(l[1]['data']['image'],
+                            s[1]['data']['pe1_image'] + 5)
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+            assert l[1]['provenance'] == prov
+        assert l[1] != s[1]
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_map_args_kwargs(exp_db, start_uid1):
+    source = Stream()
+
+    def add(img, adder):
+        return img + adder
+
+    ii = {0: 'pe1_image'}
+    oi = [('image', {'dtype': 'array', 'source': 'testing'})]
+    dp = es.map(add,
+                source,
+                adder=5,
+                input_info=ii,
+                output_info=oi)
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    prov = dict(stream_class='map',
+                function=dict(function_module=add.__module__,
+                              function_name=add.__name__),
                 stream_class_module=es.map.__module__,
                 input_info=ii, output_info=oi)
     assert_docs = set()

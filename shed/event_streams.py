@@ -425,15 +425,20 @@ class EventStream(Stream):
         -------
 
         """
-        # TODO: what if I want to operate on the full event? Return full dict
+        # TODO: address inner dicts, not just data or everything
         if full_event:
-            return {input_kwarg: docs[position][data_key] for
-                    input_kwarg, (data_key, position) in
-                    self.input_info.items()}
+            m = {input_kwarg: docs[position][data_key] for
+                 input_kwarg, (data_key, position) in
+                 self.input_info.items()}
         else:
-            return {input_kwarg: docs[position]['data'][data_key] for
-                    input_kwarg, (data_key, position) in
-                    self.input_info.items()}
+            m = {input_kwarg: docs[position]['data'][data_key] for
+                 input_kwarg, (data_key, position) in
+                 self.input_info.items()}
+        args_positions = [k for k in m.keys() if isinstance(k, int)]
+        args_positions.sort()
+
+        args = [m.pop(k) for k in args_positions]
+        return args, m
 
     def issue_event(self, outputs):
         """Create a new event document based off of function returns
@@ -539,26 +544,29 @@ class map(EventStream):
     >>> l = m.sink(print)
     >>> L = m.sink_to_list()
     >>> for doc in g: z = source.emit(doc)
-    >> assert len(L) == 6
+    >>> assert len(L) == 6
     """
 
-    def __init__(self, func, child, *,
+    def __init__(self, func, child, *args,
                  full_event=False,
                  output_info=None, input_info=None,
                  **kwargs):
         self.func = func
-        self.kwargs = kwargs
 
         EventStream.__init__(self, child, output_info=output_info,
                              input_info=input_info, **kwargs)
+        self.kwargs = kwargs
+        self.args = args
         self.full_event = full_event
         self.generate_provenance(function=func)
 
     def event(self, docs):
         try:
             # we need to expose the event data
-            res = self.event_contents(docs, self.full_event)
-            result = self.func(res, **self.kwargs)
+            res_args, res_kwargs = self.event_contents(docs, self.full_event)
+            # take the event contents and add them to the args/kwargs
+            result = self.func(*res_args, *self.args,
+                               **res_kwargs, **self.kwargs)
             # Now we must massage the raw return into a new event
             result = self.issue_event(result)
         except Exception as e:
