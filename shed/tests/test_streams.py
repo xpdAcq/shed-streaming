@@ -13,7 +13,7 @@
 #
 ##############################################################################
 from numpy.testing import assert_allclose, assert_equal, assert_raises
-from streams.core import Stream
+from streamz.core import Stream
 
 import shed.event_streams as es
 from ..event_streams import dstar, star

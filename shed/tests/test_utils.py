@@ -1,5 +1,5 @@
 """Test generator for yielding valid event model from an iterable"""
-from streams import Stream
+from streamz import Stream
 from shed.event_streams import star
 from ..utils import to_event_model
 from bluesky.callbacks.core import CallbackBase

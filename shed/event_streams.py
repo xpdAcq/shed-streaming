@@ -21,7 +21,7 @@ import uuid
 from builtins import zip as zzip
 from collections import deque
 
-from streams.core import Stream, no_default
+from streamz.core import Stream, no_default
 from tornado.locks import Condition
 
 
@@ -553,7 +553,7 @@ class map(EventStream):
     Examples
     --------
     >>> from shed.utils import to_event_model
-    >>> from streams import Stream
+    >>> from streamz import Stream
     >>> import shed.event_streams as es
     >>> a = [1, 2, 3]  # base data
     >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
@@ -619,7 +619,7 @@ class filter(EventStream):
     Examples
     --------
     >>> from shed.utils import to_event_model
-    >>> from streams import Stream
+    >>> from streamz import Stream
     >>> import shed.event_streams as es
     >>> a = [1, 2, 3]  # base data
     >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
@@ -686,7 +686,7 @@ class accumulate(EventStream):
     Examples
     --------
     >>> from shed.utils import to_event_model
-    >>> from streams import Stream
+    >>> from streamz import Stream
     >>> import shed.event_streams as es
     >>> a = [1, 2, 3]  # base data
     >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
@@ -746,7 +746,7 @@ class zip(EventStream):
     Examples
     --------
     >>> from shed.utils import to_event_model
-    >>> from streams import Stream
+    >>> from streamz import Stream
     >>> import shed.event_streams as es
     >>> from builtins import zip as zzip
     >>> a = [1, 2, 3]  # base data
@@ -799,7 +799,7 @@ class Bundle(EventStream):
     Examples
     --------
     >>> from shed.utils import to_event_model
-    >>> from streams import Stream
+    >>> from streamz import Stream
     >>> import shed.event_streams as es
     >>> from builtins import zip as zzip
     >>> a = [1, 2, 3]  # base data
@@ -881,7 +881,7 @@ class BundleSingleStream(EventStream):
     Examples
     --------
     >>> from shed.utils import to_event_model
-    >>> from streams import Stream
+    >>> from streamz import Stream
     >>> import shed.event_streams as es
     >>> a = [1, 2, 3]  # base data
     >>> b = [4, 5, 6]
@@ -970,7 +970,7 @@ class combine_latest(EventStream):
     Examples
     --------
     >>> from shed.utils import to_event_model
-    >>> from streams import Stream
+    >>> from streamz import Stream
     >>> import shed.event_streams as es
     >>> a = [1, 2, 3]  # base data
     >>> b = [4, 5, 6]
@@ -1040,7 +1040,7 @@ class Eventify(EventStream):
     Examples
     --------
     >>> from shed.utils import to_event_model
-    >>> from streams import Stream
+    >>> from streamz import Stream
     >>> import shed.event_streams as es
     >>> a = [1, 2, 3]  # base data
     >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
