@@ -992,3 +992,24 @@ def test_workflow(exp_db, start_uid1):
         assert d
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_event_contents_fail(exp_db, start_uid1):
+    source = Stream()
+
+    from operator import add
+
+    ii = {1: 'pe1_image'}
+    oi = [('image', {'dtype': 'array', 'source': 'testing'})]
+    dp = es.map(add,
+                source,
+                5,
+                input_info=ii,
+                output_info=oi)
+    dp.sink(star(SinkAssertion(True)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
