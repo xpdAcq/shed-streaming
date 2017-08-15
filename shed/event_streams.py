@@ -427,7 +427,10 @@ class EventStream(Stream):
 
         Returns
         -------
-
+        args: tuple
+            The arguments to be passed to a function
+        kwargs: dict
+            The keyword arguments to be passed to a function
         """
         # TODO: address inner dicts, not just data or everything
         if full_event:
