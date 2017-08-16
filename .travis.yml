@@ -53,7 +53,7 @@ before_install:
 
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
-  - conda create --yes -n testenv numpy scipy flake8 matplotlib python=$TRAVIS_PYTHON_VERSION pytest coverage pip databroker bluesky nose -c conda-forge -c lightsource2-dev -c lightsource-tag -c lightsource2 -c soft-matter
+  - conda create --yes -n testenv numpy scipy flake8 matplotlib python=$TRAVIS_PYTHON_VERSION pytest coverage codecov pip databroker bluesky nose -c conda-forge -c lightsource2-dev -c lightsource-tag -c lightsource2 -c soft-matter
   - source activate testenv
   - if [[ "${CUTTING_EDGE}" == true ]]; then
       conda remove metadatastore databroker filestore bluesky event-model --yes;
