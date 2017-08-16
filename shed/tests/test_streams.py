@@ -777,11 +777,11 @@ def test_eventify(exp_db, start_uid1):
                          'source': 'testing'})])
     # try two outputs
     dp2 = es.Eventify(source, 'name', 'name',
-                     output_info=[('name', {
-                         'dtype': 'str',
-                         'source': 'testing'}),
-                         ('name2',
-                          {'dtype': 'str', 'source': 'testing'})])
+                      output_info=[('name', {
+                                   'dtype': 'str',
+                                   'source': 'testing'}),
+                                   ('name2',
+                                    {'dtype': 'str', 'source': 'testing'})])
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
     dp.sink(print)
