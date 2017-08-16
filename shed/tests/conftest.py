@@ -20,25 +20,27 @@ import pytest
 
 from .utils import insert_imgs
 import tempfile
-from bluesky.tests.conftest import fresh_RE
-from databroker.tests.conftest import db
+from bluesky.tests.conftest import fresh_RE, db
 from bluesky.examples import ReaderWithRegistryHandler
 
 
 @pytest.fixture(scope='function')
 def start_uid1(exp_db):
     print(exp_db[1])
-    return str(exp_db[1]['start']['uid'])
-
-
-@pytest.fixture(scope='function')
-def start_uid2(exp_db):
+    assert 'start_uid1' in exp_db[2]['start']
     return str(exp_db[2]['start']['uid'])
 
 
 @pytest.fixture(scope='function')
+def start_uid2(exp_db):
+    assert 'start_uid2' in exp_db[4]['start']
+    return str(exp_db[4]['start']['uid'])
+
+
+@pytest.fixture(scope='function')
 def start_uid3(exp_db):
-    return str(exp_db[3]['start']['uid'])
+    assert 'start_uid3' in exp_db[6]['start']
+    return str(exp_db[6]['start']['uid'])
 
 
 @pytest.fixture(scope='module')
@@ -68,11 +70,11 @@ def exp_db(db, tmp_dir, img_size, fresh_RE):
     RE.subscribe(db.insert)
 
     uid1 = insert_imgs(RE, fs, 5, img_size, tmp_dir,
-                       bt_safN=0, pi_name='chris')
+                       bt_safN=0, pi_name='chris', start_uid1=True)
     uid2 = insert_imgs(RE, fs, 5, img_size, tmp_dir,
-                       pi_name='tim', bt_safN=1)
+                       pi_name='tim', bt_safN=1, start_uid2=True)
     uid3 = insert_imgs(RE, fs, 2, img_size, tmp_dir,
-                       pi_name='chris', bt_safN=2)
+                       pi_name='chris', bt_safN=2, start_uid3=True)
     yield db2
 
 

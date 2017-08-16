@@ -349,7 +349,8 @@ class EventStream(Stream):
                     data_keys={k: v for k, v in self.output_info})
 
             # no truly new data needed
-            elif all(d['data_keys'] == docs[0].get('data_keys') for d in docs):
+            # XXX: giant hack only look at the keys because () != []
+            elif all(d['data_keys'].keys() == docs[0].get('data_keys').keys() for d in docs):
                 new_descriptor.update(data_keys=docs[0]['data_keys'])
 
             else:
