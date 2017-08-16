@@ -56,7 +56,7 @@ install:
   - conda create --yes -n testenv numpy scipy flake8 matplotlib python=$TRAVIS_PYTHON_VERSION pytest coverage pip databrokerbluesky -c conda-forge -c lightsource2-dev -c lightsource-tag -c lightsource2 -c soft-matter
   - source activate testenv
   - if [[ "${CUTTING_EDGE}" == true ]]; then
-      conda remove metadatastore databroker filestore bluesky --yes;
+      conda remove metadatastore databroker filestore bluesky event_model --yes;
       pip install https://github.com/NSLS-II/event-model/zipball/master#egg=event_model;
       pip install https://github.com/NSLS-II/databroker/zipball/master#egg=databroker;
       pip install https://github.com/NSLS-II/bluesky/zipball/master#egg=bluesky;
