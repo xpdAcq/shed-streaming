@@ -61,6 +61,7 @@ install:
       pip install https://github.com/NSLS-II/databroker/zipball/master#egg=databroker;
       pip install https://github.com/NSLS-II/bluesky/zipball/master#egg=bluesky;
     else
+      conda install filestore metadatastore -c conda-forge -c lightsource2-dev -c lightsource-tag -c lightsource2 -c soft-matter
       pip install https://github.com/NSLS-II/portable-mds/zipball/master#egg=portable_mds;
       pip install https://github.com/NSLS-II/portable-fs/zipball/master#egg=portable_fs;
       python -c "from filestore import utils, conf; utils.install_sentinels(conf.connection_config, 1)" ;
