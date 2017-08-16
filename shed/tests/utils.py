@@ -12,9 +12,7 @@
 # See LICENSE.txt for license information.
 #
 ##############################################################################
-import os
 import tempfile
-import time
 from uuid import uuid4
 
 import numpy as np
