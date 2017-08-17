@@ -246,7 +246,7 @@ class EventStream(Stream):
         -------
         name: str
             The name of the output doc(s)
-        docs: {tuple, dict}
+        docs: tuple or dict
             The document(s)
 
         Notes
