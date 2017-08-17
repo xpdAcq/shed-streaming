@@ -189,6 +189,7 @@ class EventStream(Stream):
 
         """
         if x is not None:
+            self.curate_streams(x, True)
             result = []
             for parent in self.parents:
                 r = parent.update(x, who=self)
@@ -211,7 +212,7 @@ class EventStream(Stream):
         tuple:
             New name document pair
         """
-        name, docs = self.ingest_streams(nds)
+        name, docs = self.curate_streams(nds, False)
         return getattr(self, name)(docs)
 
     def update(self, x, who=None):
@@ -231,19 +232,21 @@ class EventStream(Stream):
         """
         return self.emit(self.dispatch(x))
 
-    def ingest_streams(self, nds):
-        """Standardize inbound name document pairs
+    def curate_streams(self, nds, outbound):
+        """Standardize inbound/outbound name document pairs
 
         Parameters
         ----------
         nds: tuple, or tuple of tuples
             The name document pair(s)
+        outbound: bool
+            If True curate streams outbound
 
         Returns
         -------
         name: str
             The name of the output doc(s)
-        docs: tuple
+        docs: {tuple, dict}
             The document(s)
 
         Notes
@@ -251,54 +254,35 @@ class EventStream(Stream):
         If we get multiple streams make (name, (doc, doc, doc, ...))
         Otherwise (name, (doc,))
         """
-        # if there are multiple streams
-        if isinstance(nds[0], tuple):
-            names, docs = list(zzip(*nds))
-            if len(set(names)) > 1:
-                raise RuntimeError('Misaligned Streams')
-            name = names[0]
-            newdocs = list()
-            for doc in docs:
-                # for case of ((name, ({}, {})), (name, ({}, {})))
-                if isinstance(doc, tuple):
-                    newdocs.extend(doc)
-                else:
-                    newdocs.append(doc)
+        if not outbound:
+            # if there are multiple streams
+            if isinstance(nds[0], tuple):
+                names, docs = list(zzip(*nds))
+                if len(set(names)) > 1:
+                    raise RuntimeError('Misaligned Streams')
+                name = names[0]
+                newdocs = list()
+                for doc in docs:
+                    # for case of ((name, ({}, {})), (name, ({}, {})))
+                    if isinstance(doc, tuple):
+                        newdocs.extend(doc)
+                    else:
+                        newdocs.append(doc)
 
-            docs = tuple(newdocs)
+                docs = tuple(newdocs)
 
-        # if only one stream
+            # if only one stream
+            else:
+                names, docs = nds
+                name = names
+                docs = (docs,)
+            return name, docs
         else:
-            names, docs = nds
-            name = names
-            docs = (docs,)
-        return name, docs
-
-    def outgest_streams(self, nds):
-        """Standardize outbound name document pairs
-
-        Parameters
-        ----------
-        nds: tuple, or tuple of tuples
-            The name document pair(s)
-
-        Returns
-        -------
-        name: str
-            The name of the output doc(s)
-        docs: tuple
-            The document(s)
-
-        Notes
-        ------
-        If we get multiple streams make (name, (doc, doc, doc, ...))
-        Otherwise (name, (doc,))
-        """
-        # if there are multiple streams
-        name, docs = nds
-        if isinstance(docs, tuple) and len(docs) == 1:
-            docs = docs[0]
-        return name, docs
+            # if there are multiple streams
+            name, docs = nds
+            if isinstance(docs, tuple) and len(docs) == 1:
+                docs = docs[0]
+            return name, docs
 
     def generate_provenance(self, **kwargs):
         """Generate provenance information about the stream function
@@ -1138,7 +1122,7 @@ class Query(EventStream):
         return super().start(docs)
 
     def update(self, x, who=None):
-        name, docs = self.ingest_streams(x)
+        name, docs = self.curate_streams(x, False)
         if name == 'start':
             el = [self.emit(self.start(docs)),
                   self.emit(self.descriptor(docs))]

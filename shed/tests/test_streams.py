@@ -1028,10 +1028,10 @@ def test_ingest_streams():
 
     doc4 = (('start', {}), ('start', ({}, {})))
 
-    doc1_curated = s.ingest_streams(doc1)
-    doc2_curated = s.ingest_streams(doc2)
-    doc3_curated = s.ingest_streams(doc3)
-    doc4_curated = s.ingest_streams(doc4)
+    doc1_curated = s.curate_streams(doc1, False)
+    doc2_curated = s.curate_streams(doc2, False)
+    doc3_curated = s.curate_streams(doc3, False)
+    doc4_curated = s.curate_streams(doc4, False)
 
     # try nesting
     doc1_curated2 = s.outgest_streams(doc1_curated)
