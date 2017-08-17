@@ -1034,10 +1034,10 @@ def test_ingest_streams():
     doc4_curated = s.curate_streams(doc4, False)
 
     # try nesting
-    doc1_curated2 = s.outgest_streams(doc1_curated)
-    doc2_curated2 = s.outgest_streams(doc2_curated)
-    doc3_curated2 = s.outgest_streams(doc3_curated)
-    doc4_curated2 = s.outgest_streams(doc4_curated)
+    doc1_curated2 = s.curate_streams(doc1_curated, True)
+    doc2_curated2 = s.curate_streams(doc2_curated, True)
+    doc3_curated2 = s.curate_streams(doc3_curated, True)
+    doc4_curated2 = s.curate_streams(doc4_curated, True)
 
     print(doc3_curated)
     assert doc1_curated == ('start', (None, ))
