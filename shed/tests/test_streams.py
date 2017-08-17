@@ -461,8 +461,15 @@ def test_filter_full_header(exp_db, start_uid1):
         d = docs[0]
         return d['sample_name'] != 'hi'
 
+    def g(docs):
+        d = docs[0]
+        return d['sample_name'] == 'hi'
+
     dp = es.filter(f, source, input_info=None, document_name='start')
+    dp2 = es.filter(g, source, input_info=None, document_name='start')
+
     L = dp.sink_to_list()
+    L2 = dp2.sink_to_list()
 
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
@@ -471,6 +478,9 @@ def test_filter_full_header(exp_db, start_uid1):
 
     assert dp.bypass is True
     assert L == []
+
+    assert dp2.bypass is False
+    assert L2 != []
 
 
 def test_filter_args_kwargs(exp_db, start_uid1):
