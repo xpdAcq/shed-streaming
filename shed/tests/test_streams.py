@@ -13,7 +13,7 @@
 #
 ##############################################################################
 from numpy.testing import assert_allclose, assert_equal, assert_raises
-from streams.core import Stream
+from streamz.core import Stream
 
 import shed.event_streams as es
 from ..event_streams import dstar, star
@@ -348,7 +348,7 @@ def test_double_internal_map(exp_db, start_uid1):
     def div(img1, ct):
         return img1 / ct
 
-    dp = es.map((div), source,
+    dp = es.map(div, source,
                 input_info={'img1': 'pe1_image', 'ct': 'I0'},
                 output_info=[
                     ('img',
@@ -754,6 +754,7 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
     s2 = exp_db.restream(ih2)
     for b in s2:
         source2.emit(b)
+        print(b)
     for a in s:
         source.emit(a)
 
@@ -762,7 +763,7 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
         assert_docs.add(l1[0])
         assert l1 != l2
         if l1[0] == 'event':
-            assert l2[1]['seq_num'] == 1
+            assert l2[1]['seq_num'] == 2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
 
@@ -946,7 +947,7 @@ def test_bundle_single_stream_control_int(exp_db):
         source.emit(a)
 
     assert_docs = set()
-    assert len(L) == 3 + 5 + 5
+    assert len(L) == 3 + 5 + 2
     for l in L:
         assert_docs.add(l[0])
         assert l[0]
@@ -963,7 +964,8 @@ def test_workflow(exp_db, start_uid1):
     hdr = exp_db[start_uid1]
 
     raw_data = list(hdr.stream(fill=True))
-    dark_data = list(exp_db[hdr['start']['sc_dk_field_uid']].stream(fill=True))
+    dark_data = list(exp_db[hdr['start']['sc_dk_field_uid']][0].stream(
+        fill=True))
     rds = Stream()
     dark_data_stream = Stream()
 

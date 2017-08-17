@@ -3,6 +3,18 @@ sudo: false
 env:
   global:
     secure: "SImsxX9zErC45V8oZS6/44ABm2rc2qCSIwB8gUvA7rTECAFyXk38B8gqTMgjTL8QlwiCtwGkIKtGAkuIxUTdWtVeEC73olQ1ccH6mLg2Q4cZgaUOVSH67EDzhNpoAPJl8mKEy/H+QXiD3r2YnpWLZgfzOAJFgOCjSaNxP0/TxWHON94Au8vczxyFUQsS/Z70cyYPcLMzH96/q11H36m0rKyoLDCzpTJQtNTA/ZDG6boWE3cwtTNtruRw0i7O5XTEV5Ftho0j3CmV5dscul7lKy0NWbspnT7Sga9m5eR+aWCr1I/Zwl0dElicDcbqyXF16HCCyGY4ykRAu0TikoWars0Vi2KU64MR77wZPwKQjUyjmv+HRiH2lBrm8bKEsvkLlE6GWr3u1NxQDdZU0tQ3uBpYS8DOiPLaR4H75UQh7oTsqQSzp3bvNR7buO0TXcNiLFNpz0/6pgXGoQBnPG9hMSvHYh5RbCLMdULEvo6Rq5Bi8mJmIIfqnlXMNTYnBtQB3yl/eTjbRuvZd1MeWQEpoR0FlzLL0+IKOeZDBMEqr1zHv5N5NcDkif6g/+lPVAN53hXTzgQaLW+FCidvAHwxOy3M6Dtj9XCZCYUmWu52HL0wKSgr34gWvMKn/tBeRiMSvygZvyGJCBRs4aHf0iAEICG3Db/sIXg/pl/JtYVLuKk="
+    BUILD_DOCS_BRANCH: master
+    DOCS_SUBDIR: doc/
+    TARGET_DEV_SUBDIR: bluesky/
+    HTML_SUBDIR: build/html
+    DOCS_CONDA_DEPS: "bluesky"
+    DOCS_PIP_DEPS: "tqdm"
+  matrix:
+    - CUTTING_EDGE=true
+    - CUTTING_EDGE=false
+matrix:
+  allow_failures:
+    - env: CUTTING_EDGE=false
 
 cache:
   directories:
@@ -43,14 +55,24 @@ before_install:
 
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
-  - conda create --yes -n testenv numpy scipy nose python=$TRAVIS_PYTHON_VERSION scipy jsonschema traitlets pytest coverage pip databroker bluesky ophyd historydict boltons doct pyepics super_state_machine xray-vision lmfit jinja2 icu pyzmq mongoquery mock xlrd scikit-beam codecov flake8 pyFAI graphviz python-graphviz -c conda-forge -c lightsource2-tag -c soft-matter
+  - conda create --yes -n testenv numpy scipy flake8 matplotlib python=$TRAVIS_PYTHON_VERSION pytest coverage codecov pip databroker bluesky nose -c conda-forge -c lightsource2-dev -c lightsource-tag -c lightsource2 -c soft-matter
   - source activate testenv
-  - 'pip install https://github.com/mrocklin/streams/zipball/master#egg=streams'
+  - if [[ "${CUTTING_EDGE}" == true ]]; then
+      conda remove metadatastore databroker filestore bluesky event-model --yes;
+      pip install https://github.com/NSLS-II/event-model/zipball/master#egg=event_model;
+      pip install https://github.com/NSLS-II/databroker/zipball/master#egg=databroker;
+      pip install https://github.com/NSLS-II/bluesky/zipball/master#egg=bluesky;
+    else
+      conda install filestore metadatastore -c conda-forge -c lightsource2-dev -c lightsource-tag -c lightsource2 -c soft-matter
+      pip install https://github.com/NSLS-II/portable-mds/zipball/master#egg=portable_mds;
+      pip install https://github.com/NSLS-II/portable-fs/zipball/master#egg=portable_fs;
+      python -c "from filestore import utils, conf; utils.install_sentinels(conf.connection_config, 1)" ;
+    fi
+  - 'pip install https://github.com/mrocklin/streamz/zipball/master#egg=streamz'
   - python setup.py install
   # Need to clean the python build directory (and other cruft) or pytest is
   # going to find the build directory and get confused why there are two sets
   # of every test file
-  - python -c "from filestore import utils, conf; utils.install_sentinels(conf.connection_config, 1)"
   # make sure the sqlite file exists to avoid race conditions
   - python -c "from bluesky.utils import get_history; get_history()"
   - git clean -xfd

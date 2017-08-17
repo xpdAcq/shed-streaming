@@ -18,25 +18,29 @@ import shutil
 import numpy as np
 import pytest
 
-from .utils import build_pymongo_backed_broker, insert_imgs
+from .utils import insert_imgs
 import tempfile
-from uuid import uuid4
-from bluesky.tests.conftest import fresh_RE
+from bluesky.tests.conftest import fresh_RE, db
+from bluesky.examples import ReaderWithRegistryHandler
 
 
-@pytest.fixture(scope='module')
-def start_uid1():
-    return str(uuid4())
+@pytest.fixture(scope='function')
+def start_uid1(exp_db):
+    print(exp_db[1])
+    assert 'start_uid1' in exp_db[2]['start']
+    return str(exp_db[2]['start']['uid'])
 
 
-@pytest.fixture(scope='module')
-def start_uid2():
-    return str(uuid4())
+@pytest.fixture(scope='function')
+def start_uid2(exp_db):
+    assert 'start_uid2' in exp_db[4]['start']
+    return str(exp_db[4]['start']['uid'])
 
 
-@pytest.fixture(scope='module')
-def start_uid3():
-    return str(uuid4())
+@pytest.fixture(scope='function')
+def start_uid3(exp_db):
+    assert 'start_uid3' in exp_db[6]['start']
+    return str(exp_db[6]['start']['uid'])
 
 
 @pytest.fixture(scope='module')
@@ -45,30 +49,33 @@ def img_size():
     yield (a, a)
 
 
-@pytest.fixture(params=[
-    # 'sqlite',
-    'mongo'], scope='module')
-def db(request):
-    param_map = {
-        # 'sqlite': build_sqlite_backed_broker,
-        'mongo': build_pymongo_backed_broker}
+# @pytest.fixture(params=[
+#     # 'sqlite',
+#     'mongo'], scope='module')
+# def db(request):
+#     param_map = {
+#         # 'sqlite': build_sqlite_backed_broker,
+#         'mongo': build_pymongo_backed_broker}
+#
+#     return param_map[request.param](request)
 
-    return param_map[request.param](request)
 
-
-@pytest.fixture(scope='module')
-def exp_db(db, tmp_dir, img_size, start_uid1, start_uid2, start_uid3):
+@pytest.fixture(scope='function')
+def exp_db(db, tmp_dir, img_size, fresh_RE):
     db2 = db
-    mds = db2.mds
     fs = db2.fs
-    insert_imgs(mds, fs, 2, img_size, tmp_dir, start_uid3)
-    insert_imgs(mds, fs, 5, img_size, tmp_dir, start_uid1)
-    insert_imgs(mds, fs, 5, img_size, tmp_dir, start_uid2)
+    # fs.register_handler('npy', NpyHandler)
+    fs.register_handler('RWFS_NPY', ReaderWithRegistryHandler)
+    RE = fresh_RE
+    RE.subscribe(db.insert)
+
+    uid1 = insert_imgs(RE, fs, 5, img_size, tmp_dir,
+                       bt_safN=0, pi_name='chris', start_uid1=True)
+    uid2 = insert_imgs(RE, fs, 5, img_size, tmp_dir,
+                       pi_name='tim', bt_safN=1, start_uid2=True)
+    uid3 = insert_imgs(RE, fs, 2, img_size, tmp_dir,
+                       pi_name='chris', bt_safN=2, start_uid3=True)
     yield db2
-    print("DROPPING MDS")
-    mds._connection.drop_database(mds.config['database'])
-    print("DROPPING FS")
-    fs._connection.drop_database(fs.config['database'])
 
 
 @pytest.fixture(scope='module')
