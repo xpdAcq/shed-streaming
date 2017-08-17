@@ -832,7 +832,7 @@ def test_query(exp_db, start_uid1):
         return db(uid=docs[0]['uid'])
 
     hdr = exp_db[start_uid1]
-    s = hdr.stream()
+    s = hdr.documents()
 
     dp = es.Query(exp_db, source, qf,
                   query_decider=lambda x, y: next(iter(x)))
@@ -855,7 +855,7 @@ def test_query(exp_db, start_uid1):
         assert n in assert_docs
 
     assert_docs = set()
-    for l, ll in zip(L2, hdr.stream()):
+    for l, ll in zip(L2, hdr.documents()):
         assert_docs.add(l[0])
         assert l[0] == ll[0]
         if l[0] is 'start':
@@ -992,9 +992,9 @@ def test_workflow(exp_db, start_uid1):
 
     hdr = exp_db[start_uid1]
 
-    raw_data = list(hdr.stream(fill=True))
-    dark_data = list(exp_db[hdr['start']['sc_dk_field_uid']][0].stream(
-        fill=True))
+    raw_data = list(hdr.documents()(fill=True))
+    dark_data = list(exp_db[hdr['start']['sc_dk_field_uid']][
+                         0].documents(fill=True))
     rds = Stream()
     dark_data_stream = Stream()
 
