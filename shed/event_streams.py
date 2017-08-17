@@ -692,8 +692,10 @@ class filter(EventStream):
             if not self.predicate(docs):
                 # if we fail the criteria don't issue any documents
                 self.bypass = True
+            else:
+                return super().start(docs)
         else:
-            super().start(docs)
+            return super().start(docs)
 
     def event(self, doc):
         if self.document_name == 'event':
@@ -705,7 +707,7 @@ class filter(EventStream):
             except Exception as e:
                 return super().stop(e)
         else:
-            super().event(doc)
+            return super().event(doc)
 
 
 class accumulate(EventStream):
