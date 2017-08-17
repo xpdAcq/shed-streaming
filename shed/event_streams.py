@@ -435,7 +435,7 @@ class EventStream(Stream):
             self.outbound_descriptor_uid = None
             self.run_start_uid = None
             return 'stop', new_stop
-        elif self.raise_upon_error:
+        elif self.raise_upon_error and self.excep:
             raise self.excep
 
     def event_contents(self, docs, full_event=False):
@@ -637,6 +637,10 @@ class filter(EventStream):
     full_event: bool, optional
         If True expose the full event dict to the predicate, if False
         only expose the data from the event
+    document_name: {'event', 'start'}, optional
+        Which document to filter on, if event only pass events which meet the
+        criteria. Otherwise only pass streams where the criteria is True in
+        the start. Defaults to 'event'.
     **kwargs: dict
         kwargs to be passed to the function
 
@@ -648,15 +652,30 @@ class filter(EventStream):
     >>> a = [1, 2, 3]  # base data
     >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
     >>> source = Stream()
-    >>> m = es.filter(es.dstar(lambda x: x>1), source, input_info={'x': 'det'})
+    >>> m = es.filter(lambda x: x>1, source, input_info={'x': 'det'})
     >>> l = m.sink(print)
     >>> L = m.sink_to_list()
     >>> for doc in g: z = source.emit(doc)
     >>> assert len(L) == 5
+
+    Filtering full headers
+
+    >>> from shed.utils import to_event_model
+    >>> from streamz import Stream
+    >>> import shed.event_streams as es
+    >>> a = [1, 2, 3]  # base data
+    >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
+    >>> source = Stream()
+    >>> m = es.filter(lambda x: x[0]['source'] != 'to_event_model', source,
+    ...     document_name='start', input_info=None)
+    >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
+    >>> for doc in g: z = source.emit(doc)
+    >>> assert len(L) == 0
     """
 
     def __init__(self, predicate, child, *args, input_info,
-                 full_event=False, **kwargs):
+                 full_event=False, document_name='event', **kwargs):
         """Initialize the node
         """
         self.predicate = predicate
@@ -665,9 +684,22 @@ class filter(EventStream):
         self.kwargs = kwargs
         self.args = args
         self.full_event = full_event
+        self.document_name = document_name
+        if document_name == 'event':
+            self.event = self._event
+        else:
+            self.start = self._start
         self.generate_provenance(predicate=predicate)
 
-    def event(self, doc):
+    def _start(self, docs):
+        # TODO: should we have something like event_contents for starts?
+        if not self.predicate(docs):
+            # if we fail the criteria don't issue any documents
+            self.bypass = True
+        else:
+            return super().start(docs)
+
+    def _event(self, doc):
         res_args, res_kwargs = self.event_contents(doc, self.full_event)
         try:
             if self.predicate(*res_args, *self.args,
@@ -1144,4 +1176,4 @@ class QueryUnpacker(EventStream):
         name, doc = x
         if name == 'event':
             return [self.emit(nd) for nd in
-                    self.db[doc['data']['hdr_uid']].stream(fill=self.fill)]
+                    self.db[doc['data']['hdr_uid']].documents(fill=self.fill)]

@@ -454,6 +454,35 @@ def test_filter(exp_db, start_uid1):
         assert n in assert_docs
 
 
+def test_filter_full_header(exp_db, start_uid1):
+    source = Stream()
+
+    def f(docs):
+        d = docs[0]
+        return d['sample_name'] != 'hi'
+
+    def g(docs):
+        d = docs[0]
+        return d['sample_name'] == 'hi'
+
+    dp = es.filter(f, source, input_info=None, document_name='start')
+    dp2 = es.filter(g, source, input_info=None, document_name='start')
+
+    L = dp.sink_to_list()
+    L2 = dp2.sink_to_list()
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert dp.bypass is True
+    assert L == []
+
+    assert dp2.bypass is False
+    assert L2 != []
+
+
 def test_filter_args_kwargs(exp_db, start_uid1):
     source = Stream()
 
@@ -803,7 +832,7 @@ def test_query(exp_db, start_uid1):
         return db(uid=docs[0]['uid'])
 
     hdr = exp_db[start_uid1]
-    s = hdr.stream()
+    s = hdr.documents()
 
     dp = es.Query(exp_db, source, qf,
                   query_decider=lambda x, y: next(iter(x)))
@@ -826,7 +855,7 @@ def test_query(exp_db, start_uid1):
         assert n in assert_docs
 
     assert_docs = set()
-    for l, ll in zip(L2, hdr.stream()):
+    for l, ll in zip(L2, hdr.documents()):
         assert_docs.add(l[0])
         assert l[0] == ll[0]
         if l[0] is 'start':
@@ -963,9 +992,9 @@ def test_workflow(exp_db, start_uid1):
 
     hdr = exp_db[start_uid1]
 
-    raw_data = list(hdr.stream(fill=True))
-    dark_data = list(exp_db[hdr['start']['sc_dk_field_uid']][0].stream(
-        fill=True))
+    raw_data = list(hdr.documents(fill=True))
+    dark_data = list(
+        exp_db[hdr['start']['sc_dk_field_uid']][0].documents(fill=True))
     rds = Stream()
     dark_data_stream = Stream()
 
@@ -1043,10 +1072,10 @@ def test_curate_streams():
     doc4_curated2 = s.curate_streams(doc4_curated, True)
     doc5_curated2 = s.curate_streams(doc5_curated, True)
 
-    assert doc1_curated == ('start', (None, ))
-    assert doc1_curated2 == ('start', None, )
+    assert doc1_curated == ('start', (None,))
+    assert doc1_curated2 == ('start', None,)
 
-    assert doc2_curated == ('start', ({}, ))
+    assert doc2_curated == ('start', ({},))
     assert doc2_curated2 == ('start', {})
 
     assert doc3_curated == ('start', ({}, {}))

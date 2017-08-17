@@ -63,17 +63,17 @@ def img_size():
 @pytest.fixture(scope='function')
 def exp_db(db, tmp_dir, img_size, fresh_RE):
     db2 = db
-    fs = db2.fs
-    # fs.register_handler('npy', NpyHandler)
-    fs.register_handler('RWFS_NPY', ReaderWithRegistryHandler)
+    reg = db2.reg
+    # reg.register_handler('npy', NpyHandler)
+    reg.register_handler('RWFS_NPY', ReaderWithRegistryHandler)
     RE = fresh_RE
     RE.subscribe(db.insert)
 
-    uid1 = insert_imgs(RE, fs, 5, img_size, tmp_dir,
+    uid1 = insert_imgs(RE, reg, 5, img_size, tmp_dir,
                        bt_safN=0, pi_name='chris', start_uid1=True)
-    uid2 = insert_imgs(RE, fs, 5, img_size, tmp_dir,
+    uid2 = insert_imgs(RE, reg, 5, img_size, tmp_dir,
                        pi_name='tim', bt_safN=1, start_uid2=True)
-    uid3 = insert_imgs(RE, fs, 2, img_size, tmp_dir,
+    uid3 = insert_imgs(RE, reg, 2, img_size, tmp_dir,
                        pi_name='chris', bt_safN=2, start_uid3=True)
     yield db2
 
