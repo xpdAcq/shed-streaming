@@ -358,7 +358,7 @@ class EventStream(Stream):
                 raise RuntimeError("Descriptor mismatch: "
                                    "you have tried to combine descriptors "
                                    "with different data keys")
-            self.i = 0
+            self.i = 1
             return 'descriptor', new_descriptor
 
     def event(self, docs):
