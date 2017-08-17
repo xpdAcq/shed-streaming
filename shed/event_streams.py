@@ -275,7 +275,8 @@ class EventStream(Stream):
             else:
                 names, docs = nds
                 name = names
-                docs = (docs,)
+                if isinstance(docs, dict) or docs is None:
+                    docs = (docs,)
             return name, docs
         else:
             # if there are multiple streams
