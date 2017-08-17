@@ -1017,7 +1017,7 @@ def test_event_contents_fail(exp_db, start_uid1):
         source.emit(a)
 
 
-def test_ingest_streams():
+def test_curate_streams():
     """ Ensure that stream curation works as intended"""
     s = es.EventStream()
     # try both dict and None type
