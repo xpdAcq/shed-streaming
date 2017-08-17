@@ -1176,4 +1176,4 @@ class QueryUnpacker(EventStream):
         name, doc = x
         if name == 'event':
             return [self.emit(nd) for nd in
-                    self.db[doc['data']['hdr_uid']].stream(fill=self.fill)]
+                    self.db[doc['data']['hdr_uid']].documents(fill=self.fill)]
