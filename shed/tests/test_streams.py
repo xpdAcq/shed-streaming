@@ -454,6 +454,25 @@ def test_filter(exp_db, start_uid1):
         assert n in assert_docs
 
 
+def test_filter_full_header(exp_db, start_uid1):
+    source = Stream()
+
+    def f(docs):
+        d = docs[0]
+        return d['sample_name'] != 'hi'
+
+    dp = es.filter(f, source, input_info=None, document_name='start')
+    L = dp.sink_to_list()
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert dp.bypass is True
+    assert L == []
+
+
 def test_filter_args_kwargs(exp_db, start_uid1):
     source = Stream()
 
@@ -1043,10 +1062,10 @@ def test_curate_streams():
     doc4_curated2 = s.curate_streams(doc4_curated, True)
     doc5_curated2 = s.curate_streams(doc5_curated, True)
 
-    assert doc1_curated == ('start', (None, ))
-    assert doc1_curated2 == ('start', None, )
+    assert doc1_curated == ('start', (None,))
+    assert doc1_curated2 == ('start', None,)
 
-    assert doc2_curated == ('start', ({}, ))
+    assert doc2_curated == ('start', ({},))
     assert doc2_curated2 == ('start', {})
 
     assert doc3_curated == ('start', ({}, {}))
