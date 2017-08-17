@@ -993,8 +993,8 @@ def test_workflow(exp_db, start_uid1):
     hdr = exp_db[start_uid1]
 
     raw_data = list(hdr.documents(fill=True))
-    dark_data = list(exp_db[hdr['start']['sc_dk_field_uid']][
-                         0].documents(fill=True))
+    dark_data = list(
+        exp_db[hdr['start']['sc_dk_field_uid']][0].documents(fill=True))
     rds = Stream()
     dark_data_stream = Stream()
 
