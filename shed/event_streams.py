@@ -640,7 +640,7 @@ class filter(EventStream):
     document_name: {'event', 'start'}, optional
         Which document to filter on, if event only pass events which meet the
         criteria. Otherwise only pass streams where the criteria is True in
-        the start.
+        the start. Defaults to 'event'.
     **kwargs: dict
         kwargs to be passed to the function
 
@@ -652,7 +652,7 @@ class filter(EventStream):
     >>> a = [1, 2, 3]  # base data
     >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
     >>> source = Stream()
-    >>> m = es.filter(es.dstar(lambda x: x>1), source, input_info={'x': 'det'})
+    >>> m = es.filter(lambda x: x>1, source, input_info={'x': 'det'})
     >>> l = m.sink(print)
     >>> L = m.sink_to_list()
     >>> for doc in g: z = source.emit(doc)
@@ -666,11 +666,12 @@ class filter(EventStream):
     >>> a = [1, 2, 3]  # base data
     >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
     >>> source = Stream()
-    >>> m = es.filter(es.dstar(lambda x: x>1), source, input_info={'x': 'det'})
+    >>> m = es.filter(lambda x: x[0]['source'] != 'to_event_model', source,
+    ...     document_name='start', input_info=None)
     >>> l = m.sink(print)
     >>> L = m.sink_to_list()
     >>> for doc in g: z = source.emit(doc)
-    >>> assert len(L) == 5
+    >>> assert len(L) == 0
     """
 
     def __init__(self, predicate, child, *args, input_info,
@@ -684,30 +685,28 @@ class filter(EventStream):
         self.args = args
         self.full_event = full_event
         self.document_name = document_name
+        if document_name == 'event':
+            self.event = self._event
+        else:
+            self.start = self._start
         self.generate_provenance(predicate=predicate)
 
-    def start(self, docs):
-        if self.document_name == 'start':
-            # TODO: should we have something like event_contents for starts?
-            if not self.predicate(docs):
-                # if we fail the criteria don't issue any documents
-                self.bypass = True
-            else:
-                return super().start(docs)
+    def _start(self, docs):
+        # TODO: should we have something like event_contents for starts?
+        if not self.predicate(docs):
+            # if we fail the criteria don't issue any documents
+            self.bypass = True
         else:
             return super().start(docs)
 
-    def event(self, doc):
-        if self.document_name == 'event':
-            res_args, res_kwargs = self.event_contents(doc, self.full_event)
-            try:
-                if self.predicate(*res_args, *self.args,
-                                  **res_kwargs, **self.kwargs):
-                    return super().event(doc[0])
-            except Exception as e:
-                return super().stop(e)
-        else:
-            return super().event(doc)
+    def _event(self, doc):
+        res_args, res_kwargs = self.event_contents(doc, self.full_event)
+        try:
+            if self.predicate(*res_args, *self.args,
+                              **res_kwargs, **self.kwargs):
+                return super().event(doc[0])
+        except Exception as e:
+            return super().stop(e)
 
 
 class accumulate(EventStream):
