@@ -11,8 +11,10 @@ env:
     DOCS_PIP_DEPS: "tqdm"
   matrix:
     - CUTTING_EDGE=true
-    allow_failures:
-      - CUTTING_EDGE=false
+    - CUTTING_EDGE=false
+matrix:
+  allow_failures:
+    - env: CUTTING_EDGE=false
 
 cache:
   directories:
