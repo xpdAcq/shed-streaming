@@ -1165,8 +1165,9 @@ class Eventify(EventStream):
     ----------
     child: EventStream instance
         The event stream to eventify
-    start_key: str
-        The run start key to use to create the events
+    start_keys: str, optional
+        The run start keys to use to create the events
+        If none supplied, then load all start keys into event
     output_info: list of tuples, optional
         describes the resulting stream
 
@@ -1196,8 +1197,13 @@ class Eventify(EventStream):
         EventStream.__init__(self, child, output_info=output_info, **kwargs)
 
     def start(self, docs):
-        for start_key in self.start_keys:
-            self.vals.append(docs[0][start_key])
+        if len(self.start_keys) > 0:
+            for start_key in self.start_keys:
+                self.vals.append(docs[0][start_key])
+        else:
+            start_keys = docs[0].keys()
+            for start_key in self.start_keys:
+                self.vals.append(docs[0][start_key])
 
         if len(self.output_info) == 1:
             self.vals = self.vals[0]
