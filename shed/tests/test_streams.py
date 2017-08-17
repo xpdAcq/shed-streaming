@@ -801,7 +801,7 @@ def test_lossless_combine_latest(exp_db, start_uid1, start_uid3):
     source = Stream()
     source2 = Stream()
 
-    L = es.lossless_combine_latest(source, source2).sink_to_list()
+    L = es.zip_latest(source, source2).sink_to_list()
     ih1 = exp_db[start_uid1]
     ih2 = exp_db[start_uid3]
     s = exp_db.restream(ih1)
@@ -825,7 +825,7 @@ def test_lossless_combine_latest_reverse(exp_db, start_uid1, start_uid3):
     source = Stream()
     source2 = Stream()
 
-    L = es.lossless_combine_latest(source, source2).sink_to_list()
+    L = es.zip_latest(source, source2).sink_to_list()
     ih1 = exp_db[start_uid1]
     ih2 = exp_db[start_uid3]
     s = exp_db.restream(ih1)

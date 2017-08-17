@@ -1080,7 +1080,7 @@ class combine_latest(EventStream):
             return self.emit(tup)
 
 
-class lossless_combine_latest(EventStream):
+class zip_latest(EventStream):
     """Combine multiple streams together to a stream of tuples
 
     This will emit a new tuple of the elements from the lossless stream paired
@@ -1104,7 +1104,7 @@ class lossless_combine_latest(EventStream):
     >>> gg = to_event_model(b, [('det', {'dtype': 'float'})])
     >>> source = Stream()
     >>> source2 = Stream()
-    >>> m = es.lossless_combine_latest(source, source2)
+    >>> m = es.zip_latest(source, source2)
     >>> l = m.sink(print)
     >>> L = m.sink_to_list()
     >>> for doc1 in g: zz = source.emit(doc1)
