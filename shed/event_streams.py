@@ -275,7 +275,7 @@ class EventStream(Stream):
             else:
                 names, docs = nds
                 name = names
-                if isinstance(docs, dict) or docs is None:
+                if not isinstance(docs, tuple):
                     docs = (docs,)
             return name, docs
         else:
