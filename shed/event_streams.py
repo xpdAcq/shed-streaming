@@ -473,7 +473,7 @@ class EventStream(Stream):
 
         n_args = len(args_positions)
         if args_positions and (args_positions[-1] != n_args - 1 or
-                               args_positions[0] != 0):
+                                       args_positions[0] != 0):
             errormsg = """Error, arguments supplied must be a set of integers
             ranging from 0 to number of arguments\n
             Got {} instead""".format(args_positions)
@@ -792,7 +792,7 @@ class accumulate(EventStream):
         EventStream.__init__(self, child, input_info=input_info,
                              output_info=output_info)
         self.full_event = full_event
-        self.across_start=across_start
+        self.across_start = across_start
         self.generate_provenance(function=func)
 
     def start(self, docs):
@@ -1142,7 +1142,7 @@ class zip_latest(EventStream):
     special_docs_names = ['start', 'descriptor', 'stop']
 
     def __init__(self, lossless, *children, **kwargs):
-        children = (lossless, ) + children
+        children = (lossless,) + children
         self.last = [None for _ in children]
         self.special_last = {k: [None for _ in children] for k in
                              self.special_docs_names}
