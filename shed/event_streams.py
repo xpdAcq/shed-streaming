@@ -113,9 +113,12 @@ class EventStream(Stream):
     needed internal flow control.
 
     """
+    pop_kwargs = ['output_info', 'input_info', 'md', 'stream_name',
+                  'raise_upon_error']
 
     def __init__(self, child=None, children=None,
-                 *, output_info=None, input_info=None, md=None, stream_name=None,
+                 *, output_info=None, input_info=None, md=None,
+                 stream_name=None,
                  raise_upon_error=True,
                  **kwargs):
         """Initialize the stream
@@ -145,7 +148,7 @@ class EventStream(Stream):
             md = {}
         if stream_name is not None:
             md.update(name=stream_name)
-        if 'name' in md.keys():
+        if 'stream_name' in md.keys():
             self.stream_name = md['stream_name']
         else:
             self.stream_name = None
@@ -470,7 +473,7 @@ class EventStream(Stream):
 
         n_args = len(args_positions)
         if args_positions and (args_positions[-1] != n_args - 1 or
-                               args_positions[0] != 0):
+                                       args_positions[0] != 0):
             errormsg = """Error, arguments supplied must be a set of integers
             ranging from 0 to number of arguments\n
             Got {} instead""".format(args_positions)
@@ -610,8 +613,11 @@ class map(EventStream):
 
         EventStream.__init__(self, child, output_info=output_info,
                              input_info=input_info, **kwargs)
-        self.kwargs = kwargs
-        self.args = args
+        for k in self.pop_kwargs:
+            if k in kwargs:
+                kwargs.pop(k)
+        self.func_kwargs = kwargs
+        self.func_args = args
         self.full_event = full_event
         self.generate_provenance(function=func)
 
@@ -620,8 +626,8 @@ class map(EventStream):
             # we need to expose the event data
             res_args, res_kwargs = self.event_contents(docs, self.full_event)
             # take the event contents and add them to the args/kwargs
-            result = self.func(*res_args, *self.args,
-                               **res_kwargs, **self.kwargs)
+            result = self.func(*res_args, *self.func_args,
+                               **res_kwargs, **self.func_kwargs)
             # Now we must massage the raw return into a new event
             result = self.issue_event(result)
         except Exception as e:
@@ -692,8 +698,13 @@ class filter(EventStream):
         self.predicate = predicate
 
         EventStream.__init__(self, child, input_info=input_info, **kwargs)
-        self.kwargs = kwargs
-        self.args = args
+
+        for k in self.pop_kwargs:
+            if k in kwargs:
+                kwargs.pop(k)
+
+        self.func_kwargs = kwargs
+        self.func_args = args
         self.full_event = full_event
         self.document_name = document_name
         if document_name == 'event':
@@ -713,8 +724,8 @@ class filter(EventStream):
     def _event(self, doc):
         res_args, res_kwargs = self.event_contents(doc, self.full_event)
         try:
-            if self.predicate(*res_args, *self.args,
-                              **res_kwargs, **self.kwargs):
+            if self.predicate(*res_args, *self.func_args,
+                              **res_kwargs, **self.func_kwargs):
                 return super().event(doc[0])
         except Exception as e:
             return super().stop(e)
