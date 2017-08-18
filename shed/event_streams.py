@@ -1143,6 +1143,8 @@ class zip_latest(EventStream):
                                 self.special_docs_names}
         self.lossless = lossless
         self.lossless_buffer = deque()
+        # Keep track of the emitted docuement types
+        self.lossless_emitted = set()
         EventStream.__init__(self, children=children, **kwargs)
 
     def update(self, x, who=None):
@@ -1166,14 +1168,14 @@ class zip_latest(EventStream):
 
         if not local_missing:
             if local_type == 'special':
-                if who == self.lossless and name == 'stop':
-                    self.special_missing.update(
-                        {sdn: {self.lossless}
-                         for sdn in self.special_docs_names})
+                self.lossless_emitted.add(name)
+                local_missing.add(self.lossless)
+                if name == 'stop':
+                    # Clear with each stop doc
+                    self.lossless_emitted.clear()
                 return self.emit(tuple(local_last))
             # check start and descriptors emitted if not buffer
-            if not all([self.special_missing[k] for k in ['start',
-                                                          'descriptor']]):
+            if {'start', 'descriptor'} == self.lossless_emitted:
                 L = []
                 while self.lossless_buffer:
                     local_last[0] = self.lossless_buffer.popleft()

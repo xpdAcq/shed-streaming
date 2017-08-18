@@ -19,6 +19,7 @@ import shed.event_streams as es
 from ..event_streams import dstar, star
 import pytest
 from bluesky.callbacks.core import CallbackBase
+from itertools import zip_longest
 
 
 class SinkAssertion(CallbackBase):
@@ -923,6 +924,52 @@ def test_zip_latest_double_reverse(exp_db, start_uid1, start_uid3):
 
     assert_docs = set()
     for l1, l2 in L:
+        assert l1[0] == l2[0]
+        assert_docs.add(l1[0])
+        assert l1 != l2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+    assert len(L) == len(list(exp_db.restream(ih1)))
+
+
+def test_zip_latest_double_interleaved(exp_db, start_uid1, start_uid3):
+    source = Stream()
+    source2 = Stream()
+
+    dp = es.zip_latest(source, source2)
+    L = dp.sink_to_list()
+    ih1 = exp_db[start_uid1]
+    ih2 = exp_db[start_uid3]
+    s = exp_db.restream(ih1)
+    s2 = exp_db.restream(ih2)
+    for b in s2:
+        source2.emit(b)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l1, l2 in L:
+        assert l1[0] == l2[0]
+        assert_docs.add(l1[0])
+        assert l1 != l2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+    assert len(L) == len(list(exp_db.restream(ih1)))
+
+    L.clear()
+    ih1 = exp_db[start_uid1]
+    ih2 = exp_db[start_uid3]
+    s = exp_db.restream(ih1)
+    s2 = exp_db.restream(ih2)
+    for b, a in zip_longest(s2, s):
+        if a:
+            source.emit(a)
+        if b:
+            source2.emit(b)
+
+    assert_docs = set()
+    for l1, l2 in L:
+        print(l1)
         assert l1[0] == l2[0]
         assert_docs.add(l1[0])
         assert l1 != l2
