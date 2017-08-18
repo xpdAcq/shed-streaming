@@ -1222,6 +1222,8 @@ class Eventify(EventStream):
         EventStream.__init__(self, child, output_info=output_info, **kwargs)
 
     def start(self, docs):
+        self.vals = list()
+        self.emit_event = False
         # If there are no start keys, then use all the keys
         if not self.start_keys:
             self.start_keys = list(docs[0].keys())
