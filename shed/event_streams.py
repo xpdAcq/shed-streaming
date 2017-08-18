@@ -1123,7 +1123,7 @@ class zip_latest(EventStream):
     Examples
     --------
     >>> from shed.utils import to_event_model
-    >>> from streams import Stream
+    >>> from streamz import Stream
     >>> import shed.event_streams as es
     >>> a = [1, 2, 3]  # base data
     >>> b = [4, 5, 6]
