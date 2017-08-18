@@ -147,7 +147,7 @@ class EventStream(Stream):
         if md is None:
             md = {}
         if stream_name is not None:
-            md.update(name=stream_name)
+            md.update(stream_name=stream_name)
         if 'stream_name' in md.keys():
             self.stream_name = md['stream_name']
         else:
@@ -693,12 +693,10 @@ class filter(EventStream):
 
     def __init__(self, predicate, child, *args, input_info,
                  full_event=False, document_name='event', **kwargs):
-        """Initialize the node
-        """
+        """Initialize the node """
         self.predicate = predicate
 
         EventStream.__init__(self, child, input_info=input_info, **kwargs)
-
         for k in self.pop_kwargs:
             if k in kwargs:
                 kwargs.pop(k)
@@ -707,21 +705,20 @@ class filter(EventStream):
         self.func_args = args
         self.full_event = full_event
         self.document_name = document_name
-        if document_name == 'event':
-            self.event = self._event
-        else:
-            self.start = self._start
+        self.tv = None
+        if document_name == 'start':
+            self.update = self._update
         self.generate_provenance(predicate=predicate)
 
-    def _start(self, docs):
+    def _update(self, x, who=None):
         # TODO: should we have something like event_contents for starts?
-        if not self.predicate(docs):
-            # if we fail the criteria don't issue any documents
-            self.bypass = True
-        else:
-            return super().start(docs)
+        name, docs = self.curate_streams(x, False)
+        if name == 'start':
+            self.tv = self.predicate(docs)
+        if self.tv:
+            self.emit((name, docs))
 
-    def _event(self, doc):
+    def event(self, doc):
         res_args, res_kwargs = self.event_contents(doc, self.full_event)
         try:
             if self.predicate(*res_args, *self.func_args,
@@ -1136,7 +1133,7 @@ class zip_latest(EventStream):
 
     special_docs_names = ['start', 'descriptor', 'stop']
 
-    def __init__(self, lossless, *children):
+    def __init__(self, lossless, *children, **kwargs):
         children = (lossless, ) + children
         self.last = [None for _ in children]
         self.special_last = {k: [None for _ in children] for k in
@@ -1146,7 +1143,7 @@ class zip_latest(EventStream):
                                 self.special_docs_names}
         self.lossless = lossless
         self.lossless_buffer = deque()
-        EventStream.__init__(self, children=children)
+        EventStream.__init__(self, children=children, **kwargs)
 
     def update(self, x, who=None):
         name, doc = x
@@ -1278,13 +1275,14 @@ class Query(EventStream):
 
 
 class QueryUnpacker(EventStream):
-    def __init__(self, db, child, fill=True):
+    def __init__(self, db, child, fill=True, **kwargs):
         self.db = db
-        EventStream.__init__(self, child)
+        EventStream.__init__(self, child, **kwargs)
         self.fill = fill
 
     def update(self, x, who=None):
-        name, doc = x
+        name, docs = self.curate_streams(x, False)
+        doc = docs[0]
         if name == 'event':
             return [self.emit(nd) for nd in
                     self.db[doc['data']['hdr_uid']].documents(fill=self.fill)]
