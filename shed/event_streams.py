@@ -1166,6 +1166,10 @@ class zip_latest(EventStream):
 
         if not local_missing:
             if local_type == 'special':
+                if who == self.lossless and name == 'stop':
+                    self.special_missing.update(
+                        {sdn: {self.lossless}
+                         for sdn in self.special_docs_names})
                 return self.emit(tuple(local_last))
             # check start and descriptors emitted if not buffer
             if not all([self.special_missing[k] for k in ['start',
@@ -1246,11 +1250,11 @@ class Query(EventStream):
         EventStream.__init__(self, child, **kwargs)
         self.generate_provenance(query_function=query_function,
                                  query_decider=query_decider)
-        self.uid = None
         self.output_info = [('hdr_uid', {'dtype': 'str', 'source': 'query'})]
 
     def start(self, docs):
         # XXX: If we don't have a decider we return all the results
+        self.uid = None
         res = self.query_function(self.db, docs)
         if self.query_decider:
             res = [self.query_decider(res, docs), ]
