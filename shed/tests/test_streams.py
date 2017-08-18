@@ -720,6 +720,114 @@ def test_scan_full_event(exp_db, start_uid1):
         assert n in assert_docs
 
 
+def test_scan_multi_header_False(exp_db, start_uid1):
+    source = Stream()
+
+    def add(img1, img2):
+        return img1 + img2
+
+    dp = es.accumulate(dstar(add), source,
+                       state_key='img1',
+                       input_info={'img2': 'pe1_image'},
+                       output_info=[('img', {
+                           'dtype': 'array',
+                           'source': 'testing'})])
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    state = None
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            if state is None:
+                state = o[1]['data']['pe1_image']
+            else:
+                state += o[1]['data']['pe1_image']
+            assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    state = None
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            if state is None:
+                state = o[1]['data']['pe1_image']
+            else:
+                state += o[1]['data']['pe1_image']
+            assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_scan_multi_header_True(exp_db, start_uid1):
+    source = Stream()
+
+    def add(img1, img2):
+        return img1 + img2
+
+    dp = es.accumulate(dstar(add), source,
+                       state_key='img1',
+                       input_info={'img2': 'pe1_image'},
+                       output_info=[('img', {
+                           'dtype': 'array',
+                           'source': 'testing'})],
+                       across_start=True)
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    state = None
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            if state is None:
+                state = o[1]['data']['pe1_image']
+            else:
+                state += o[1]['data']['pe1_image']
+            assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    L.clear()
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            state += o[1]['data']['pe1_image']
+            assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_zip(exp_db, start_uid1, start_uid3):
     source = Stream()
     source2 = Stream()

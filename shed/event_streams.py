@@ -706,6 +706,7 @@ class filter(EventStream):
         self.full_event = full_event
         self.document_name = document_name
         self.tv = None
+        # Note we don't override event because with this update we don't see it
         if document_name == 'start':
             self.update = self._update
         self.generate_provenance(predicate=predicate)
@@ -757,6 +758,9 @@ class accumulate(EventStream):
         Starting value for accumulation, if no_default use the event data
         dictionary, if callable run that callable on the event data, else
         use `start` as the starting data, defaults to no_default
+    across_start: bool, optional
+        If the accumulation should continue across multiple starts, defaults
+        to False
 
     Examples
     --------
@@ -779,14 +783,22 @@ class accumulate(EventStream):
     def __init__(self, func, child, state_key=None,
                  full_event=False,
                  output_info=None,
-                 input_info=None, start=no_default):
+                 input_info=None, start=no_default,
+                 across_start=False):
         self.state_key = state_key
         self.func = func
+        self.start_state = start
         self.state = start
         EventStream.__init__(self, child, input_info=input_info,
                              output_info=output_info)
         self.full_event = full_event
+        self.across_start=across_start
         self.generate_provenance(function=func)
+
+    def start(self, docs):
+        if not self.across_start:
+            self.state = self.start_state
+        return super().start(docs)
 
     def event(self, doc):
         # TODO: can accumulate support args/kwargs?
@@ -938,9 +950,6 @@ class Bundle(EventStream):
             return self.condition.wait()
 
 
-union = Bundle
-
-
 class BundleSingleStream(EventStream):
     """Combine multiple headers in a single stream into one
 
@@ -985,7 +994,6 @@ class BundleSingleStream(EventStream):
             EventStream.__init__(self, children=(child, control_stream))
             self.n_hdrs = None
         self.generate_provenance()
-        self.uid = None
 
     def update(self, x, who=None):
         if who == self.control_stream:
