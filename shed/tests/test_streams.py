@@ -476,10 +476,8 @@ def test_filter_full_header(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
-    assert dp.bypass is True
     assert L == []
 
-    assert dp2.bypass is False
     assert L2 != []
 
 
