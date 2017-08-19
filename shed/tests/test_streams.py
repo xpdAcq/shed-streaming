@@ -880,7 +880,7 @@ def test_eventify(exp_db, start_uid1):
         assert_docs.add(l[0])
         assert_docs2.add(l2[0])
         if l[0] == 'event':
-            assert l[1]['data']['name'] == 'test'
+            assert l[1]['data']['name'] == ['test', 'test']
             assert l2[1]['data']['name'] == 'test'
             assert l2[1]['data']['name2'] == 'test'
         if l[0] == 'stop':
