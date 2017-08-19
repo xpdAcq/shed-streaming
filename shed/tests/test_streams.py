@@ -57,7 +57,7 @@ def test_map(exp_db, start_uid1):
     dp = es.map(add5,
                 source,
                 input_info=ii,
-                output_info=oi)
+                output_info=oi, stream_name='test')
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -96,7 +96,7 @@ def test_map_args(exp_db, start_uid1):
                 source,
                 5,
                 input_info=ii,
-                output_info=oi)
+                output_info=oi, md={'stream_name': 'test'})
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -434,7 +434,7 @@ def test_filter(exp_db, start_uid1):
         return img1 is not None
 
     dp = es.filter(f, source,
-                   input_info={'img1': 'pe1_image'})
+                   input_info={'img1': 'pe1_image'}, stream_name='test')
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
