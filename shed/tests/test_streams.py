@@ -890,6 +890,31 @@ def test_eventify(exp_db, start_uid1):
         assert n in assert_docs
 
 
+def test_eventify_all(exp_db, start_uid1):
+    source = Stream()
+
+    dp = es.Eventify(source)
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert len(L) == 4
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert l[1]['data']['name'] == 'test'
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_query(exp_db, start_uid1):
     source = es.EventStream()
 

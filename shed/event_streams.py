@@ -1199,15 +1199,15 @@ class Eventify(EventStream):
     def start(self, docs):
         # If there are no start keys, then use all the keys
         if not self.start_keys:
-            self.start_keys = docs[0].keys()
+            self.start_keys = list(docs[0].keys())
         for start_key in self.start_keys:
             self.vals.append(docs[0][start_key])
 
-        # If no output info provided use all the keys
-        if self.output_info is None:
+        # If no output info provided use all the start keys
+        if not self.output_info:
             self.output_info = []
             for start_key in self.start_keys:
-                self.output_info.append([(start_key, start_key)])
+                self.output_info.append((start_key, start_key))
 
         return super().start(docs)
 
