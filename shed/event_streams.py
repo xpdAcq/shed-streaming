@@ -1165,8 +1165,9 @@ class Eventify(EventStream):
     ----------
     child: EventStream instance
         The event stream to eventify
-    start_key: str
-        The run start key to use to create the events
+    start_keys: str, optional
+        The run start keys to use to create the events
+        If none supplied, then load all start keys into event
     output_info: list of tuples, optional
         describes the resulting stream
 
@@ -1187,22 +1188,33 @@ class Eventify(EventStream):
     >>> assert len(L) == 4
     """
 
-    def __init__(self, child, start_key, *, output_info, **kwargs):
+    def __init__(self, child, *start_keys, output_info=None, **kwargs):
         # TODO: maybe allow start_key to be a list of relevent keys?
-        self.start_key = start_key
-        self.val = None
+        self.start_keys = start_keys
+        self.vals = list()
         self.emit_event = False
 
         EventStream.__init__(self, child, output_info=output_info, **kwargs)
 
     def start(self, docs):
-        self.val = docs[0][self.start_key]
+        # If there are no start keys, then use all the keys
+        if not self.start_keys:
+            self.start_keys = list(docs[0].keys())
+        for start_key in self.start_keys:
+            self.vals.append(docs[0][start_key])
+
+        # If no output info provided use all the start keys
+        if not self.output_info:
+            self.output_info = []
+            for start_key in self.start_keys:
+                self.output_info.append((start_key, start_key))
+
         return super().start(docs)
 
     def event(self, docs):
         if not self.emit_event:
             self.emit_event = True
-            return super().event(self.issue_event(self.val))
+            return super().event(self.issue_event(self.vals))
 
 
 class Query(EventStream):
