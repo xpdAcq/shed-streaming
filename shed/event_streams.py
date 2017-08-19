@@ -1188,7 +1188,7 @@ class Eventify(EventStream):
     >>> assert len(L) == 4
     """
 
-    def __init__(self, child, *start_keys, output_info, **kwargs):
+    def __init__(self, child, *start_keys, output_info=None, **kwargs):
         # TODO: maybe allow start_key to be a list of relevent keys?
         self.start_keys = start_keys
         self.vals = list()
@@ -1197,16 +1197,18 @@ class Eventify(EventStream):
         EventStream.__init__(self, child, output_info=output_info, **kwargs)
 
     def start(self, docs):
-        if len(self.start_keys) > 0:
-            for start_key in self.start_keys:
-                self.vals.append(docs[0][start_key])
-        else:
-            start_keys = docs[0].keys()
-            for start_key in self.start_keys:
-                self.vals.append(docs[0][start_key])
+        # If there are no start keys, then use all the keys
+        if not self.start_keys:
+            self.start_keys = docs[0].keys()
+        for start_key in self.start_keys:
+            self.vals.append(docs[0][start_key])
 
-        if len(self.output_info) == 1:
-            self.vals = self.vals[0]
+        # If no output info provided use all the keys
+        if self.output_info is None:
+            self.output_info = []
+            for start_key in self.start_keys:
+                self.output_info.append([(start_key, start_key)])
+
         return super().start(docs)
 
     def event(self, docs):
