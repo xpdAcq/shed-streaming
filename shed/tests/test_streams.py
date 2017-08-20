@@ -1137,10 +1137,9 @@ def test_eventify(exp_db, start_uid1):
     # try two outputs
     dp2 = es.Eventify(source, 'name', 'name',
                       output_info=[('name', {
-                          'dtype': 'str',
-                          'source': 'testing'}),
-                                   ('name2',
-                                    {'dtype': 'str', 'source': 'testing'})])
+                          'dtype': 'str', 'source': 'testing'}),
+                                   ('name2', {'dtype': 'str',
+                                              'source': 'testing'})])
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
     dp.sink(print)
@@ -1534,13 +1533,12 @@ def test_string_workflow(exp_db, start_uid1):
                 full_event=True, output_info=[('human_timestamp',
                                                {'dtype': 'str'})])
     zz = es.zip(source, ht)
-    zz.sink(print)
     zl = es.zip_latest(zz, e)
     final = es.map(lambda a, **x: a.format_map(SafeDict(**x)),
                    zl, st,
                    output_info=[('filename', {'dtype': 'str'})],
                    ext='.tiff')
-    # final.sink(print)
+    final.sink(print)
     L = final.sink_to_list()
     for nd in hdr.documents():
         source.emit(nd)
