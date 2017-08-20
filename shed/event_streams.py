@@ -192,7 +192,7 @@ class EventStream(Stream):
 
         """
         if x is not None:
-            self.curate_streams(x, True)
+            x = self.curate_streams(x, True)
             result = []
             for parent in self.parents:
                 r = parent.update(x, who=self)
@@ -257,33 +257,31 @@ class EventStream(Stream):
         If we get multiple streams make (name, (doc, doc, doc, ...))
         Otherwise (name, (doc,))
         """
+        # if there are multiple streams
+        if isinstance(nds[0], tuple):
+            names, docs = list(zzip(*nds))
+            if len(set(names)) > 1:
+                raise RuntimeError('Misaligned Streams')
+            name = names[0]
+            newdocs = list()
+            for doc in docs:
+                # for case of ((name, ({}, {})), (name, ({}, {})))
+                if isinstance(doc, tuple):
+                    newdocs.extend(doc)
+                else:
+                    newdocs.append(doc)
+
+            docs = tuple(newdocs)
+
+        # if only one stream
+        else:
+            names, docs = nds
+            name = names
+            if not isinstance(docs, tuple):
+                docs = (docs,)
         if not outbound:
-            # if there are multiple streams
-            if isinstance(nds[0], tuple):
-                names, docs = list(zzip(*nds))
-                if len(set(names)) > 1:
-                    raise RuntimeError('Misaligned Streams')
-                name = names[0]
-                newdocs = list()
-                for doc in docs:
-                    # for case of ((name, ({}, {})), (name, ({}, {})))
-                    if isinstance(doc, tuple):
-                        newdocs.extend(doc)
-                    else:
-                        newdocs.append(doc)
-
-                docs = tuple(newdocs)
-
-            # if only one stream
-            else:
-                names, docs = nds
-                name = names
-                if not isinstance(docs, tuple):
-                    docs = (docs,)
             return name, docs
         else:
-            # if there are multiple streams
-            name, docs = nds
             if isinstance(docs, tuple) and len(docs) == 1:
                 docs = docs[0]
             return name, docs
@@ -460,14 +458,18 @@ class EventStream(Stream):
             The keyword arguments to be passed to a function
         """
         # TODO: access to full document(s)
-        if self.input_info is None:
+        if not self.input_info:
             kwargs = {}
             # Reverse the order of the docs so that the first doc in resolves
             # last
             rdocs = list(docs)
             rdocs.reverse()
-            for doc in rdocs:
-                kwargs.update(**doc)
+            if full_event:
+                for doc in rdocs:
+                    kwargs.update(**doc)
+            else:
+                for doc in rdocs:
+                    kwargs.update(**doc['data'])
         else:
             # TODO: address inner dicts, not just data or everything
             if full_event:

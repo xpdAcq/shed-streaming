@@ -102,7 +102,32 @@ def test_map_no_input_info(exp_db, start_uid1):
     for l, s in zip(L, exp_db.restream(ih1, fill=False)):
         assert_docs.add(l[0])
         if l[0] == 'event':
-            assert l[1] == s[1]
+            assert l[1]['data'] == s[1]['data']
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+        assert l[1] != s[1]
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_map_no_input_info_full_event(exp_db, start_uid1):
+    source = Stream()
+
+    dp = es.map(lambda **x: x, source, full_event=True)
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=False)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=False)):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert l[1]['data'] == s[1]
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
         assert l[1] != s[1]
@@ -868,8 +893,8 @@ def test_zip(exp_db, start_uid1, start_uid3):
         source.emit(a)
 
     assert_docs = set()
-    for l1, l2 in L:
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -920,11 +945,11 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
         source.emit(a)
 
     assert_docs = set()
-    for l1, l2 in L:
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
-        if l1[0] == 'event':
-            assert l2[1]['seq_num'] == 2
+        if name == 'event':
+            assert l2['seq_num'] == 2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
 
@@ -944,9 +969,8 @@ def test_zip_latest(exp_db, start_uid1, start_uid3):
         source.emit(a)
 
     assert_docs = set()
-    for l1, l2 in L:
-        assert l1[0] == l2[0]
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -968,9 +992,8 @@ def test_zip_latest_reverse(exp_db, start_uid1, start_uid3):
         source2.emit(b)
 
     assert_docs = set()
-    for l1, l2 in L:
-        assert l1[0] == l2[0]
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -993,9 +1016,8 @@ def test_zip_latest_double(exp_db, start_uid1, start_uid3):
         source.emit(a)
 
     assert_docs = set()
-    for l1, l2 in L:
-        assert l1[0] == l2[0]
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -1012,10 +1034,9 @@ def test_zip_latest_double(exp_db, start_uid1, start_uid3):
         source.emit(a)
 
     assert_docs = set()
-    for l1, l2 in L:
+    for name, (l1, l2) in L:
         print(l1)
-        assert l1[0] == l2[0]
-        assert_docs.add(l1[0])
+        assert_docs.add(name)
         assert l1 != l2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -1037,9 +1058,8 @@ def test_zip_latest_double_reverse(exp_db, start_uid1, start_uid3):
         source2.emit(b)
 
     assert_docs = set()
-    for l1, l2 in L:
-        assert l1[0] == l2[0]
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -1056,9 +1076,8 @@ def test_zip_latest_double_reverse(exp_db, start_uid1, start_uid3):
         source2.emit(b)
 
     assert_docs = set()
-    for l1, l2 in L:
-        assert l1[0] == l2[0]
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -1081,9 +1100,8 @@ def test_zip_latest_double_interleaved(exp_db, start_uid1, start_uid3):
         source.emit(a)
 
     assert_docs = set()
-    for l1, l2 in L:
-        assert l1[0] == l2[0]
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -1101,10 +1119,8 @@ def test_zip_latest_double_interleaved(exp_db, start_uid1, start_uid3):
             source2.emit(b)
 
     assert_docs = set()
-    for l1, l2 in L:
-        print(l1)
-        assert l1[0] == l2[0]
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -1121,8 +1137,8 @@ def test_eventify(exp_db, start_uid1):
     # try two outputs
     dp2 = es.Eventify(source, 'name', 'name',
                       output_info=[('name', {
-                                   'dtype': 'str',
-                                   'source': 'testing'}),
+                          'dtype': 'str',
+                          'source': 'testing'}),
                                    ('name2',
                                     {'dtype': 'str', 'source': 'testing'})])
     L = dp.sink_to_list()
@@ -1492,3 +1508,49 @@ def test_outputinfo_default(exp_db, start_uid1):
                 s2.emit(d)
         else:
             s2.emit(d)
+
+
+def test_string_workflow(exp_db, start_uid1):
+    st = '{sample_name}/{human_timestamp}_uid={pe1_image}{ext}'
+    import datetime
+
+    def _timestampstr(timestamp):
+        """ convert timestamp to strftime formate """
+        timestring = datetime.datetime.fromtimestamp(
+            float(timestamp)).strftime(
+            '%Y%m%d-%H%M%S')
+        return timestring
+
+    class SafeDict(dict):
+        def __missing__(self, key):
+            return '{' + key + '}'
+
+    hdr = exp_db[start_uid1]
+
+    source = Stream()
+
+    e = es.Eventify(source)
+    ht = es.map(_timestampstr, source, input_info={'timestamp': 'time'},
+                full_event=True, output_info=[('human_timestamp',
+                                               {'dtype': 'str'})])
+    zz = es.zip(source, ht)
+    zz.sink(print)
+    zl = es.zip_latest(zz, e)
+    final = es.map(lambda a, **x: a.format_map(SafeDict(**x)),
+                   zl, st,
+                   output_info=[('filename', {'dtype': 'str'})],
+                   ext='.tiff')
+    # final.sink(print)
+    L = final.sink_to_list()
+    for nd in hdr.documents():
+        source.emit(nd)
+
+    assert_docs = set()
+    for n, d in L:
+        assert_docs.add(n)
+        if n == 'event':
+            assert '2017' in d['data']['filename']
+            assert 'hi' in d['data']['filename']
+            assert '.tiff' in d['data']['filename']
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
