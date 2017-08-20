@@ -1244,6 +1244,9 @@ class Eventify(EventStream):
             for start_key in self.start_keys:
                 self.output_info.append((start_key, start_key))
 
+        if len(self.output_info) == 1:
+            self.vals = self.vals[0]
+
         return super().start(docs)
 
     def event(self, docs):
