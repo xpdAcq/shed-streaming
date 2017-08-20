@@ -1246,6 +1246,9 @@ class Eventify(EventStream):
 
         if len(self.output_info) == 1:
             self.vals = self.vals[0]
+        else:
+            if len(self.output_info) != len(self.vals):
+                raise RuntimeError('The output_info does not match the values')
 
         return super().start(docs)
 
