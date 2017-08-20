@@ -459,15 +459,25 @@ class EventStream(Stream):
         kwargs: dict
             The keyword arguments to be passed to a function
         """
-        # TODO: address inner dicts, not just data or everything
-        if full_event:
-            kwargs = {input_kwarg: docs[position][data_key] for
-                      input_kwarg, (data_key, position) in
-                      self.input_info.items()}
+        # TODO: access to full document(s)
+        if self.input_info is None:
+            kwargs = {}
+            # Reverse the order of the docs so that the first doc in resolves
+            # last
+            rdocs = list(docs)
+            rdocs.reverse()
+            for doc in rdocs:
+                kwargs.update(**doc)
         else:
-            kwargs = {input_kwarg: docs[position]['data'][data_key] for
-                      input_kwarg, (data_key, position) in
-                      self.input_info.items()}
+            # TODO: address inner dicts, not just data or everything
+            if full_event:
+                kwargs = {input_kwarg: docs[position][data_key] for
+                          input_kwarg, (data_key, position) in
+                          self.input_info.items()}
+            else:
+                kwargs = {input_kwarg: docs[position]['data'][data_key] for
+                          input_kwarg, (data_key, position) in
+                          self.input_info.items()}
         args_positions = [k for k in kwargs.keys() if isinstance(k, int)]
         args_positions.sort()
 
