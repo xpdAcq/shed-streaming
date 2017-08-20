@@ -575,6 +575,11 @@ class EventStream(Stream):
             self.i += 1
             return new_event
 
+    def _clean_kwargs(self, kwargs):
+        for k in self.pop_kwargs:
+            if k in kwargs:
+                kwargs.pop(k)
+
 
 class map(EventStream):
     """Apply a function onto every event in the stream
@@ -623,9 +628,7 @@ class map(EventStream):
 
         EventStream.__init__(self, child, output_info=output_info,
                              input_info=input_info, **kwargs)
-        for k in self.pop_kwargs:
-            if k in kwargs:
-                kwargs.pop(k)
+        self._clean_kwargs(kwargs)
         self.func_kwargs = kwargs
         self.func_args = args
         self.full_event = full_event
@@ -707,9 +710,7 @@ class filter(EventStream):
         self.predicate = predicate
 
         EventStream.__init__(self, child, input_info=input_info, **kwargs)
-        for k in self.pop_kwargs:
-            if k in kwargs:
-                kwargs.pop(k)
+        self._clean_kwargs(kwargs)
 
         self.func_kwargs = kwargs
         self.func_args = args
@@ -802,12 +803,12 @@ class accumulate(EventStream):
         EventStream.__init__(self, child, input_info=input_info,
                              output_info=output_info)
         self.full_event = full_event
-        self.across_start = across_start
+        if not across_start:
+            self.start = self._not_across_start_start
         self.generate_provenance(function=func)
 
-    def start(self, docs):
-        if not self.across_start:
-            self.state = self.start_state
+    def _not_across_start_start(self, docs):
+        self.state = self.start_state
         return super().start(docs)
 
     def event(self, doc):

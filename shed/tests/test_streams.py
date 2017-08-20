@@ -85,6 +85,31 @@ def test_map(exp_db, start_uid1):
         assert n in assert_docs
 
 
+def test_map_no_input_info(exp_db, start_uid1):
+    source = Stream()
+
+    dp = es.map(lambda **x: x, source)
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=False)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=False)):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert l[1] == s[1]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+        assert l[1] != s[1]
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_map_args(exp_db, start_uid1):
     source = Stream()
 
