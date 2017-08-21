@@ -177,6 +177,7 @@ class EventStream(Stream):
         self.excep = None
 
         # If the stream number is not specified its zero
+        # FIXME: handle (nested tuple) so that it behaves properly
         for k, v in input_info.items():
             if isinstance(v, str) or len(v) < 2:
                 input_info[k] = (v, 0)
@@ -476,16 +477,23 @@ class EventStream(Stream):
                 for doc in rdocs:
                     kwargs.update(**doc['data'])
         else:
-            # TODO: address inner dicts, not just data or everything
-            # TODO: if data_key is None unpack full dict into kwarg
-            if full_event:
-                kwargs = {input_kwarg: docs[position][data_key] for
-                          input_kwarg, (data_key, position) in
-                          self.input_info.items()}
-            else:
-                kwargs = {input_kwarg: docs[position]['data'][data_key] for
-                          input_kwarg, (data_key, position) in
-                          self.input_info.items()}
+            kwargs = {}
+            # address inner dicts, not just data or everything
+            for input_kwarg, (data_key, position) in self.input_info.items():
+                if isinstance(data_key, tuple):
+                    inner = docs[position].copy()
+                    for dk in data_key:
+                        inner = inner[dk].copy()
+                # for backwards compat will be removed soon
+                elif full_event:
+                    inner = docs[position][data_key]
+                    DeprecationWarning('full_event will be removed in the '
+                                       'near future please just use an empty '
+                                       'data_key tuple')
+                else:
+                    inner = docs[position]['data'][data_key]
+                kwargs[input_kwarg] = inner
+
         args_positions = [k for k in kwargs.keys() if isinstance(k, int)]
         args_positions.sort()
 

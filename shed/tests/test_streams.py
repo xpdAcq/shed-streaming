@@ -42,6 +42,8 @@ class SinkAssertion(CallbackBase):
             assert doc.get('reason')
         else:
             assert doc['exit_status']
+            if not doc.get('reason', None):
+                print(doc.get('reason', None))
             assert not doc.get('reason', None)
         assert self.expected_docs == set(self.docs)
 
@@ -53,6 +55,45 @@ def test_map(exp_db, start_uid1):
         return img + 5
 
     ii = {'img': 'pe1_image'}
+    oi = [('image', {'dtype': 'array', 'source': 'testing'})]
+    dp = es.map(add5,
+                source,
+                input_info=ii,
+                output_info=oi, stream_name='test')
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    prov = dict(stream_class='map',
+                function=dict(function_module=add5.__module__,
+                              function_name=add5.__name__),
+                stream_class_module=es.map.__module__,
+                input_info=ii, output_info=oi)
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert_allclose(l[1]['data']['image'],
+                            s[1]['data']['pe1_image'] + 5)
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+            assert l[1]['provenance'] == prov
+        assert l[1] != s[1]
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_map_nested_input_info(exp_db, start_uid1):
+    source = Stream()
+
+    def add5(img):
+        return img + 5
+
+    ii = {'img': (('data', 'pe1_image'), 0)}
     oi = [('image', {'dtype': 'array', 'source': 'testing'})]
     dp = es.map(add5,
                 source,
