@@ -483,7 +483,10 @@ class EventStream(Stream):
                 if isinstance(data_key, tuple):
                     inner = docs[position].copy()
                     for dk in data_key:
-                        inner = inner[dk].copy()
+                        if hasattr(inner[dk], 'copy'):
+                            inner = inner[dk].copy()
+                        else:
+                            inner = inner[dk]
                 # for backwards compat will be removed soon
                 elif full_event:
                     inner = docs[position][data_key]
@@ -732,7 +735,7 @@ class filter(EventStream):
         self.func_args = args
         self.full_event = full_event
         self.document_name = document_name
-        self.tv = None
+        self.truth_value = None
         # Note we don't override event because with this update we don't see it
         if document_name == 'start':
             self.update = self._update
@@ -742,8 +745,8 @@ class filter(EventStream):
         # TODO: should we have something like event_contents for starts?
         name, docs = self.curate_streams(x, False)
         if name == 'start':
-            self.tv = self.predicate(docs)
-        if self.tv:
+            self.truth_value = self.predicate(docs)
+        if self.truth_value:
             self.emit((name, docs))
 
     def event(self, doc):
