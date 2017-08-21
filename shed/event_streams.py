@@ -379,9 +379,13 @@ class EventStream(Stream):
                 new_descriptor.update(data_keys=docs[0]['data_keys'])
 
             else:
-                raise RuntimeError("Descriptor mismatch: "
-                                   "you have tried to combine descriptors "
-                                   "with different data keys")
+                rdocs = list(docs)
+                rdocs.reverse()
+                dk = {}
+                for doc in rdocs:
+                    dk.update(doc.get('data_keys'))
+                new_descriptor.update(data_keys=dk)
+
             self.i = 1
             return 'descriptor', new_descriptor
 
@@ -473,6 +477,7 @@ class EventStream(Stream):
                     kwargs.update(**doc['data'])
         else:
             # TODO: address inner dicts, not just data or everything
+            # TODO: if data_key is None unpack full dict into kwarg
             if full_event:
                 kwargs = {input_kwarg: docs[position][data_key] for
                           input_kwarg, (data_key, position) in
