@@ -1372,3 +1372,14 @@ class QueryUnpacker(EventStream):
         if name == 'event':
             return [self.emit(nd) for nd in
                     self.db[doc['data']['hdr_uid']].documents(fill=self.fill)]
+
+
+class split(EventStream):
+    def __init__(self, child, n_streams):
+        self.split_streams = [EventStream() for _ in range(n_streams)]
+        EventStream.__init__(self, child=child)
+
+    def update(self, x, who=None):
+        name, docs = self.curate_streams(x, False)
+        return [s.emit((name, doc)) for s, doc in zzip(self.split_streams,
+                                                       docs)]

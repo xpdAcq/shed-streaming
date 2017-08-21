@@ -1592,3 +1592,27 @@ def test_string_workflow(exp_db, start_uid1):
             assert '.tiff' in d['data']['filename']
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
+
+
+def test_split(exp_db, start_uid1):
+    source1 = Stream()
+    source2 = Stream()
+
+    z = es.zip(source1, source2)
+    uz = es.split(z, 2)
+    L1 = uz.split_streams[0].sink_to_list()
+    L2 = uz.split_streams[1].sink_to_list()
+
+    h1 = exp_db[start_uid1]
+
+    for s1, s2 in zip(h1.documents(), h1.documents()):
+        source1.emit(s1)
+        source2.emit(s2)
+
+    assert_docs = set()
+    for s, s1, s2 in zip(h1.documents(), L1, L2):
+        assert s == s1
+        assert s == s2
+        assert_docs.add(s1[0])
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
