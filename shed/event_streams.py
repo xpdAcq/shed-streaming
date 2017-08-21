@@ -113,6 +113,7 @@ class EventStream(Stream):
     needed internal flow control.
 
     """
+    # these are sacred kwargs which can never be passed to operator nodes
     pop_kwargs = ['output_info', 'input_info', 'md', 'stream_name',
                   'raise_upon_error']
 
@@ -1272,6 +1273,28 @@ class Eventify(EventStream):
 
 
 class Query(EventStream):
+    """Query a databroker for data
+
+    Parameters
+    -----------
+    db: databroker.Broker instance
+        The databroker to be queried
+    child: EventStream instance
+        The stream to be subscribed to
+    query_function: callable
+        A function which executes a query against the databroker using the
+        start document of the stream. Note that the signature must be
+        ``func(Broker, docs)`` where docs is a tuple of documents and returns
+        the valid headers.
+    query_decider: callable, optional
+        A function to decide among the query results. The signature must be
+        func(list of headers, docs) and returns a single header. If not
+        provided use all the headers returned. Defaults to None.
+    max_n_hdrs: int, optional
+        Maximum number of headers returned, if the number of headers returned
+        is greater than the max then the node raises a RuntimeError
+
+    """
     def __init__(self, db, child, query_function,
                  query_decider=None, max_n_hdrs=10, **kwargs):
         self.max_n_hdrs = max_n_hdrs
@@ -1310,6 +1333,21 @@ class Query(EventStream):
 
 
 class QueryUnpacker(EventStream):
+    """Unpack Queries from the Query node
+
+    This unpacks the start uids passed down from the Query node and creates
+    a restream of the data for each header
+
+    Parameters
+    -----------
+    db: databroker.Broker instance
+        The databroker to be queried
+    child: EventStream instance
+        The stream to be subscribed to
+    fill: bool, optional
+        Whether or not to fill the documents, defaults to True
+
+    """
     def __init__(self, db, child, fill=True, **kwargs):
         self.db = db
         EventStream.__init__(self, child, **kwargs)
