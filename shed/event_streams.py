@@ -433,6 +433,11 @@ class EventStream(Stream):
                             )
             if isinstance(docs, Exception):
                 self.bypass = True
+                print(self.stream_name)
+                print(self.md)
+                print(traceback.format_exc())
+                print(repr(docs))
+
                 new_stop.update(reason=repr(docs),
                                 trace=traceback.format_exc(),
                                 exit_status='failure')
