@@ -1256,34 +1256,59 @@ class Eventify(EventStream):
     >>> assert len(L) == 4
     """
 
-    def __init__(self, child, *start_keys, output_info=None, **kwargs):
+    def __init__(self, child, *keys, output_info=None,
+                 document='start',
+                 **kwargs):
         # TODO: maybe allow start_key to be a list of relevent keys?
-        self.start_keys = start_keys
+        self.keys = keys
+        if document == 'event':
+                raise ValueError("Can't eventify event, its an event already")
+        self.document = document
         self.vals = list()
         self.emit_event = False
 
         EventStream.__init__(self, child, output_info=output_info, **kwargs)
 
-    def start(self, docs):
-        self.vals = list()
-        self.emit_event = False
+    def _extract_info(self, docs):
         # If there are no start keys, then use all the keys
-        if not self.start_keys:
-            self.start_keys = list(docs[0].keys())
-        for start_key in self.start_keys:
-            self.vals.append(docs[0][start_key])
+        if not self.keys:
+            self.keys = list(docs[0].keys())
+        for key in self.keys:
+            self.vals.append(docs[0][key])
 
         # If no output info provided use all the start keys
         if not self.output_info:
             self.output_info = []
-            for start_key in self.start_keys:
-                self.output_info.append((start_key, start_key))
+            for key in self.keys:
+                self.output_info.append((key, key))
 
         if len(self.output_info) == 1:
             self.vals = self.vals[0]
         else:
             if len(self.output_info) != len(self.vals):
                 raise RuntimeError('The output_info does not match the values')
+
+    def dispatch(self, nds):
+        """Dispatch to methods expecting particular doc types.
+
+        Parameters
+        ----------
+        nds: tuple
+            Name document pair
+
+        Returns
+        -------
+        tuple:
+            New name document pair
+        """
+        name, docs = self.curate_streams(nds, False)
+        if name == self.document:
+            self._extract_info(docs)
+        return getattr(self, name)(docs)
+
+    def start(self, docs):
+        self.vals = list()
+        self.emit_event = False
 
         return super().start(docs)
 
