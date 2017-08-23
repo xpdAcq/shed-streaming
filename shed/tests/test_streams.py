@@ -1252,6 +1252,101 @@ def test_eventify_all(exp_db, start_uid1):
         assert n in assert_docs
 
 
+def test_eventify_descriptor(exp_db, start_uid1):
+    source = Stream()
+
+    dp = es.Eventify(source, 'data_keys',
+                     output_info=[('name', {
+                         'dtype': 'str',
+                         'source': 'testing'})],
+                     document='descriptor')
+    # try two outputs
+    dp2 = es.Eventify(source, 'data_keys', 'data_keys',
+                      output_info=[
+                          ('name', {'dtype': 'str', 'source': 'testing'}),
+                          ('name2', {'dtype': 'str', 'source': 'testing'})],
+                      document='descriptor')
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+    L2 = dp2.sink_to_list()
+    dp2.sink(star(SinkAssertion(False)))
+    dp2.sink(print)
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    dk = None
+    for a in s:
+        if a[0] == 'descriptor':
+            print(a)
+            dk = a[1]['data_keys']
+        source.emit(a)
+
+    assert len(L) == 4
+    assert len(L2) == 4
+    assert_docs = set()
+    assert_docs2 = set()
+    # zip them since we know they're same length and order
+    for l, l2 in zip(L, L2):
+        assert_docs.add(l[0])
+        assert_docs2.add(l2[0])
+        if l[0] == 'event':
+            assert l[1]['data']['name'] == dk
+            assert l2[1]['data']['name'] == dk
+            assert l2[1]['data']['name2'] == dk
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+            assert l2[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_eventify_all_descriptor(exp_db, start_uid1):
+    source = Stream()
+
+    dp = es.Eventify(source, document='descriptor')
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    dk = None
+    for a in s:
+        if a[0] == 'descriptor':
+            dk = a[1]
+        source.emit(a)
+
+    assert len(L) == 4
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            for k in set(dk.keys()) | set(l[1]['data'].keys()):
+                assert l[1]['data'][k] == dk[k]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    L.clear()
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert len(L) == 4
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            for k in set(dk.keys()) | set(l[1]['data'].keys()):
+                assert l[1]['data'][k] == dk[k]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_query(exp_db, start_uid1):
     source = es.EventStream()
 

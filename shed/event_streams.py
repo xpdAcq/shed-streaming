@@ -1302,15 +1302,12 @@ class Eventify(EventStream):
             New name document pair
         """
         name, docs = self.curate_streams(nds, False)
+        if name == 'start':
+            self.vals = list()
+            self.emit_event = False
         if name == self.document:
             self._extract_info(docs)
         return getattr(self, name)(docs)
-
-    def start(self, docs):
-        self.vals = list()
-        self.emit_event = False
-
-        return super().start(docs)
 
     def event(self, docs):
         if not self.emit_event:
