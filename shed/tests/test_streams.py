@@ -1616,3 +1616,16 @@ def test_split(exp_db, start_uid1):
         assert_docs.add(s1[0])
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
+
+
+def test_fill_events(exp_db, start_uid1):
+    source = Stream()
+    dp = es.fill_events(exp_db, source)
+    L = dp.sink_to_list()
+
+    h1 = exp_db[start_uid1]
+    for s in h1.documents():
+        source.emit(s)
+
+    for a, b in zip(L, h1.documents(fill=True)):
+        assert_equal(a[1], b[1])

@@ -1387,3 +1387,26 @@ class split(EventStream):
         name, docs = self.curate_streams(x, False)
         return [s.emit((name, doc)) for s, doc in zzip(self.split_streams,
                                                        docs)]
+
+
+class fill_events(EventStream):
+    """Fill events without provenence"""
+    def __init__(self, db, child):
+        self.db = db
+        EventStream.__init__(self, child=child)
+        self.descs = None
+
+    def start(self, docs):
+        self.descs = None
+        return 'start', docs
+
+    def descriptor(self, docs):
+        self.descs = docs
+        return 'descriptor', docs
+
+    def event(self, docs):
+        d = next(self.db.fill_events(docs, self.descs))
+        return 'event', d
+
+    def stop(self, docs):
+        return 'stop', docs
