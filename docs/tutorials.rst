@@ -231,8 +231,7 @@ Here is a typical way to intercept your output::
     s3 = es.map(print, s2, input_info={'data' : 'data'},
                 output_info=(('data',{'dtype' : 'array'}),))
     # add these two lines
-    L = list()
-    s4 = sc.map(L.append, s2)
+    L = sc.sink_to_list(s2)
     
     event_streams = gen_imgs([data1, data2], name="Alex", sample="FeO")
     # generate the event streams again since generator is exhausted
