@@ -1379,7 +1379,8 @@ class QueryUnpacker(EventStream):
 
 class split(EventStream):
     def __init__(self, child, n_streams):
-        self.split_streams = [EventStream() for _ in range(n_streams)]
+        self.split_streams = [EventStream(
+            stream_name='Split output-{}'.format(i)) for i in range(n_streams)]
         EventStream.__init__(self, child=child)
 
     def update(self, x, who=None):
