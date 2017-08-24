@@ -82,6 +82,7 @@ script:
   - set -e
   - coverage run run_tests.py
   - coverage report -m
+  - codecov
   - flake8 .
   - conda install --yes sphinx sphinx_rtd_theme
   - pip install git+git://github.com/drdoctr/doctr.git
@@ -89,6 +90,3 @@ script:
   - make html
   - cd ..
   - doctr deploy . --built-docs ./docs/_build/html;
-
-after_success:
-  - codecov
