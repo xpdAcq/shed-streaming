@@ -1724,3 +1724,28 @@ def test_fill_events(exp_db, start_uid1):
 
     for a, b in zip(L, h1.documents(fill=True)):
         assert_equal(a[1], b[1])
+
+
+def test_descriptor_no_output_info(exp_db, start_uid1):
+    from ..utils import to_event_model
+    s1 = Stream()
+    s2 = Stream()
+
+    hdr = exp_db[start_uid1]
+    a = to_event_model([1, 2, 3, 4], output_info=[('multiplyer',
+                                                   {'dtype': 'int'})])
+
+    z = es.zip(es.Eventify(s1), es.Eventify(s2))
+    zz = es.map(lambda **x: x, z)
+
+    L = zz.sink_to_list()
+    for y in hdr.documents():
+        s1.emit(y)
+    for yy in a:
+        s2.emit(yy)
+
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs

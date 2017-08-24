@@ -490,10 +490,7 @@ class EventStream(Stream):
                 if isinstance(data_key, tuple):
                     inner = docs[position].copy()
                     for dk in data_key:
-                        if hasattr(inner[dk], 'copy'):
-                            inner = inner[dk].copy()
-                        else:
-                            inner = inner[dk]
+                        inner = inner[dk]
                 # for backwards compat will be removed soon
                 elif full_event:
                     inner = docs[position][data_key]
