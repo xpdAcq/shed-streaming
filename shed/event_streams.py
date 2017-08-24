@@ -24,6 +24,8 @@ from collections import deque
 from streamz.core import Stream, no_default
 from tornado.locks import Condition
 
+# TODO: if mismatch includes error stop doc be more verbose
+
 
 def star(f):
     """Take tuple and unpack it into args"""
@@ -1351,6 +1353,7 @@ class Query(EventStream):
 
     def start(self, docs):
         # XXX: If we don't have a decider we return all the results
+        # TODO: should this issue a stop on failure?
         self.uid = None
         res = self.query_function(self.db, docs)
         if self.query_decider:
