@@ -19,6 +19,7 @@ import shed.event_streams as es
 from ..event_streams import dstar, star
 import pytest
 from bluesky.callbacks.core import CallbackBase
+from itertools import zip_longest
 
 
 class SinkAssertion(CallbackBase):
@@ -41,6 +42,8 @@ class SinkAssertion(CallbackBase):
             assert doc.get('reason')
         else:
             assert doc['exit_status']
+            if not doc.get('reason', None):
+                print(doc.get('reason', None))
             assert not doc.get('reason', None)
         assert self.expected_docs == set(self.docs)
 
@@ -56,7 +59,7 @@ def test_map(exp_db, start_uid1):
     dp = es.map(add5,
                 source,
                 input_info=ii,
-                output_info=oi)
+                output_info=oi, stream_name='test')
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -84,6 +87,95 @@ def test_map(exp_db, start_uid1):
         assert n in assert_docs
 
 
+def test_map_nested_input_info(exp_db, start_uid1):
+    source = Stream()
+
+    def add5(img):
+        return img + 5
+
+    ii = {'img': (('data', 'pe1_image'), 0)}
+    oi = [('image', {'dtype': 'array', 'source': 'testing'})]
+    dp = es.map(add5,
+                source,
+                input_info=ii,
+                output_info=oi, stream_name='test')
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    prov = dict(stream_class='map',
+                function=dict(function_module=add5.__module__,
+                              function_name=add5.__name__),
+                stream_class_module=es.map.__module__,
+                input_info=ii, output_info=oi)
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert_allclose(l[1]['data']['image'],
+                            s[1]['data']['pe1_image'] + 5)
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+            assert l[1]['provenance'] == prov
+        assert l[1] != s[1]
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_map_no_input_info(exp_db, start_uid1):
+    source = Stream()
+
+    dp = es.map(lambda **x: x, source)
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=False)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=False)):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert l[1]['data'] == s[1]['data']
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+        assert l[1] != s[1]
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_map_no_input_info_full_event(exp_db, start_uid1):
+    source = Stream()
+
+    dp = es.map(lambda **x: x, source, full_event=True)
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=False)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=False)):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert l[1]['data'] == s[1]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+        assert l[1] != s[1]
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_map_args(exp_db, start_uid1):
     source = Stream()
 
@@ -95,7 +187,7 @@ def test_map_args(exp_db, start_uid1):
                 source,
                 5,
                 input_info=ii,
-                output_info=oi)
+                output_info=oi, md={'stream_name': 'test'})
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -433,7 +525,7 @@ def test_filter(exp_db, start_uid1):
         return img1 is not None
 
     dp = es.filter(f, source,
-                   input_info={'img1': 'pe1_image'})
+                   input_info={'img1': 'pe1_image'}, stream_name='test')
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -476,10 +568,8 @@ def test_filter_full_header(exp_db, start_uid1):
     for a in s:
         source.emit(a)
 
-    assert dp.bypass is True
     assert L == []
 
-    assert dp2.bypass is False
     assert L2 != []
 
 
@@ -721,6 +811,114 @@ def test_scan_full_event(exp_db, start_uid1):
         assert n in assert_docs
 
 
+def test_scan_multi_header_False(exp_db, start_uid1):
+    source = Stream()
+
+    def add(img1, img2):
+        return img1 + img2
+
+    dp = es.accumulate(dstar(add), source,
+                       state_key='img1',
+                       input_info={'img2': 'pe1_image'},
+                       output_info=[('img', {
+                           'dtype': 'array',
+                           'source': 'testing'})])
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    state = None
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            if state is None:
+                state = o[1]['data']['pe1_image']
+            else:
+                state += o[1]['data']['pe1_image']
+            assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    state = None
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            if state is None:
+                state = o[1]['data']['pe1_image']
+            else:
+                state += o[1]['data']['pe1_image']
+            assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_scan_multi_header_True(exp_db, start_uid1):
+    source = Stream()
+
+    def add(img1, img2):
+        return img1 + img2
+
+    dp = es.accumulate(dstar(add), source,
+                       state_key='img1',
+                       input_info={'img2': 'pe1_image'},
+                       output_info=[('img', {
+                           'dtype': 'array',
+                           'source': 'testing'})],
+                       across_start=True)
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    state = None
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            if state is None:
+                state = o[1]['data']['pe1_image']
+            else:
+                state += o[1]['data']['pe1_image']
+            assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    L.clear()
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            state += o[1]['data']['pe1_image']
+            assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_zip(exp_db, start_uid1, start_uid3):
     source = Stream()
     source2 = Stream()
@@ -736,8 +934,8 @@ def test_zip(exp_db, start_uid1, start_uid3):
         source.emit(a)
 
     assert_docs = set()
-    for l1, l2 in L:
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -788,16 +986,16 @@ def test_combine_latest(exp_db, start_uid1, start_uid3):
         source.emit(a)
 
     assert_docs = set()
-    for l1, l2 in L:
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
-        if l1[0] == 'event':
-            assert l2[1]['seq_num'] == 2
+        if name == 'event':
+            assert l2['seq_num'] == 2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
 
 
-def test_lossless_combine_latest(exp_db, start_uid1, start_uid3):
+def test_zip_latest(exp_db, start_uid1, start_uid3):
     source = Stream()
     source2 = Stream()
 
@@ -812,16 +1010,15 @@ def test_lossless_combine_latest(exp_db, start_uid1, start_uid3):
         source.emit(a)
 
     assert_docs = set()
-    for l1, l2 in L:
-        assert l1[0] == l2[0]
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
     assert len(L) == len(list(exp_db.restream(ih1)))
 
 
-def test_lossless_combine_latest_reverse(exp_db, start_uid1, start_uid3):
+def test_zip_latest_reverse(exp_db, start_uid1, start_uid3):
     source = Stream()
     source2 = Stream()
 
@@ -836,9 +1033,135 @@ def test_lossless_combine_latest_reverse(exp_db, start_uid1, start_uid3):
         source2.emit(b)
 
     assert_docs = set()
-    for l1, l2 in L:
-        assert l1[0] == l2[0]
-        assert_docs.add(l1[0])
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
+        assert l1 != l2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+    assert len(L) == len(list(exp_db.restream(ih1)))
+
+
+def test_zip_latest_double(exp_db, start_uid1, start_uid3):
+    source = Stream()
+    source2 = Stream()
+
+    dp = es.zip_latest(source, source2)
+    L = dp.sink_to_list()
+    ih1 = exp_db[start_uid1]
+    ih2 = exp_db[start_uid3]
+    s = exp_db.restream(ih1)
+    s2 = exp_db.restream(ih2)
+    for b in s2:
+        source2.emit(b)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
+        assert l1 != l2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+    assert len(L) == len(list(exp_db.restream(ih1)))
+
+    L.clear()
+    ih1 = exp_db[start_uid1]
+    ih2 = exp_db[start_uid3]
+    s = exp_db.restream(ih1)
+    s2 = exp_db.restream(ih2)
+    for b in s2:
+        source2.emit(b)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for name, (l1, l2) in L:
+        print(l1)
+        assert_docs.add(name)
+        assert l1 != l2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+    assert len(L) == len(list(exp_db.restream(ih1)))
+
+
+def test_zip_latest_double_reverse(exp_db, start_uid1, start_uid3):
+    source = Stream()
+    source2 = Stream()
+
+    L = es.zip_latest(source, source2).sink_to_list()
+    ih1 = exp_db[start_uid1]
+    ih2 = exp_db[start_uid3]
+    s = exp_db.restream(ih1)
+    s2 = exp_db.restream(ih2)
+    for a in s:
+        source.emit(a)
+    for b in s2:
+        source2.emit(b)
+
+    assert_docs = set()
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
+        assert l1 != l2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+    assert len(L) == len(list(exp_db.restream(ih1)))
+
+    L.clear()
+    ih1 = exp_db[start_uid1]
+    ih2 = exp_db[start_uid3]
+    s = exp_db.restream(ih1)
+    s2 = exp_db.restream(ih2)
+    for a in s:
+        source.emit(a)
+    for b in s2:
+        source2.emit(b)
+
+    assert_docs = set()
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
+        assert l1 != l2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+    assert len(L) == len(list(exp_db.restream(ih1)))
+
+
+def test_zip_latest_double_interleaved(exp_db, start_uid1, start_uid3):
+    source = Stream()
+    source2 = Stream()
+
+    dp = es.zip_latest(source, source2)
+    L = dp.sink_to_list()
+    ih1 = exp_db[start_uid1]
+    ih2 = exp_db[start_uid3]
+    s = exp_db.restream(ih1)
+    s2 = exp_db.restream(ih2)
+    for b in s2:
+        source2.emit(b)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
+        assert l1 != l2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+    assert len(L) == len(list(exp_db.restream(ih1)))
+
+    L.clear()
+    ih1 = exp_db[start_uid1]
+    ih2 = exp_db[start_uid3]
+    s = exp_db.restream(ih1)
+    s2 = exp_db.restream(ih2)
+    for b, a in zip_longest(s2, s):
+        if a:
+            source.emit(a)
+        if b:
+            source2.emit(b)
+
+    assert_docs = set()
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
         assert l1 != l2
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
@@ -848,17 +1171,15 @@ def test_lossless_combine_latest_reverse(exp_db, start_uid1, start_uid3):
 def test_eventify(exp_db, start_uid1):
     source = Stream()
 
-    dp = es.Eventify(source, 'name', 'name',
+    dp = es.Eventify(source, 'name',
                      output_info=[('name', {
                          'dtype': 'str',
                          'source': 'testing'})])
     # try two outputs
     dp2 = es.Eventify(source, 'name', 'name',
-                      output_info=[('name', {
-                                   'dtype': 'str',
-                                   'source': 'testing'}),
-                                   ('name2',
-                                    {'dtype': 'str', 'source': 'testing'})])
+                      output_info=[
+                          ('name', {'dtype': 'str', 'source': 'testing'}),
+                          ('name2', {'dtype': 'str', 'source': 'testing'})])
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
     dp.sink(print)
@@ -880,7 +1201,7 @@ def test_eventify(exp_db, start_uid1):
         assert_docs.add(l[0])
         assert_docs2.add(l2[0])
         if l[0] == 'event':
-            assert l[1]['data']['name'] == ['test', 'test']
+            assert l[1]['data']['name'] == 'test'
             assert l2[1]['data']['name'] == 'test'
             assert l2[1]['data']['name2'] == 'test'
         if l[0] == 'stop':
@@ -909,6 +1230,117 @@ def test_eventify_all(exp_db, start_uid1):
         assert_docs.add(l[0])
         if l[0] == 'event':
             assert l[1]['data']['name'] == 'test'
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    L.clear()
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert len(L) == 4
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert l[1]['data']['name'] == 'test'
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_eventify_descriptor(exp_db, start_uid1):
+    source = Stream()
+
+    dp = es.Eventify(source, 'data_keys',
+                     output_info=[('name', {
+                         'dtype': 'str',
+                         'source': 'testing'})],
+                     document='descriptor')
+    # try two outputs
+    dp2 = es.Eventify(source, 'data_keys', 'data_keys',
+                      output_info=[
+                          ('name', {'dtype': 'str', 'source': 'testing'}),
+                          ('name2', {'dtype': 'str', 'source': 'testing'})],
+                      document='descriptor')
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+    L2 = dp2.sink_to_list()
+    dp2.sink(star(SinkAssertion(False)))
+    dp2.sink(print)
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    dk = None
+    for a in s:
+        if a[0] == 'descriptor':
+            print(a)
+            dk = a[1]['data_keys']
+        source.emit(a)
+
+    assert len(L) == 4
+    assert len(L2) == 4
+    assert_docs = set()
+    assert_docs2 = set()
+    # zip them since we know they're same length and order
+    for l, l2 in zip(L, L2):
+        assert_docs.add(l[0])
+        assert_docs2.add(l2[0])
+        if l[0] == 'event':
+            assert l[1]['data']['name'] == dk
+            assert l2[1]['data']['name'] == dk
+            assert l2[1]['data']['name2'] == dk
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+            assert l2[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_eventify_all_descriptor(exp_db, start_uid1):
+    source = Stream()
+
+    dp = es.Eventify(source, document='descriptor')
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    dk = None
+    for a in s:
+        if a[0] == 'descriptor':
+            dk = a[1]
+        source.emit(a)
+
+    assert len(L) == 4
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            for k in set(dk.keys()) | set(l[1]['data'].keys()):
+                assert l[1]['data'][k] == dk[k]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    L.clear()
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert len(L) == 4
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            for k in set(dk.keys()) | set(l[1]['data'].keys()):
+                assert l[1]['data'][k] == dk[k]
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
     for n in ['start', 'descriptor', 'event', 'stop']:
@@ -1210,3 +1642,110 @@ def test_outputinfo_default(exp_db, start_uid1):
                 s2.emit(d)
         else:
             s2.emit(d)
+
+
+def test_string_workflow(exp_db, start_uid1):
+    st = '{sample_name}/{human_timestamp}_uid={pe1_image}{ext}'
+    import datetime
+
+    def _timestampstr(timestamp):
+        """ convert timestamp to strftime formate """
+        timestring = datetime.datetime.fromtimestamp(
+            float(timestamp)).strftime(
+            '%Y%m%d-%H%M%S')
+        return timestring
+
+    class SafeDict(dict):
+        def __missing__(self, key):
+            return '{' + key + '}'
+
+    hdr = exp_db[start_uid1]
+
+    source = Stream()
+
+    e = es.Eventify(source)
+    ht = es.map(_timestampstr, source, input_info={'timestamp': 'time'},
+                full_event=True, output_info=[('human_timestamp',
+                                               {'dtype': 'str'})])
+    zz = es.zip(source, ht)
+    zl = es.zip_latest(zz, e)
+    final = es.map(lambda a, **x: a.format_map(SafeDict(**x)),
+                   zl, st,
+                   output_info=[('filename', {'dtype': 'str'})],
+                   ext='.tiff')
+    final.sink(print)
+    L = final.sink_to_list()
+    for nd in hdr.documents():
+        source.emit(nd)
+
+    assert_docs = set()
+    for n, d in L:
+        assert_docs.add(n)
+        if n == 'event':
+            assert '2017' in d['data']['filename']
+            assert 'hi' in d['data']['filename']
+            assert '.tiff' in d['data']['filename']
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_split(exp_db, start_uid1):
+    source1 = Stream()
+    source2 = Stream()
+
+    z = es.zip(source1, source2)
+    uz = es.split(z, 2)
+    L1 = uz.split_streams[0].sink_to_list()
+    L2 = uz.split_streams[1].sink_to_list()
+
+    h1 = exp_db[start_uid1]
+
+    for s1, s2 in zip(h1.documents(), h1.documents()):
+        source1.emit(s1)
+        source2.emit(s2)
+
+    assert_docs = set()
+    for s, s1, s2 in zip(h1.documents(), L1, L2):
+        assert s == s1
+        assert s == s2
+        assert_docs.add(s1[0])
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_fill_events(exp_db, start_uid1):
+    source = Stream()
+    dp = es.fill_events(exp_db, source)
+    L = dp.sink_to_list()
+
+    h1 = exp_db[start_uid1]
+    for s in h1.documents():
+        source.emit(s)
+
+    for a, b in zip(L, h1.documents(fill=True)):
+        assert_equal(a[1], b[1])
+
+
+def test_descriptor_no_output_info(exp_db, start_uid1):
+    from ..utils import to_event_model
+    s1 = Stream()
+    s2 = Stream()
+
+    hdr = exp_db[start_uid1]
+    a = to_event_model([1, 2, 3, 4], output_info=[('multiplyer',
+                                                   {'dtype': 'int'})])
+
+    z = es.zip(es.Eventify(s1), es.Eventify(s2))
+    zz = es.map(lambda **x: x, z)
+
+    L = zz.sink_to_list()
+    for y in hdr.documents():
+        s1.emit(y)
+    for yy in a:
+        s2.emit(yy)
+
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs

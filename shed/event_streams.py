@@ -24,6 +24,8 @@ from collections import deque
 from streamz.core import Stream, no_default
 from tornado.locks import Condition
 
+# TODO: if mismatch includes error stop doc be more verbose
+
 
 def star(f):
     """Take tuple and unpack it into args"""
@@ -113,9 +115,13 @@ class EventStream(Stream):
     needed internal flow control.
 
     """
+    # these are sacred kwargs which can never be passed to operator nodes
+    pop_kwargs = ['output_info', 'input_info', 'md', 'stream_name',
+                  'raise_upon_error']
 
     def __init__(self, child=None, children=None,
-                 *, output_info=None, input_info=None, md=None, name=None,
+                 *, output_info=None, input_info=None, md=None,
+                 stream_name=None,
                  raise_upon_error=True,
                  **kwargs):
         """Initialize the stream
@@ -143,13 +149,13 @@ class EventStream(Stream):
         """
         if md is None:
             md = {}
-        if name is not None:
-            md.update(name=name)
-        if 'name' in md.keys():
-            self.name = md['name']
+        if stream_name is not None:
+            md.update(stream_name=stream_name)
+        if 'stream_name' in md.keys():
+            self.stream_name = md['stream_name']
         else:
-            self.name = None
-        Stream.__init__(self, child, children, name=self.name)
+            self.stream_name = None
+        Stream.__init__(self, child, children, stream_name=self.stream_name)
         if output_info is None:
             output_info = {}
         if input_info is None:
@@ -173,6 +179,7 @@ class EventStream(Stream):
         self.excep = None
 
         # If the stream number is not specified its zero
+        # FIXME: handle (nested tuple) so that it behaves properly
         for k, v in input_info.items():
             if isinstance(v, str) or len(v) < 2:
                 input_info[k] = (v, 0)
@@ -189,7 +196,7 @@ class EventStream(Stream):
 
         """
         if x is not None:
-            self.curate_streams(x, True)
+            x = self.curate_streams(x, True)
             result = []
             for parent in self.parents:
                 r = parent.update(x, who=self)
@@ -254,33 +261,31 @@ class EventStream(Stream):
         If we get multiple streams make (name, (doc, doc, doc, ...))
         Otherwise (name, (doc,))
         """
+        # if there are multiple streams
+        if isinstance(nds[0], tuple):
+            names, docs = list(zzip(*nds))
+            if len(set(names)) > 1:
+                raise RuntimeError('Misaligned Streams')
+            name = names[0]
+            newdocs = list()
+            for doc in docs:
+                # for case of ((name, ({}, {})), (name, ({}, {})))
+                if isinstance(doc, tuple):
+                    newdocs.extend(doc)
+                else:
+                    newdocs.append(doc)
+
+            docs = tuple(newdocs)
+
+        # if only one stream
+        else:
+            names, docs = nds
+            name = names
+            if not isinstance(docs, tuple):
+                docs = (docs,)
         if not outbound:
-            # if there are multiple streams
-            if isinstance(nds[0], tuple):
-                names, docs = list(zzip(*nds))
-                if len(set(names)) > 1:
-                    raise RuntimeError('Misaligned Streams')
-                name = names[0]
-                newdocs = list()
-                for doc in docs:
-                    # for case of ((name, ({}, {})), (name, ({}, {})))
-                    if isinstance(doc, tuple):
-                        newdocs.extend(doc)
-                    else:
-                        newdocs.append(doc)
-
-                docs = tuple(newdocs)
-
-            # if only one stream
-            else:
-                names, docs = nds
-                name = names
-                if not isinstance(docs, tuple):
-                    docs = (docs,)
             return name, docs
         else:
-            # if there are multiple streams
-            name, docs = nds
             if isinstance(docs, tuple) and len(docs) == 1:
                 docs = docs[0]
             return name, docs
@@ -377,9 +382,13 @@ class EventStream(Stream):
                 new_descriptor.update(data_keys=docs[0]['data_keys'])
 
             else:
-                raise RuntimeError("Descriptor mismatch: "
-                                   "you have tried to combine descriptors "
-                                   "with different data keys")
+                rdocs = list(docs)
+                rdocs.reverse()
+                dk = {}
+                for doc in rdocs:
+                    dk.update(doc.get('data_keys'))
+                new_descriptor.update(data_keys=dk)
+
             self.i = 1
             return 'descriptor', new_descriptor
 
@@ -426,6 +435,11 @@ class EventStream(Stream):
                             )
             if isinstance(docs, Exception):
                 self.bypass = True
+                print(self.stream_name)
+                print(self.md)
+                print(traceback.format_exc())
+                print(repr(docs))
+
                 new_stop.update(reason=repr(docs),
                                 trace=traceback.format_exc(),
                                 exit_status='failure')
@@ -456,15 +470,37 @@ class EventStream(Stream):
         kwargs: dict
             The keyword arguments to be passed to a function
         """
-        # TODO: address inner dicts, not just data or everything
-        if full_event:
-            kwargs = {input_kwarg: docs[position][data_key] for
-                      input_kwarg, (data_key, position) in
-                      self.input_info.items()}
+        # TODO: access to full document(s)
+        if not self.input_info:
+            kwargs = {}
+            # Reverse the order of the docs so that the first doc in resolves
+            # last
+            rdocs = list(docs)
+            rdocs.reverse()
+            if full_event:
+                for doc in rdocs:
+                    kwargs.update(**doc)
+            else:
+                for doc in rdocs:
+                    kwargs.update(**doc['data'])
         else:
-            kwargs = {input_kwarg: docs[position]['data'][data_key] for
-                      input_kwarg, (data_key, position) in
-                      self.input_info.items()}
+            kwargs = {}
+            # address inner dicts, not just data or everything
+            for input_kwarg, (data_key, position) in self.input_info.items():
+                if isinstance(data_key, tuple):
+                    inner = docs[position].copy()
+                    for dk in data_key:
+                        inner = inner[dk]
+                # for backwards compat will be removed soon
+                elif full_event:
+                    inner = docs[position][data_key]
+                    DeprecationWarning('full_event will be removed in the '
+                                       'near future please just use an empty '
+                                       'data_key tuple')
+                else:
+                    inner = docs[position]['data'][data_key]
+                kwargs[input_kwarg] = inner
+
         args_positions = [k for k in kwargs.keys() if isinstance(k, int)]
         args_positions.sort()
 
@@ -562,6 +598,11 @@ class EventStream(Stream):
             self.i += 1
             return new_event
 
+    def _clean_kwargs(self, kwargs):
+        for k in self.pop_kwargs:
+            if k in kwargs:
+                kwargs.pop(k)
+
 
 class map(EventStream):
     """Apply a function onto every event in the stream
@@ -610,8 +651,9 @@ class map(EventStream):
 
         EventStream.__init__(self, child, output_info=output_info,
                              input_info=input_info, **kwargs)
-        self.kwargs = kwargs
-        self.args = args
+        self._clean_kwargs(kwargs)
+        self.func_kwargs = kwargs
+        self.func_args = args
         self.full_event = full_event
         self.generate_provenance(function=func)
 
@@ -620,8 +662,8 @@ class map(EventStream):
             # we need to expose the event data
             res_args, res_kwargs = self.event_contents(docs, self.full_event)
             # take the event contents and add them to the args/kwargs
-            result = self.func(*res_args, *self.args,
-                               **res_kwargs, **self.kwargs)
+            result = self.func(*res_args, *self.func_args,
+                               **res_kwargs, **self.func_kwargs)
             # Now we must massage the raw return into a new event
             result = self.issue_event(result)
         except Exception as e:
@@ -687,34 +729,35 @@ class filter(EventStream):
 
     def __init__(self, predicate, child, *args, input_info,
                  full_event=False, document_name='event', **kwargs):
-        """Initialize the node
-        """
+        """Initialize the node """
         self.predicate = predicate
 
         EventStream.__init__(self, child, input_info=input_info, **kwargs)
-        self.kwargs = kwargs
-        self.args = args
+        self._clean_kwargs(kwargs)
+
+        self.func_kwargs = kwargs
+        self.func_args = args
         self.full_event = full_event
         self.document_name = document_name
-        if document_name == 'event':
-            self.event = self._event
-        else:
-            self.start = self._start
+        self.truth_value = None
+        # Note we don't override event because with this update we don't see it
+        if document_name == 'start':
+            self.update = self._update
         self.generate_provenance(predicate=predicate)
 
-    def _start(self, docs):
+    def _update(self, x, who=None):
         # TODO: should we have something like event_contents for starts?
-        if not self.predicate(docs):
-            # if we fail the criteria don't issue any documents
-            self.bypass = True
-        else:
-            return super().start(docs)
+        name, docs = self.curate_streams(x, False)
+        if name == 'start':
+            self.truth_value = self.predicate(docs)
+        if self.truth_value:
+            self.emit((name, docs))
 
-    def _event(self, doc):
+    def event(self, doc):
         res_args, res_kwargs = self.event_contents(doc, self.full_event)
         try:
-            if self.predicate(*res_args, *self.args,
-                              **res_kwargs, **self.kwargs):
+            if self.predicate(*res_args, *self.func_args,
+                              **res_kwargs, **self.func_kwargs):
                 return super().event(doc[0])
         except Exception as e:
             return super().stop(e)
@@ -749,6 +792,9 @@ class accumulate(EventStream):
         Starting value for accumulation, if no_default use the event data
         dictionary, if callable run that callable on the event data, else
         use `start` as the starting data, defaults to no_default
+    across_start: bool, optional
+        If the accumulation should continue across multiple starts, defaults
+        to False
 
     Examples
     --------
@@ -771,14 +817,22 @@ class accumulate(EventStream):
     def __init__(self, func, child, state_key=None,
                  full_event=False,
                  output_info=None,
-                 input_info=None, start=no_default):
+                 input_info=None, start=no_default,
+                 across_start=False):
         self.state_key = state_key
         self.func = func
+        self.start_state = start
         self.state = start
         EventStream.__init__(self, child, input_info=input_info,
                              output_info=output_info)
         self.full_event = full_event
+        if not across_start:
+            self.start = self._not_across_start_start
         self.generate_provenance(function=func)
+
+    def _not_across_start_start(self, docs):
+        self.state = self.start_state
+        return super().start(docs)
 
     def event(self, doc):
         # TODO: can accumulate support args/kwargs?
@@ -930,9 +984,6 @@ class Bundle(EventStream):
             return self.condition.wait()
 
 
-union = Bundle
-
-
 class BundleSingleStream(EventStream):
     """Combine multiple headers in a single stream into one
 
@@ -977,7 +1028,6 @@ class BundleSingleStream(EventStream):
             EventStream.__init__(self, children=(child, control_stream))
             self.n_hdrs = None
         self.generate_provenance()
-        self.uid = None
 
     def update(self, x, who=None):
         if who == self.control_stream:
@@ -1107,7 +1157,7 @@ class zip_latest(EventStream):
     Examples
     --------
     >>> from shed.utils import to_event_model
-    >>> from streams import Stream
+    >>> from streamz import Stream
     >>> import shed.event_streams as es
     >>> a = [1, 2, 3]  # base data
     >>> b = [4, 5, 6]
@@ -1125,8 +1175,8 @@ class zip_latest(EventStream):
 
     special_docs_names = ['start', 'descriptor', 'stop']
 
-    def __init__(self, lossless, *children):
-        children = (lossless, ) + children
+    def __init__(self, lossless, *children, **kwargs):
+        children = (lossless,) + children
         self.last = [None for _ in children]
         self.special_last = {k: [None for _ in children] for k in
                              self.special_docs_names}
@@ -1135,7 +1185,9 @@ class zip_latest(EventStream):
                                 self.special_docs_names}
         self.lossless = lossless
         self.lossless_buffer = deque()
-        EventStream.__init__(self, children=children)
+        # Keep track of the emitted docuement types
+        self.lossless_emitted = set()
+        EventStream.__init__(self, children=children, **kwargs)
 
     def update(self, x, who=None):
         name, doc = x
@@ -1158,10 +1210,14 @@ class zip_latest(EventStream):
 
         if not local_missing:
             if local_type == 'special':
+                self.lossless_emitted.add(name)
+                local_missing.add(self.lossless)
+                if name == 'stop':
+                    # Clear with each stop doc
+                    self.lossless_emitted.clear()
                 return self.emit(tuple(local_last))
             # check start and descriptors emitted if not buffer
-            if not all([self.special_missing[k] for k in ['start',
-                                                          'descriptor']]):
+            if {'start', 'descriptor'} == self.lossless_emitted:
                 L = []
                 while self.lossless_buffer:
                     local_last[0] = self.lossless_buffer.popleft()
@@ -1199,28 +1255,58 @@ class Eventify(EventStream):
     >>> assert len(L) == 4
     """
 
-    def __init__(self, child, *start_keys, output_info=None, **kwargs):
+    def __init__(self, child, *keys, output_info=None,
+                 document='start',
+                 **kwargs):
         # TODO: maybe allow start_key to be a list of relevent keys?
-        self.start_keys = start_keys
+        self.keys = keys
+        if document == 'event':
+                raise ValueError("Can't eventify event, its an event already")
+        self.document = document
         self.vals = list()
         self.emit_event = False
 
         EventStream.__init__(self, child, output_info=output_info, **kwargs)
 
-    def start(self, docs):
+    def _extract_info(self, docs):
         # If there are no start keys, then use all the keys
-        if not self.start_keys:
-            self.start_keys = list(docs[0].keys())
-        for start_key in self.start_keys:
-            self.vals.append(docs[0][start_key])
+        if not self.keys:
+            self.keys = list(docs[0].keys())
+        for key in self.keys:
+            self.vals.append(docs[0][key])
 
         # If no output info provided use all the start keys
         if not self.output_info:
             self.output_info = []
-            for start_key in self.start_keys:
-                self.output_info.append((start_key, start_key))
+            for key in self.keys:
+                self.output_info.append((key, key))
 
-        return super().start(docs)
+        if len(self.output_info) == 1:
+            self.vals = self.vals[0]
+        else:
+            if len(self.output_info) != len(self.vals):
+                raise RuntimeError('The output_info does not match the values')
+
+    def dispatch(self, nds):
+        """Dispatch to methods expecting particular doc types.
+
+        Parameters
+        ----------
+        nds: tuple
+            Name document pair
+
+        Returns
+        -------
+        tuple:
+            New name document pair
+        """
+        name, docs = self.curate_streams(nds, False)
+        if name == 'start':
+            self.vals = list()
+            self.emit_event = False
+        if name == self.document:
+            self._extract_info(docs)
+        return getattr(self, name)(docs)
 
     def event(self, docs):
         if not self.emit_event:
@@ -1229,6 +1315,28 @@ class Eventify(EventStream):
 
 
 class Query(EventStream):
+    """Query a databroker for data
+
+    Parameters
+    -----------
+    db: databroker.Broker instance
+        The databroker to be queried
+    child: EventStream instance
+        The stream to be subscribed to
+    query_function: callable
+        A function which executes a query against the databroker using the
+        start document of the stream. Note that the signature must be
+        ``func(Broker, docs)`` where docs is a tuple of documents and returns
+        the valid headers.
+    query_decider: callable, optional
+        A function to decide among the query results. The signature must be
+        func(list of headers, docs) and returns a single header. If not
+        provided use all the headers returned. Defaults to None.
+    max_n_hdrs: int, optional
+        Maximum number of headers returned, if the number of headers returned
+        is greater than the max then the node raises a RuntimeError
+
+    """
     def __init__(self, db, child, query_function,
                  query_decider=None, max_n_hdrs=10, **kwargs):
         self.max_n_hdrs = max_n_hdrs
@@ -1238,11 +1346,12 @@ class Query(EventStream):
         EventStream.__init__(self, child, **kwargs)
         self.generate_provenance(query_function=query_function,
                                  query_decider=query_decider)
-        self.uid = None
         self.output_info = [('hdr_uid', {'dtype': 'str', 'source': 'query'})]
 
     def start(self, docs):
         # XXX: If we don't have a decider we return all the results
+        # TODO: should this issue a stop on failure?
+        self.uid = None
         res = self.query_function(self.db, docs)
         if self.query_decider:
             res = [self.query_decider(res, docs), ]
@@ -1267,13 +1376,64 @@ class Query(EventStream):
 
 
 class QueryUnpacker(EventStream):
-    def __init__(self, db, child, fill=True):
+    """Unpack Queries from the Query node
+
+    This unpacks the start uids passed down from the Query node and creates
+    a restream of the data for each header
+
+    Parameters
+    -----------
+    db: databroker.Broker instance
+        The databroker to be queried
+    child: EventStream instance
+        The stream to be subscribed to
+    fill: bool, optional
+        Whether or not to fill the documents, defaults to True
+
+    """
+    def __init__(self, db, child, fill=True, **kwargs):
         self.db = db
-        EventStream.__init__(self, child)
+        EventStream.__init__(self, child, **kwargs)
         self.fill = fill
 
     def update(self, x, who=None):
-        name, doc = x
+        name, docs = self.curate_streams(x, False)
+        doc = docs[0]
         if name == 'event':
             return [self.emit(nd) for nd in
                     self.db[doc['data']['hdr_uid']].documents(fill=self.fill)]
+
+
+class split(EventStream):
+    def __init__(self, child, n_streams):
+        self.split_streams = [EventStream(
+            stream_name='Split output-{}'.format(i)) for i in range(n_streams)]
+        EventStream.__init__(self, child=child)
+
+    def update(self, x, who=None):
+        name, docs = self.curate_streams(x, False)
+        return [s.emit((name, doc)) for s, doc in zzip(self.split_streams,
+                                                       docs)]
+
+
+class fill_events(EventStream):
+    """Fill events without provenence"""
+    def __init__(self, db, child):
+        self.db = db
+        EventStream.__init__(self, child=child)
+        self.descs = None
+
+    def start(self, docs):
+        self.descs = None
+        return 'start', docs
+
+    def descriptor(self, docs):
+        self.descs = docs
+        return 'descriptor', docs
+
+    def event(self, docs):
+        d = next(self.db.fill_events(docs, self.descs))
+        return 'event', d
+
+    def stop(self, docs):
+        return 'stop', docs

@@ -1,7 +1,7 @@
 """Example for Max's Alginate data"""
 import shed.event_streams as es
 from shed.event_streams import dstar, star
-from streams.core import Stream
+from streamz.core import Stream
 import numpy as np
 from skbeam.core.accumulators.binned_statistic import BinnedStatistic1D
 # from functools import partial

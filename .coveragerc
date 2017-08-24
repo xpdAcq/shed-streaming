@@ -1,6 +1,7 @@
 [run]
 source = 
     shed
+branch = True
 [report]
 omit =
     */python?.?/*
