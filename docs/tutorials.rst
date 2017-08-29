@@ -291,13 +291,3 @@ where ``name`` is one of the strings ``'start'``, ``'decriptor'``,
 ``'event'`` or ``'stop'``. From here on, we won't dig further into the
 structure of the events. But we encourage you to output intermediate
 steps like this as much as you can.
-
-
-
-Tutorial 3 : Mapping inputs and outputs
-------------------------------------
-
-Now we've learned the basics of what SHED attempts to resolve, we can move on
-to more complex operations. The first obvious questions is multiple
-inputs/outputs. Let's say we had the function::
-
