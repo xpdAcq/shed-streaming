@@ -571,6 +571,8 @@ def test_filter_descriptor(exp_db, start_uid1):
         assert_docs.add(l[0])
         if l[0] == 'start':
             assert l[1] != s[1]
+        if l[0] == 'descriptor':
+            assert l[1] == s[1]
         if l[0] == 'event':
             assert_allclose(l[1]['data']['pe1_image'],
                             s[1]['data']['pe1_image'])
@@ -590,6 +592,8 @@ def test_filter_descriptor(exp_db, start_uid1):
         assert_docs.add(l[0])
         if l[0] == 'start':
             assert l[1] != s[1]
+        if l[0] == 'descriptor':
+            assert l[1] == s[1]
         if l[0] == 'event':
             assert_allclose(l[1]['data']['pe1_image'],
                             s[1]['data']['pe1_image'])
