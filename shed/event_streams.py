@@ -789,7 +789,7 @@ class filter(EventStream):
             # take in singular headers vs multiple
             self.descriptor_truth_values[docs[0]['uid']] = self.predicate(docs)
             if self.descriptor_truth_values[docs[0]['uid']]:
-                ret = super().descriptor(docs)
+                ret = ('descriptor', docs)
         elif (name == 'event' and
               self.descriptor_truth_values[docs[0]['descriptor']]):
             ret = super().event(docs)
