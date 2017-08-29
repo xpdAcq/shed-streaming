@@ -512,7 +512,7 @@ class EventStream(Stream):
 
         n_args = len(args_positions)
         if args_positions and (args_positions[-1] != n_args - 1 or
-                               args_positions[0] != 0):
+                                       args_positions[0] != 0):
             errormsg = """Error, arguments supplied must be a set of integers
             ranging from 0 to number of arguments\n
             Got {} instead""".format(args_positions)
@@ -1059,29 +1059,37 @@ class BundleSingleStream(EventStream):
     >>> assert len(L) == 9
     """
 
-    def __init__(self, child, control_stream, **kwargs):
+    def __init__(self, child, control, **kwargs):
         self.maxsize = kwargs.pop('maxsize', 100)
         self.buffers = []
         self.desc_start_map = {}
         self.condition = Condition()
         self.prior = ()
-        self.control_stream = control_stream
-        if isinstance(control_stream, int):
+        self.control = control
+        if isinstance(control, int):
             EventStream.__init__(self, child=child)
-            self.n_hdrs = control_stream
+            self.n_hdrs = control
+        elif isinstance(control, callable):
+            EventStream.__init__(self, child=child)
+            self.n_hdrs = None
         else:
-            EventStream.__init__(self, children=(child, control_stream))
+            EventStream.__init__(self, children=(child, control))
             self.n_hdrs = None
         self.generate_provenance()
+        self.emitted = {'start': False, 'descriptor': False, 'stop': False}
 
     def update(self, x, who=None):
-        if who == self.control_stream:
+        name, docs = self.curate_streams(x, False)
+        if who == self.control:
             if x[0] == 'start':
                 self.n_hdrs = x[1]['n_hdrs']
         else:
             if x[0] == 'start':
                 self.buffers.append(deque())
             self.buffers[-1].append(x)
+        if self.emitted.get(name, False):
+            if name ==
+            self.dispatch(x)
         if len(self.buffers) == self.n_hdrs:
             # if all the docs are of the same type and not an event, issue
             # new documents which are combined
