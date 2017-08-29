@@ -1089,11 +1089,13 @@ class BundleSingleStream(EventStream):
     def update(self, x, who=None):
         return_values = []
         name, docs = self.curate_streams(x, False)
-        print(name, self.start_count, self.n_hdrs)
         if who == self.control:
             if name == 'start':
                 self.n_hdrs = x[1]['n_hdrs']
         else:
+            # Stash the start header in case we issue a stop on the first one
+            if name == 'start':
+                self.start_docs = docs
             if (name == 'start' and
                     self.emitted.get(name, False) and
                     self.predicate(docs)):
@@ -1101,6 +1103,7 @@ class BundleSingleStream(EventStream):
                 for k in self.emitted:
                     self.emitted[k] = False
                 self.start_count = 0
+                self.start_docs = None
                 # Issue a stop
                 return_values.append(super().stop(docs))
             # If we have emitted that kind of document
@@ -1115,11 +1118,12 @@ class BundleSingleStream(EventStream):
                     self.start_count += 1
                 elif name == 'descriptor':
                     self.emitted[x[0]] = True
-            elif self.predicate(docs):
+            elif self.predicate(docs) or self.predicate(self.start_docs):
                 # Reset the state
                 for k in self.emitted:
                     self.emitted[k] = False
                 self.start_count = 0
+                self.start_docs = None
                 # Issue a stop
                 return_values.append(super().stop(docs))
 

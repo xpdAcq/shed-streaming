@@ -1608,6 +1608,29 @@ def test_bundle_single_stream_control_int(exp_db):
         assert n in assert_docs
 
 
+def test_bundle_single_stream_callable_control(exp_db, start_uid3):
+    source = Stream()
+
+    dpf = es.BundleSingleStream(source,
+                                lambda x: x[0].get('uid', None) == start_uid3)
+
+    L = dpf.sink_to_list()
+    dpf.sink(print)
+
+    for a in exp_db[start_uid3].documents():
+        source.emit(a)
+
+    assert_docs = set()
+    assert len(L) == (1 + 1 + 2 + 1)
+    for l in L:
+        assert_docs.add(l[0])
+        assert l[0]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_workflow(exp_db, start_uid1):
     def subs(x1, x2):
         return x1 - x2
