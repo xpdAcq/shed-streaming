@@ -1567,7 +1567,7 @@ def test_bundle_single_stream(exp_db):
         source.emit(a)
 
     assert_docs = set()
-    assert len(L) == 3 + 5 + 5 + 2
+    assert len(L) == 3 + (5 + 5 + 2)
     for l in L:
         assert_docs.add(l[0])
         assert l[0]
@@ -1598,7 +1598,7 @@ def test_bundle_single_stream_control_int(exp_db):
         source.emit(a)
 
     assert_docs = set()
-    assert len(L) == 3 + 5 + 2
+    assert len(L) == (5 + 5 + 1 + 1 + 1) + (1 + 1 + 2)
     for l in L:
         assert_docs.add(l[0])
         assert l[0]

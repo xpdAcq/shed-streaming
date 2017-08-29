@@ -1036,10 +1036,14 @@ class BundleSingleStream(EventStream):
     ----------
     child: EventStream instances
         The event stream containing the data to be zipped together
-    control_stream: {EventStream, int}
+    control_stream: {EventStream, int, callable}
         Information to control the buffering. If int, bundle that many
         header together. If an EventStream, pull from the start document
-        ``n_hdrs`` to determine the number of headers to bundle
+        ``n_hdrs`` to determine the number of headers to bundle. If callable,
+        run predicate on both start and stop (note that one should use
+        ``dict.get(key, False)`` so as not to ``KeyError`` when desiginging
+        the predicate). If the predicate is True then the stop is issued
+        and a new stream of events (with its own start) is generated.
 
     Examples
     --------
@@ -1078,7 +1082,7 @@ class BundleSingleStream(EventStream):
         else:
             EventStream.__init__(self, children=(child, control))
             self.n_hdrs = None
-            self.predicate = lambda x: False
+            self.predicate = lambda x: self.start_count == self.n_hdrs
         self.generate_provenance()
         self.emitted = {'start': False, 'descriptor': False}
 
@@ -1111,6 +1115,14 @@ class BundleSingleStream(EventStream):
                     self.start_count += 1
                 elif name == 'descriptor':
                     self.emitted[x[0]] = True
+            elif self.predicate(docs):
+                # Reset the state
+                for k in self.emitted:
+                    self.emitted[k] = False
+                self.start_count = 0
+                # Issue a stop
+                return_values.append(super().stop(docs))
+
         return [self.emit(r) for r in return_values]
 
 
