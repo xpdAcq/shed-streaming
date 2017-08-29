@@ -1638,7 +1638,8 @@ def test_bundle_single_stream_callable_control2():
 
     dpf = es.BundleSingleStream(source,
                                 lambda x: x[0].get('stitch_with_previous',
-                                                   False) == False)
+                                                   False) == False,
+                                predicate_against='start')
 
     L = dpf.sink_to_list()
     dpf.sink(print)
@@ -1654,14 +1655,17 @@ def test_bundle_single_stream_callable_control2():
             source.emit(a)
 
     assert_docs = set()
-    assert len(L) == ((1 + 1) + 3 * 3 + 1) + 3 + 3
+    n_stops = 0
+    assert len(L) == ((1 + 1) + 3 * 3 + 1) + 3 + 2
     for l in L:
         assert_docs.add(l[0])
         assert l[0]
         if l[0] == 'stop':
+            n_stops += 1
             assert l[1]['exit_status'] == 'success'
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
+    assert n_stops == 1
 
 
 def test_workflow(exp_db, start_uid1):

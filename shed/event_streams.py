@@ -512,7 +512,7 @@ class EventStream(Stream):
 
         n_args = len(args_positions)
         if args_positions and (args_positions[-1] != n_args - 1 or
-                               args_positions[0] != 0):
+                                       args_positions[0] != 0):
             errormsg = """Error, arguments supplied must be a set of integers
             ranging from 0 to number of arguments\n
             Got {} instead""".format(args_positions)
@@ -1063,7 +1063,9 @@ class BundleSingleStream(EventStream):
     >>> assert len(L) == 9
     """
 
-    def __init__(self, child, control, **kwargs):
+    def __init__(self, child, control, predicate_against=('start', 'stop'),
+                 **kwargs):
+        self.predicate_against = predicate_against
         self.maxsize = kwargs.pop('maxsize', 100)
         self.buffers = []
         self.desc_start_map = {}
@@ -1085,6 +1087,7 @@ class BundleSingleStream(EventStream):
             self.predicate = lambda x: self.start_count == self.n_hdrs
         self.generate_provenance()
         self.emitted = {'start': False, 'descriptor': False}
+        self.start_docs = None
 
     def update(self, x, who=None):
         return_values = []
@@ -1096,10 +1099,11 @@ class BundleSingleStream(EventStream):
             # Stash the start header in case we issue a stop on the first one
             if name == 'start':
                 self.start_docs = docs
-            if (name == 'start' and
-                    self.emitted.get(name, False) and
-                    self.predicate(docs)):
-                print(self.predicate(docs))
+            if (name == 'start' and  # if a start doc
+                self.emitted.get(name, False) and  # and we haven't emitted one
+                name in self.predicate_against and  # and to test the cond.
+                self.predicate(docs)  # and it satisfies the condition
+                ):
                 # Reset the state
                 for k in self.emitted:
                     self.emitted[k] = False
@@ -1109,17 +1113,21 @@ class BundleSingleStream(EventStream):
                 return_values.append(super().stop(docs))
             # If we have emitted that kind of document
             if self.emitted.get(name, False):
+                # If start stash the parent uids and increment the count
                 if name == 'start':
                     self.parent_uids.extend([doc['uid'] for doc in docs])
                     self.start_count += 1
             elif name != 'stop':
+                # If not a stop emit it
                 return_values.append(getattr(self, name)(docs))
                 if name == 'start':
                     self.emitted[x[0]] = True
                     self.start_count += 1
                 elif name == 'descriptor':
                     self.emitted[x[0]] = True
-            elif self.predicate(docs) or self.predicate(self.start_docs):
+            elif (name in self.predicate_against and
+                  (self.predicate(docs) or self.predicate(self.start_docs))
+                  ):
                 # Reset the state
                 for k in self.emitted:
                     self.emitted[k] = False
