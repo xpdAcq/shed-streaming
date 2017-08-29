@@ -1099,6 +1099,7 @@ class BundleSingleStream(EventStream):
             if (name == 'start' and
                     self.emitted.get(name, False) and
                     self.predicate(docs)):
+                print(self.predicate(docs))
                 # Reset the state
                 for k in self.emitted:
                     self.emitted[k] = False

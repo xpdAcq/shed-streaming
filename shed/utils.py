@@ -23,7 +23,7 @@ def to_event_model(data, output_info, md=None):
 
     Notes
     -----
-    This is only for demonstration/example use, do not use for production.
+    This is only for demonstration/example/test use, do not use in production.
     """
     if md is None:
         md = {}
