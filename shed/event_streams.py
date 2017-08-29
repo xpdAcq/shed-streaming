@@ -24,6 +24,7 @@ from collections import deque
 from streamz.core import Stream, no_default
 from tornado.locks import Condition
 
+
 # TODO: if mismatch includes error stop doc be more verbose
 
 
@@ -129,7 +130,11 @@ class EventStream(Stream):
         Parameters
         ----------
         input_info: dict, optional
-            describes the incoming streams
+            describes the incoming streams by providing a map between function
+            args/kwargs and data in each incoming stream. The form for this
+            is ``{'function_arg/kwarg_position/name':
+            (('keys', 'to', 'data', 'in', 'dict'), stream_number)}`` where
+            the stream_number denotes which stream to pull the data from.
         output_info: list of tuples, optional
             describes the resulting stream
         md: dict, optional
@@ -370,7 +375,8 @@ class EventStream(Stream):
             self.outbound_descriptor_uid = str(uuid.uuid4())
             new_descriptor = dict(uid=self.outbound_descriptor_uid,
                                   time=time.time(),
-                                  run_start=self.run_start_uid)
+                                  run_start=self.run_start_uid,
+                                  name='primary')
             if self.output_info:
                 new_descriptor.update(
                     data_keys={k: v for k, v in self.output_info})
@@ -690,10 +696,11 @@ class filter(EventStream):
     full_event: bool, optional
         If True expose the full event dict to the predicate, if False
         only expose the data from the event
-    document_name: {'event', 'start'}, optional
+    document_name: {'event', 'start', 'descriptor'}, optional
         Which document to filter on, if event only pass events which meet the
-        criteria. Otherwise only pass streams where the criteria is True in
-        the start. Defaults to 'event'.
+        criteria. Otherwise if ``start`` only pass streams where the criteria
+        is True in the start. Otherwise if ``descriptor`` only pass streams
+        where the criteria is True in the descriptor. Defaults to 'event'.
     **kwargs: dict
         kwargs to be passed to the function
 
@@ -720,14 +727,29 @@ class filter(EventStream):
     >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
     >>> source = Stream()
     >>> m = es.filter(lambda x: x[0]['source'] != 'to_event_model', source,
-    ...     document_name='start', input_info=None)
+    ...     document_name='start')
     >>> l = m.sink(print)
     >>> L = m.sink_to_list()
     >>> for doc in g: z = source.emit(doc)
     >>> assert len(L) == 0
+
+    Filtering on descriptors
+
+    >>> from shed.utils import to_event_model
+    >>> from streamz import Stream
+    >>> import shed.event_streams as es
+    >>> a = [1, 2, 3]  # base data
+    >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
+    >>> source = Stream()
+    >>> m = es.filter(lambda x: x[0]['name'] != 'primary', source,
+    ...     document_name='descriptor')
+    >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
+    >>> for doc in g: z = source.emit(doc)
+    >>> assert len(L) == 2
     """
 
-    def __init__(self, predicate, child, *args, input_info,
+    def __init__(self, predicate, child, *args, input_info=None,
                  full_event=False, document_name='event', **kwargs):
         """Initialize the node """
         self.predicate = predicate
@@ -742,16 +764,39 @@ class filter(EventStream):
         self.truth_value = None
         # Note we don't override event because with this update we don't see it
         if document_name == 'start':
-            self.update = self._update
+            self.update = self._start_update
+        elif document_name == 'descriptor':
+            self.update = self._descriptor_update
+            self.descriptor_truth_values = {}
         self.generate_provenance(predicate=predicate)
 
-    def _update(self, x, who=None):
+    def _start_update(self, x, who=None):
         # TODO: should we have something like event_contents for starts?
         name, docs = self.curate_streams(x, False)
         if name == 'start':
             self.truth_value = self.predicate(docs)
         if self.truth_value:
             self.emit((name, docs))
+
+    def _descriptor_update(self, x, who=None):
+        name, docs = self.curate_streams(x, False)
+        ret = None
+        if name == 'start':
+            self.descriptor_truth_values = {}
+            ret = super().start(docs)
+        elif name == 'descriptor':
+            # TODO: we need to sort out how to deal with nodes/modes which only
+            # take in singular headers vs multiple
+            self.descriptor_truth_values[docs[0]['uid']] = self.predicate(docs)
+            if self.descriptor_truth_values[docs[0]['uid']]:
+                ret = super().descriptor(docs)
+        elif (name == 'event' and
+              self.descriptor_truth_values[docs[0]['descriptor']]):
+            ret = super().event(docs)
+        elif name == 'stop':
+            ret = super().stop(docs)
+        if ret is not None:
+            return self.emit(ret)
 
     def event(self, doc):
         res_args, res_kwargs = self.event_contents(doc, self.full_event)
@@ -1261,7 +1306,7 @@ class Eventify(EventStream):
         # TODO: maybe allow start_key to be a list of relevent keys?
         self.keys = keys
         if document == 'event':
-                raise ValueError("Can't eventify event, its an event already")
+            raise ValueError("Can't eventify event, its an event already")
         self.document = document
         self.vals = list()
         self.emit_event = False
@@ -1337,6 +1382,7 @@ class Query(EventStream):
         is greater than the max then the node raises a RuntimeError
 
     """
+
     def __init__(self, db, child, query_function,
                  query_decider=None, max_n_hdrs=10, **kwargs):
         self.max_n_hdrs = max_n_hdrs
@@ -1391,6 +1437,7 @@ class QueryUnpacker(EventStream):
         Whether or not to fill the documents, defaults to True
 
     """
+
     def __init__(self, db, child, fill=True, **kwargs):
         self.db = db
         EventStream.__init__(self, child, **kwargs)
@@ -1418,6 +1465,7 @@ class split(EventStream):
 
 class fill_events(EventStream):
     """Fill events without provenence"""
+
     def __init__(self, db, child):
         self.db = db
         EventStream.__init__(self, child=child)
