@@ -1066,61 +1066,52 @@ class BundleSingleStream(EventStream):
         self.condition = Condition()
         self.prior = ()
         self.control = control
+        self.start_count = 0
         if isinstance(control, int):
             EventStream.__init__(self, child=child)
             self.n_hdrs = control
-        elif isinstance(control, callable):
+            self.predicate = lambda x: self.start_count == self.n_hdrs
+        elif callable(control):
             EventStream.__init__(self, child=child)
             self.n_hdrs = None
+            self.predicate = control
         else:
             EventStream.__init__(self, children=(child, control))
             self.n_hdrs = None
+            self.predicate = lambda x: False
         self.generate_provenance()
-        self.emitted = {'start': False, 'descriptor': False, 'stop': False}
+        self.emitted = {'start': False, 'descriptor': False}
 
     def update(self, x, who=None):
+        return_values = []
         name, docs = self.curate_streams(x, False)
+        print(name, self.start_count, self.n_hdrs)
         if who == self.control:
-            if x[0] == 'start':
+            if name == 'start':
                 self.n_hdrs = x[1]['n_hdrs']
         else:
-            if x[0] == 'start':
-                self.buffers.append(deque())
-            self.buffers[-1].append(x)
-        if self.emitted.get(name, False):
-            if name ==
-            self.dispatch(x)
-        if len(self.buffers) == self.n_hdrs:
-            # if all the docs are of the same type and not an event, issue
-            # new documents which are combined
-            rvs = []
-            while all(self.buffers):
-                first_doc_name = self.buffers[0][0][0]
-                if all([b[0][0] == first_doc_name and b[0][0] != 'event'
-                        for b in self.buffers]):
-                    res = self.dispatch(
-                        tuple([b.popleft() for b in self.buffers]))
-                    rvs.append(self.emit(res))
-                elif any([b[0][0] == 'event' for b in self.buffers]):
-                    for b in self.buffers:
-                        while b:
-                            nd_pair = b[0]
-                            # run the buffers down until no events are left
-                            if nd_pair[0] != 'event':
-                                break
-                            else:
-                                nd_pair = b.popleft()
-                                new_nd_pair = super().event(
-                                    self.refresh_event(nd_pair[1]))
-                                rvs.append(self.emit(new_nd_pair))
-
-                else:
-                    raise RuntimeError("There is a mismatch of docs, but none "
-                                       "of them are events so we have reached "
-                                       "a potential deadlock, so we raise "
-                                       "this error instead")
-
-            return rvs
+            if (name == 'start' and
+                    self.emitted.get(name, False) and
+                    self.predicate(docs)):
+                # Reset the state
+                for k in self.emitted:
+                    self.emitted[k] = False
+                self.start_count = 0
+                # Issue a stop
+                return_values.append(super().stop(docs))
+            # If we have emitted that kind of document
+            if self.emitted.get(name, False):
+                if name == 'start':
+                    self.parent_uids.extend([doc['uid'] for doc in docs])
+                    self.start_count += 1
+            elif name != 'stop':
+                return_values.append(getattr(self, name)(docs))
+                if name == 'start':
+                    self.emitted[x[0]] = True
+                    self.start_count += 1
+                elif name == 'descriptor':
+                    self.emitted[x[0]] = True
+        return [self.emit(r) for r in return_values]
 
 
 class combine_latest(EventStream):
