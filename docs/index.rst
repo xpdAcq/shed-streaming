@@ -11,6 +11,7 @@ Welcome to SHED's documentation!
    :caption: Contents:
 
    shed
+   tutorials 
 
 
 Indices and tables
