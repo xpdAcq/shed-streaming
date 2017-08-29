@@ -23,13 +23,16 @@ from itertools import zip_longest
 
 
 class SinkAssertion(CallbackBase):
-    def __init__(self, fail=True):
+    def __init__(self, fail=True, expected_docs=None):
         self.fail = fail
         self.docs = []
-        if fail:
-            self.expected_docs = {'start', 'descriptor', 'stop'}
+        if expected_docs is None:
+            if fail:
+                self.expected_docs = {'start', 'descriptor', 'stop'}
+            else:
+                self.expected_docs = {'start', 'descriptor', 'event', 'stop'}
         else:
-            self.expected_docs = {'start', 'descriptor', 'event', 'stop'}
+            self.expected_docs = expected_docs
 
     def __call__(self, name, doc):
         """Dispatch to methods expecting particular doc types."""
@@ -543,6 +546,101 @@ def test_filter(exp_db, start_uid1):
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
     for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_filter_descriptor(exp_db, start_uid1):
+    source = Stream()
+
+    def f(d):
+        return d[0]['name'] == 'primary'
+
+    dp = es.filter(f, source,
+                   stream_name='test',
+                   document_name='descriptor')
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'start':
+            assert l[1] != s[1]
+        if l[0] == 'event':
+            assert_allclose(l[1]['data']['pe1_image'],
+                            s[1]['data']['pe1_image'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    L.clear()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'start':
+            assert l[1] != s[1]
+        if l[0] == 'event':
+            assert_allclose(l[1]['data']['pe1_image'],
+                            s[1]['data']['pe1_image'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_filter_descriptor_negative(exp_db, start_uid1):
+    source = Stream()
+
+    def f(d):
+        tv = d[0]['name'] != 'primary'
+        return tv
+
+    dp = es.filter(f, source,
+                   stream_name='test',
+                   document_name='descriptor')
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False, expected_docs={'start', 'stop'})))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'start':
+            assert l[1] != s[1]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'stop']:
+        assert n in assert_docs
+
+    L.clear()
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+        assert_docs.add(l[0])
+        if l[0] == 'start':
+            assert l[1] != s[1]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'stop']:
         assert n in assert_docs
 
 
