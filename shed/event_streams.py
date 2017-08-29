@@ -371,7 +371,8 @@ class EventStream(Stream):
             self.outbound_descriptor_uid = str(uuid.uuid4())
             new_descriptor = dict(uid=self.outbound_descriptor_uid,
                                   time=time.time(),
-                                  run_start=self.run_start_uid)
+                                  run_start=self.run_start_uid,
+                                  name='primary')
             if self.output_info:
                 new_descriptor.update(
                     data_keys={k: v for k, v in self.output_info})
@@ -691,10 +692,11 @@ class filter(EventStream):
     full_event: bool, optional
         If True expose the full event dict to the predicate, if False
         only expose the data from the event
-    document_name: {'event', 'start'}, optional
+    document_name: {'event', 'start', 'descriptor'}, optional
         Which document to filter on, if event only pass events which meet the
-        criteria. Otherwise only pass streams where the criteria is True in
-        the start. Defaults to 'event'.
+        criteria. Otherwise if ``start`` only pass streams where the criteria
+        is True in the start. Otherwise if ``descriptor`` only pass streams
+        where the criteria is True in the descriptor. Defaults to 'event'.
     **kwargs: dict
         kwargs to be passed to the function
 
@@ -721,11 +723,26 @@ class filter(EventStream):
     >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
     >>> source = Stream()
     >>> m = es.filter(lambda x: x[0]['source'] != 'to_event_model', source,
-    ...     document_name='start', input_info=None)
+    ...     document_name='start')
     >>> l = m.sink(print)
     >>> L = m.sink_to_list()
     >>> for doc in g: z = source.emit(doc)
     >>> assert len(L) == 0
+
+    Filtering on descriptors
+
+    >>> from shed.utils import to_event_model
+    >>> from streamz import Stream
+    >>> import shed.event_streams as es
+    >>> a = [1, 2, 3]  # base data
+    >>> g = to_event_model(a, [('det', {'dtype': 'float'})])
+    >>> source = Stream()
+    >>> m = es.filter(lambda x: x[0]['name'] != 'primary', source,
+    ...     document_name='descriptor')
+    >>> l = m.sink(print)
+    >>> L = m.sink_to_list()
+    >>> for doc in g: z = source.emit(doc)
+    >>> assert len(L) == 2
     """
 
     def __init__(self, predicate, child, *args, input_info=None,
