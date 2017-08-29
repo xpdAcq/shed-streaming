@@ -130,7 +130,11 @@ class EventStream(Stream):
         Parameters
         ----------
         input_info: dict, optional
-            describes the incoming streams
+            describes the incoming streams by providing a map between function
+            args/kwargs and data in each incoming stream. The form for this
+            is ``{'function_arg/kwarg_position/name':
+            (('keys', 'to', 'data', 'in', 'dict'), stream_number)}`` where
+            the stream_number denotes which stream to pull the data from.
         output_info: list of tuples, optional
             describes the resulting stream
         md: dict, optional
