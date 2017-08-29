@@ -88,6 +88,7 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../shed.html">shed package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
 </ul>
 
             
@@ -169,7 +170,7 @@
     <span class="k">def</span> <span class="nf">add5</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">add</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
 
-    <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">es</span><span class="o">.</span><span class="n">dstar</span><span class="p">(</span><span class="n">add5</span><span class="p">),</span> <span class="n">source</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;img&#39;</span><span class="p">:</span> <span class="s1">&#39;det&#39;</span><span class="p">},</span>
+    <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">add5</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;img&#39;</span><span class="p">:</span> <span class="s1">&#39;det&#39;</span><span class="p">},</span>
                 <span class="n">output_info</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;det5&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;test&#39;</span><span class="p">})])</span>
     <span class="n">dp</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
     <span class="n">L</span> <span class="o">=</span> <span class="n">dp</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>

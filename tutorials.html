@@ -1,0 +1,515 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Tutorials &mdash; SHED  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="SHED  documentation" href="index.html"/>
+        <link rel="prev" title="shed.tests package" href="shed.tests.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> SHED
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="shed.html">shed package</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#tutorial-1-simple-streams">Tutorial 1 : Simple Streams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tutorial-2-a-simple-event-stream">Tutorial 2 : A simple Event Stream</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#what-s-happening-to-the-stream">What’s Happening to the Stream?</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SHED</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Tutorials</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/tutorials.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="tutorials">
+<h1>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this headline">¶</a></h1>
+<p>These area tutorials designed to better understand what pySHED is, and what it
+attempts to resolve.
+Before beginning, we’ll assume that you have the <code class="docutils literal"><span class="pre">shed</span></code> and
+<a class="reference external" href="http://www.github.com/mrocklin/streams">streams</a> libraries installed.</p>
+<div class="section" id="tutorial-1-simple-streams">
+<h2>Tutorial 1 : Simple Streams<a class="headerlink" href="#tutorial-1-simple-streams" title="Permalink to this headline">¶</a></h2>
+<p>First, we begin with a quick review of simple streams. Let’s say we
+had a stream of incoming data, and needed to increment by one, and print
+the result. The definition is as simple as the following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">streams.core</span> <span class="k">as</span> <span class="nn">sc</span>
+<span class="k">def</span> <span class="nf">myadder</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">myadder</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+<span class="n">s3</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">print</span><span class="p">,</span> <span class="n">s2</span><span class="p">)</span>
+
+<span class="c1"># now send the data here</span>
+<span class="n">s</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">s</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here, the stream definition is done via <code class="docutils literal"><span class="pre">s</span> <span class="pre">=</span> <span class="pre">Stream()</span></code>.
+The data is not input into the stream until <code class="docutils literal"><span class="pre">s.emit(var)</span></code> is called.
+The incrementing by one is done via the <code class="docutils literal"><span class="pre">map</span></code> method. This method
+takes a function as its first argument, and the input stream as the
+second argument.</p>
+<p>If this makes sense, then we’re ready to understand event streams. If it
+doesn’t, then it is suggested you read the documentation and exmaples
+for the <a class="reference external" href="http://www.github.com/mrocklin/streams">streams</a> library.</p>
+</div>
+<div class="section" id="tutorial-2-a-simple-event-stream">
+<h2>Tutorial 2 : A simple Event Stream<a class="headerlink" href="#tutorial-2-a-simple-event-stream" title="Permalink to this headline">¶</a></h2>
+<p>An event stream is as defined by
+<a class="reference external" href="http://nsls-ii.github.io/architecture-overview.html">NSLS-II</a>, which is a
+series of documents, beginning from a start document, descriptor, event
+documents and stop documents. Please refer to the NSLS-II documentation for
+more details.</p>
+<p>SHED’s streaming method handles event streams. To better understand the general
+idea, let’s begin with a simple event stream. Before we begin, let’s focus on
+the data itself. Let’s say you had a detector called <em>detector1</em> which returned
+a 100 by 100 array of integer values. Let’s simulate this detector with random
+values for two instances, <code class="docutils literal"><span class="pre">data1</span></code> and <code class="docutils literal"><span class="pre">data2</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="n">data1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">data2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Let’s say this was captured at a beamline where some extra metadata was stored
+during the capture of this data, with fields <code class="docutils literal"><span class="pre">name</span></code> being <em>Alex</em> and
+<code class="docutils literal"><span class="pre">sample</span></code> being <em>FeO</em>. In general, this metadata can be defined arbitrarily
+and is not essential to the data capture, but helps describe it in many cases.
+We can define a quick generator to generate some of this data as follows:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">uuid</span> <span class="k">import</span> <span class="n">uuid4</span>
+<span class="k">def</span> <span class="nf">gen_imgs</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">md</span><span class="p">):</span>
+    <span class="n">run_start</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
+    <span class="k">yield</span> <span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">uid</span><span class="o">=</span><span class="n">run_start</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span> <span class="o">**</span><span class="n">md</span><span class="p">)</span>
+    <span class="n">des_uid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
+    <span class="k">yield</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">run_start</span><span class="o">=</span><span class="n">run_start</span><span class="p">,</span> <span class="n">data_keys</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">source</span><span class="o">=</span><span class="s1">&#39;testing&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;array&#39;</span><span class="p">)},</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span> <span class="n">uid</span><span class="o">=</span><span class="n">des_uid</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">datum</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">descriptor</span><span class="o">=</span><span class="n">des_uid</span><span class="p">,</span>
+                            <span class="n">uid</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">()),</span>
+                            <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+                            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">datum</span><span class="p">},</span>
+                            <span class="n">timestamps</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()},</span>
+                            <span class="n">filled</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                            <span class="n">seq_num</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">yield</span> <span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">run_start</span><span class="o">=</span><span class="n">run_start</span><span class="p">,</span>
+                       <span class="n">uid</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">()),</span>
+                       <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+
+<span class="n">event_stream</span> <span class="o">=</span> <span class="n">gen_imgs</span><span class="p">([</span><span class="n">data1</span><span class="p">,</span> <span class="n">data2</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Alex&quot;</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="s2">&quot;FeO&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The details are tedious. What is important to keep in mind is that this is
+generating a list of documents as such:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">some_start_doc</span><span class="p">),</span>
+<span class="p">(</span><span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="n">some_descriptor_doc</span><span class="p">),</span>
+<span class="p">(</span><span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="n">some_event_doc</span><span class="p">),</span>
+<span class="p">(</span><span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="n">another_event_doc</span><span class="p">),</span>
+<span class="p">(</span><span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="n">some_stop_doc</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal"><span class="pre">some_start_doc</span></code>, etc are placeholders for the contents of each
+document. To verify this, you can print the stream with:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">namedocpair</span> <span class="ow">in</span> <span class="n">event_stream</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">namedocpair</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Just remember to regenerate the generator again before using it (for more
+details, see python’s documentation on generators). There we have it. This can
+rather be lengthy, but if you think about it, this would be the simplest way to
+define a series of documents. (Again, please see the <a class="reference external" href="http://nsls-ii.github.io/architecture-overview.html">NSLS-II</a> documentation)</p>
+<p>Now we’re ready for the stream. How do we treat this? We basically need a
+stream that is document conscious. Let’s look at the previous example with
+<code class="docutils literal"><span class="pre">myadder</span></code>. Let’s say for some odd reason we needed to add 1 to the detector.
+We would need to create some function as follows:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">myadder_eventstream</span><span class="p">(</span><span class="n">namedocpair</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">namedocpair</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;detector1&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>And we could run the streams again as before. However, there are two obvious
+problems with this:</p>
+<p>1. This assumes the detector field name is known <em>detector1</em>. This could be
+externally saved in a data base, but this is still awkward and not scalable</p>
+<p>2. This returns data that does not resemble the incoming document. Ideally, we
+would like to return a new set of <code class="docutils literal"><span class="pre">(name,</span> <span class="pre">doc)</span></code> pairs that resemble the event
+architecture.</p>
+<p>To resolve this, we should also read the <code class="docutils literal"><span class="pre">descriptor_doc</span></code> and return an
+<code class="docutils literal"><span class="pre">event_doc</span></code> by running something complicated, for example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">uuid</span> <span class="k">import</span> <span class="n">uuid4</span>
+<span class="n">descriptor_buffer</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<span class="n">new_start_buffer</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">myadder_eventstream</span><span class="p">(</span><span class="n">namedocpair</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">namedocpair</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;start&#39;</span><span class="p">:</span>
+        <span class="n">start_uid</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;uid&#39;</span><span class="p">]</span>
+        <span class="c1"># map old uid to a new one</span>
+        <span class="n">new_start_buffer</span><span class="p">[</span><span class="n">start_uid</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="c1"># copy it and issue new uid</span>
+        <span class="n">newstart</span> <span class="o">=</span> <span class="n">start</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">newstart</span><span class="p">[</span><span class="s1">&#39;uid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">newstart</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">:</span>
+        <span class="c1"># get reference to start uid</span>
+        <span class="n">start_uid</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;start_uid&#39;</span><span class="p">]</span>
+        <span class="c1"># save the descriptor for that start uid</span>
+        <span class="n">descriptor_buffer</span><span class="p">[</span><span class="n">start_uid</span><span class="p">]</span> <span class="o">=</span> <span class="n">descriptor_buffer</span><span class="p">[</span><span class="s1">&#39;data_keys&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="n">newdescriptor</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span>
+        <span class="c1"># get reference to start uid</span>
+        <span class="n">start_uid</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;start_uid&#39;</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">event</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="n">descriptor_buffer</span><span class="p">[</span><span class="n">start_uid</span><span class="p">]]</span>
+        <span class="c1"># get the first key for now, let&#39;s keep it simple here</span>
+        <span class="n">data_key</span> <span class="o">=</span> <span class="n">descriptor_buffer</span><span class="p">[</span><span class="n">start_uid</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">newdata</span> <span class="o">=</span> <span class="n">data</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">newevent</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">uid</span><span class="o">=</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="n">newevent</span><span class="p">[</span><span class="n">data_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">newdata</span>
+        <span class="n">newevent</span><span class="p">[</span><span class="s1">&#39;start_uid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_uid</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="n">newevent</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
+        <span class="c1"># clear buffers and issue new stop</span>
+        <span class="n">start_uid</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;start_uid&#39;</span><span class="p">]</span>
+        <span class="n">new_start_uid</span> <span class="o">=</span> <span class="n">new_start_buffer</span><span class="p">[</span><span class="n">start_uid</span><span class="p">]</span>
+        <span class="n">new_start_buffer</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">start_uid</span><span class="p">)</span>
+        <span class="n">descriptor_buffer</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">start_uid</span><span class="p">)</span>
+        <span class="n">stop_doc</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">uid</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">()))</span>
+        <span class="n">stop_doc</span><span class="p">[</span><span class="s1">&#39;start_uid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_start_uid</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="n">newstop</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">namedocpair</span> <span class="ow">in</span> <span class="n">event_stream</span><span class="p">:</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">namedocpair</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can see this is quite lengthy. Most of the boiler plate involves treating
+different documents separately, and issuing new documents. This is where SHED
+is useful. Rather than define this monolithic function, we let the
+<code class="docutils literal"><span class="pre">event_stream</span></code> do the work. We use it by simply running:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="kn">import</span> <span class="nn">shed.event_stream</span> <span class="k">as</span> <span class="nn">es</span>
+
+<span class="k">def</span> <span class="nf">addmydata</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">data</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="c1"># this time, we pass the stream to event_stream&#39;s</span>
+<span class="c1"># map method</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;data&#39;</span> <span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">},</span>
+           <span class="n">output_info</span><span class="o">=</span><span class="p">((</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="p">{}),))</span>
+<span class="n">s3</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">print</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;data&#39;</span> <span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">},</span>
+            <span class="n">output_info</span><span class="o">=</span><span class="p">((</span><span class="s1">&#39;data&#39;</span><span class="p">,{</span><span class="s1">&#39;dtype&#39;</span> <span class="p">:</span> <span class="s1">&#39;array&#39;</span><span class="p">}),))</span>
+
+<span class="n">event_streams</span> <span class="o">=</span> <span class="n">gen_imgs</span><span class="p">([</span><span class="n">data1</span><span class="p">,</span> <span class="n">data2</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Alex&quot;</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="s2">&quot;FeO&quot;</span><span class="p">)</span>
+<span class="c1"># generate the event streams again since generator is exhausted</span>
+<span class="c1">#event_streams = gen_imgs([data1, data2], name=&quot;Alex&quot;, sample=&quot;FeO&quot;)</span>
+<span class="k">for</span> <span class="n">namedocpair</span> <span class="ow">in</span> <span class="n">event_streams</span><span class="p">:</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">namedocpair</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>There are some extra details involving <code class="docutils literal"><span class="pre">input_info</span></code> and <code class="docutils literal"><span class="pre">output_info</span></code> that
+we can ignore for now. The take home message here is that SHED allows one to
+treat streams that follow the event model, without much boilerplate code.</p>
+<div class="section" id="what-s-happening-to-the-stream">
+<h3>What’s Happening to the Stream?<a class="headerlink" href="#what-s-happening-to-the-stream" title="Permalink to this headline">¶</a></h3>
+<p>(Optional tutorial)</p>
+<p>At any point in time during these tutorials, you may be wondering what’s
+going on with the elements in the stream. During debugging, this
+connection to the raw data is especially useful. At any point, it’s possible to
+probe the raw output of the stream by simply using the parent <code class="docutils literal"><span class="pre">Stream</span></code>
+class.</p>
+<p>SHED and <code class="docutils literal"><span class="pre">Stream</span></code> are fully interchangeable and compatible
+(so long as you know what you’re doing and you adhere to SHED’s name
+document pair format).</p>
+<p>Here is a typical way to intercept your output:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
+<span class="kn">import</span> <span class="nn">streams.core</span> <span class="k">as</span> <span class="nn">sc</span>
+
+<span class="k">def</span> <span class="nf">addmydata</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">data</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+<span class="c1"># this time, we pass the stream to event_stream&#39;s</span>
+<span class="c1"># map method</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;data&#39;</span> <span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">},</span>
+           <span class="n">output_info</span><span class="o">=</span><span class="p">((</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="p">{}),))</span>
+<span class="n">s3</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">print</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;data&#39;</span> <span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">},</span>
+            <span class="n">output_info</span><span class="o">=</span><span class="p">((</span><span class="s1">&#39;data&#39;</span><span class="p">,{</span><span class="s1">&#39;dtype&#39;</span> <span class="p">:</span> <span class="s1">&#39;array&#39;</span><span class="p">}),))</span>
+<span class="c1"># add these two lines</span>
+<span class="n">L</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+
+<span class="n">event_streams</span> <span class="o">=</span> <span class="n">gen_imgs</span><span class="p">([</span><span class="n">data1</span><span class="p">,</span> <span class="n">data2</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Alex&quot;</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="s2">&quot;FeO&quot;</span><span class="p">)</span>
+<span class="c1"># generate the event streams again since generator is exhausted</span>
+<span class="c1">#event_streams = gen_imgs([data1, data2], name=&quot;Alex&quot;, sample=&quot;FeO&quot;)</span>
+<span class="k">for</span> <span class="n">namedocpair</span> <span class="ow">in</span> <span class="n">event_streams</span><span class="p">:</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">namedocpair</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Where all we’ve added is a <code class="docutils literal"><span class="pre">streams.core</span></code> import and the creation of a
+list <code class="docutils literal"><span class="pre">L</span></code> and the map from a <code class="docutils literal"><span class="pre">streams.core.map</span></code> onto the stream.
+You may print the outputs of this list by typing:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Which in this case would give something like:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;uid&#39;</span><span class="p">:</span> <span class="s1">&#39;be352ef0-fc20-4175-b137-c7ce4111160d&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span>
+<span class="mf">1502716320.1736734</span><span class="p">,</span> <span class="s1">&#39;provenance&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;stream_class&#39;</span><span class="p">:</span> <span class="s1">&#39;map&#39;</span><span class="p">,</span>
+<span class="s1">&#39;stream_class_module&#39;</span><span class="p">:</span> <span class="s1">&#39;shed.event_streams&#39;</span><span class="p">,</span> <span class="s1">&#39;input_info&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span>
+<span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)},</span> <span class="s1">&#39;output_info&#39;</span><span class="p">:</span> <span class="p">((</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="p">{}),),</span> <span class="s1">&#39;function&#39;</span><span class="p">:</span>
+<span class="p">{</span><span class="s1">&#39;function_module&#39;</span><span class="p">:</span> <span class="s1">&#39;__main__&#39;</span><span class="p">,</span> <span class="s1">&#39;function_name&#39;</span><span class="p">:</span> <span class="s1">&#39;&lt;lambda&gt;&#39;</span><span class="p">}},</span>
+<span class="s1">&#39;parents&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;e82e5162-991b-4d5d-a06e-a5f34ded4960&#39;</span><span class="p">]})</span>
+
+<span class="p">(</span><span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;uid&#39;</span><span class="p">:</span> <span class="s1">&#39;ae12e047-4549-46ff-9d02-5c1dc6e51359&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span>
+<span class="mf">1502716320.173751</span><span class="p">,</span> <span class="s1">&#39;run_start&#39;</span><span class="p">:</span> <span class="s1">&#39;be352ef0-fc20-4175-b137-c7ce4111160d&#39;</span><span class="p">,</span>
+<span class="s1">&#39;data_keys&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{}}})</span>
+
+<span class="p">(</span><span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;uid&#39;</span><span class="p">:</span> <span class="s1">&#39;d3728862-5bca-4bac-8f19-05da6e5fed7d&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span>
+<span class="mf">1502716320.174018</span><span class="p">,</span> <span class="s1">&#39;timestamps&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">:</span>
+<span class="s1">&#39;ae12e047-4549-46ff-9d02-5c1dc6e51359&#39;</span><span class="p">,</span> <span class="s1">&#39;filled&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+<span class="s1">&#39;seq_num&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+       <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+       <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+       <span class="o">...</span><span class="p">,</span>
+       <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+       <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+       <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])}})</span>
+
+<span class="p">(</span><span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;uid&#39;</span><span class="p">:</span> <span class="s1">&#39;7aa7e146-aa2b-4369-a072-89d5b3e72b3c&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span>
+<span class="mf">1502716320.1746032</span><span class="p">,</span> <span class="s1">&#39;timestamps&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">:</span>
+<span class="s1">&#39;ae12e047-4549-46ff-9d02-5c1dc6e51359&#39;</span><span class="p">,</span> <span class="s1">&#39;filled&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+<span class="s1">&#39;seq_num&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+       <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+       <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+       <span class="o">...</span><span class="p">,</span>
+       <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+       <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+       <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])}})</span>
+
+<span class="p">(</span><span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;uid&#39;</span><span class="p">:</span> <span class="s1">&#39;12b8338c-b1c8-42b2-99dc-fbaaf2447975&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span>
+<span class="mf">1502716320.1751397</span><span class="p">,</span> <span class="s1">&#39;run_start&#39;</span><span class="p">:</span> <span class="s1">&#39;be352ef0-fc20-4175-b137-c7ce4111160d&#39;</span><span class="p">,</span>
+<span class="s1">&#39;exit_status&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>Note that the output is as we expect, a series of <code class="docutils literal"><span class="pre">(name,</span> <span class="pre">doc)</span></code> pairs
+where <code class="docutils literal"><span class="pre">name</span></code> is one of the strings <code class="docutils literal"><span class="pre">'start'</span></code>, <code class="docutils literal"><span class="pre">'decriptor'</span></code>,
+<code class="docutils literal"><span class="pre">'event'</span></code> or <code class="docutils literal"><span class="pre">'stop'</span></code>. From here on, we won’t dig further into the
+structure of the events. But we encourage you to output intermediate
+steps like this as much as you can.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="shed.tests.html" class="btn btn-neutral" title="shed.tests package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Author.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

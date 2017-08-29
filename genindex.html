@@ -88,6 +88,7 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="shed.html">shed package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 
             
@@ -162,6 +163,7 @@
  | <a href="#G"><strong>G</strong></a>
  | <a href="#I"><strong>I</strong></a>
  | <a href="#M"><strong>M</strong></a>
+ | <a href="#P"><strong>P</strong></a>
  | <a href="#Q"><strong>Q</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
@@ -181,12 +183,10 @@
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shed.tests.html#shed.tests.utils.build_pymongo_backed_broker">build_pymongo_backed_broker() (in module shed.tests.utils)</a>
+      <li><a href="shed.html#shed.event_streams.Bundle">Bundle (class in shed.event_streams)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shed.html#shed.event_streams.Bundle">Bundle (class in shed.event_streams)</a>
-</li>
       <li><a href="shed.html#shed.event_streams.BundleSingleStream">BundleSingleStream (class in shed.event_streams)</a>
 </li>
   </ul></td>
@@ -207,14 +207,20 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shed.tests.html#shed.tests.conftest.db">db() (in module shed.tests.conftest)</a>
-</li>
       <li><a href="shed.html#shed.event_streams.EventStream.descriptor">descriptor() (shed.event_streams.EventStream method)</a>
+
+      <ul>
+        <li><a href="shed.html#shed.event_streams.fill_events.descriptor">(shed.event_streams.fill_events method)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shed.html#shed.event_streams.EventStream.dispatch">dispatch() (shed.event_streams.EventStream method)</a>
+      <li><a href="shed.html#shed.event_streams.Eventify.dispatch">dispatch() (shed.event_streams.Eventify method)</a>
+
+      <ul>
+        <li><a href="shed.html#shed.event_streams.EventStream.dispatch">(shed.event_streams.EventStream method)</a>
 </li>
+      </ul></li>
       <li><a href="shed.html#shed.event_streams.dstar">dstar() (in module shed.event_streams)</a>
 </li>
   </ul></td>
@@ -231,6 +237,8 @@
         <li><a href="shed.html#shed.event_streams.EventStream.event">(shed.event_streams.EventStream method)</a>
 </li>
         <li><a href="shed.html#shed.event_streams.Eventify.event">(shed.event_streams.Eventify method)</a>
+</li>
+        <li><a href="shed.html#shed.event_streams.fill_events.event">(shed.event_streams.fill_events method)</a>
 </li>
         <li><a href="shed.html#shed.event_streams.filter.event">(shed.event_streams.filter method)</a>
 </li>
@@ -252,6 +260,10 @@
 
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shed.html#shed.event_streams.fill_events">fill_events (class in shed.event_streams)</a>
+</li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shed.html#shed.event_streams.filter">filter (class in shed.event_streams)</a>
 </li>
@@ -286,6 +298,14 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shed.html#shed.event_streams.map">map (class in shed.event_streams)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shed.html#shed.event_streams.EventStream.pop_kwargs">pop_kwargs (shed.event_streams.EventStream attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -331,16 +351,24 @@
 </li>
       <li><a href="shed.tests.html#shed.tests.test_streams.SinkAssertion">SinkAssertion (class in shed.tests.test_streams)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shed.html#shed.event_streams.star">star() (in module shed.event_streams)</a>
-</li>
-      <li><a href="shed.html#shed.event_streams.Eventify.start">start() (shed.event_streams.Eventify method)</a>
+      <li><a href="shed.html#shed.event_streams.combine_latest.special_docs_names">special_docs_names (shed.event_streams.combine_latest attribute)</a>
 
       <ul>
-        <li><a href="shed.html#shed.event_streams.EventStream.start">(shed.event_streams.EventStream method)</a>
+        <li><a href="shed.html#shed.event_streams.zip_latest.special_docs_names">(shed.event_streams.zip_latest attribute)</a>
 </li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shed.html#shed.event_streams.split">split (class in shed.event_streams)</a>
+</li>
+      <li><a href="shed.html#shed.event_streams.star">star() (in module shed.event_streams)</a>
+</li>
+      <li><a href="shed.html#shed.event_streams.EventStream.start">start() (shed.event_streams.EventStream method)</a>
+
+      <ul>
         <li><a href="shed.html#shed.event_streams.Query.start">(shed.event_streams.Query method)</a>
+</li>
+        <li><a href="shed.html#shed.event_streams.fill_events.start">(shed.event_streams.fill_events method)</a>
 </li>
       </ul></li>
       <li><a href="shed.tests.html#shed.tests.conftest.start_uid1">start_uid1() (in module shed.tests.conftest)</a>
@@ -352,6 +380,8 @@
       <li><a href="shed.html#shed.event_streams.EventStream.stop">stop() (shed.event_streams.EventStream method)</a>
 
       <ul>
+        <li><a href="shed.html#shed.event_streams.fill_events.stop">(shed.event_streams.fill_events method)</a>
+</li>
         <li><a href="shed.tests.html#shed.tests.test_streams.SinkAssertion.stop">(shed.tests.test_streams.SinkAssertion method)</a>
 </li>
       </ul></li>
@@ -371,19 +401,47 @@
 </li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_combine_latest">test_combine_latest() (in module shed.tests.test_streams)</a>
 </li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_curate_streams">test_curate_streams() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_descriptor_no_output_info">test_descriptor_no_output_info() (in module shed.tests.test_streams)</a>
+</li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_double_internal_map">test_double_internal_map() (in module shed.tests.test_streams)</a>
 </li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_double_map">test_double_map() (in module shed.tests.test_streams)</a>
 </li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_event_contents_fail">test_event_contents_fail() (in module shed.tests.test_streams)</a>
+</li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_eventify">test_eventify() (in module shed.tests.test_streams)</a>
 </li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_eventify_all">test_eventify_all() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_eventify_all_descriptor">test_eventify_all_descriptor() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_eventify_descriptor">test_eventify_descriptor() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_fill_events">test_fill_events() (in module shed.tests.test_streams)</a>
+</li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_filter">test_filter() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_filter_args">test_filter_args() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_filter_args_kwargs">test_filter_args_kwargs() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_filter_descriptor">test_filter_descriptor() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_filter_descriptor_negative">test_filter_descriptor_negative() (in module shed.tests.test_streams)</a>
 </li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_filter_fail">test_filter_fail() (in module shed.tests.test_streams)</a>
 </li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_filter_full_event">test_filter_full_event() (in module shed.tests.test_streams)</a>
 </li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_filter_full_header">test_filter_full_header() (in module shed.tests.test_streams)</a>
+</li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_map">test_map() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_map_args">test_map_args() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_map_args_kwargs">test_map_args_kwargs() (in module shed.tests.test_streams)</a>
 </li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_map_fail">test_map_fail() (in module shed.tests.test_streams)</a>
 </li>
@@ -393,9 +451,17 @@
 </li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_map_full_event">test_map_full_event() (in module shed.tests.test_streams)</a>
 </li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_map_nested_input_info">test_map_nested_input_info() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_map_no_input_info">test_map_no_input_info() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_map_no_input_info_full_event">test_map_no_input_info_full_event() (in module shed.tests.test_streams)</a>
+</li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_map_stream_input">test_map_stream_input() (in module shed.tests.test_streams)</a>
 </li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_map_two_runs">test_map_two_runs() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_outputinfo_default">test_outputinfo_default() (in module shed.tests.test_streams)</a>
 </li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_query">test_query() (in module shed.tests.test_streams)</a>
 </li>
@@ -409,11 +475,29 @@
 </li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_scan_full_event">test_scan_full_event() (in module shed.tests.test_streams)</a>
 </li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_scan_multi_header_False">test_scan_multi_header_False() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_scan_multi_header_True">test_scan_multi_header_True() (in module shed.tests.test_streams)</a>
+</li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_scan_start_func">test_scan_start_func() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_split">test_split() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_string_workflow">test_string_workflow() (in module shed.tests.test_streams)</a>
 </li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_workflow">test_workflow() (in module shed.tests.test_streams)</a>
 </li>
       <li><a href="shed.tests.html#shed.tests.test_streams.test_zip">test_zip() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_zip_latest">test_zip_latest() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_zip_latest_double">test_zip_latest_double() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_zip_latest_double_interleaved">test_zip_latest_double_interleaved() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_zip_latest_double_reverse">test_zip_latest_double_reverse() (in module shed.tests.test_streams)</a>
+</li>
+      <li><a href="shed.tests.html#shed.tests.test_streams.test_zip_latest_reverse">test_zip_latest_reverse() (in module shed.tests.test_streams)</a>
 </li>
       <li><a href="shed.tests.html#shed.tests.conftest.tmp_dir">tmp_dir() (in module shed.tests.conftest)</a>
 </li>
@@ -423,8 +507,6 @@
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="shed.html#shed.event_streams.union">union (in module shed.event_streams)</a>
-</li>
       <li><a href="shed.html#shed.event_streams.Bundle.update">update() (shed.event_streams.Bundle method)</a>
 
       <ul>
@@ -438,7 +520,11 @@
 </li>
         <li><a href="shed.html#shed.event_streams.combine_latest.update">(shed.event_streams.combine_latest method)</a>
 </li>
+        <li><a href="shed.html#shed.event_streams.split.update">(shed.event_streams.split method)</a>
+</li>
         <li><a href="shed.html#shed.event_streams.zip.update">(shed.event_streams.zip method)</a>
+</li>
+        <li><a href="shed.html#shed.event_streams.zip_latest.update">(shed.event_streams.zip_latest method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -448,6 +534,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="shed.html#shed.event_streams.zip">zip (class in shed.event_streams)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="shed.html#shed.event_streams.zip_latest">zip_latest (class in shed.event_streams)</a>
 </li>
   </ul></td>
 </tr></table>

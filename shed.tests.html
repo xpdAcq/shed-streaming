@@ -37,6 +37,7 @@
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="SHED  documentation" href="index.html"/>
         <link rel="up" title="shed package" href="shed.html"/>
+        <link rel="next" title="Tutorials" href="tutorials.html"/>
         <link rel="prev" title="shed package" href="shed.html"/> 
 
   
@@ -107,6 +108,7 @@
 <li class="toctree-l2"><a class="reference internal" href="shed.html#module-shed">Module contents</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 
             
@@ -180,13 +182,8 @@
 <div class="section" id="module-shed.tests.conftest">
 <span id="shed-tests-conftest-module"></span><h2>shed.tests.conftest module<a class="headerlink" href="#module-shed.tests.conftest" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
-<dt id="shed.tests.conftest.db">
-<code class="descclassname">shed.tests.conftest.</code><code class="descname">db</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.db" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
 <dt id="shed.tests.conftest.exp_db">
-<code class="descclassname">shed.tests.conftest.</code><code class="descname">exp_db</code><span class="sig-paren">(</span><em>db</em>, <em>tmp_dir</em>, <em>img_size</em>, <em>start_uid1</em>, <em>start_uid2</em>, <em>start_uid3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#exp_db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.exp_db" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">shed.tests.conftest.</code><code class="descname">exp_db</code><span class="sig-paren">(</span><em>db</em>, <em>tmp_dir</em>, <em>img_size</em>, <em>fresh_RE</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#exp_db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.exp_db" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -196,17 +193,17 @@
 
 <dl class="function">
 <dt id="shed.tests.conftest.start_uid1">
-<code class="descclassname">shed.tests.conftest.</code><code class="descname">start_uid1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#start_uid1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.start_uid1" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">shed.tests.conftest.</code><code class="descname">start_uid1</code><span class="sig-paren">(</span><em>exp_db</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#start_uid1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.start_uid1" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="shed.tests.conftest.start_uid2">
-<code class="descclassname">shed.tests.conftest.</code><code class="descname">start_uid2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#start_uid2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.start_uid2" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">shed.tests.conftest.</code><code class="descname">start_uid2</code><span class="sig-paren">(</span><em>exp_db</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#start_uid2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.start_uid2" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="shed.tests.conftest.start_uid3">
-<code class="descclassname">shed.tests.conftest.</code><code class="descname">start_uid3</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#start_uid3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.start_uid3" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">shed.tests.conftest.</code><code class="descname">start_uid3</code><span class="sig-paren">(</span><em>exp_db</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#start_uid3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.start_uid3" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -227,7 +224,7 @@
 <span id="shed-tests-test-streams-module"></span><h2>shed.tests.test_streams module<a class="headerlink" href="#module-shed.tests.test_streams" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="shed.tests.test_streams.SinkAssertion">
-<em class="property">class </em><code class="descclassname">shed.tests.test_streams.</code><code class="descname">SinkAssertion</code><span class="sig-paren">(</span><em>fail=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#SinkAssertion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.SinkAssertion" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.tests.test_streams.</code><code class="descname">SinkAssertion</code><span class="sig-paren">(</span><em>fail=True</em>, <em>expected_docs=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#SinkAssertion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.SinkAssertion" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">bluesky.callbacks.core.CallbackBase</span></code></p>
 <dl class="method">
 <dt id="shed.tests.test_streams.SinkAssertion.stop">
@@ -257,6 +254,17 @@
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="shed.tests.test_streams.test_curate_streams">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_curate_streams</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_curate_streams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_curate_streams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure that stream curation works as intended</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_descriptor_no_output_info">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_descriptor_no_output_info</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_descriptor_no_output_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_descriptor_no_output_info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="shed.tests.test_streams.test_double_internal_map">
 <code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_double_internal_map</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_double_internal_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_double_internal_map" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -267,13 +275,58 @@
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="shed.tests.test_streams.test_event_contents_fail">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_event_contents_fail</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_event_contents_fail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_event_contents_fail" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="shed.tests.test_streams.test_eventify">
 <code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_eventify</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_eventify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_eventify" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="shed.tests.test_streams.test_eventify_all">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_eventify_all</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_eventify_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_eventify_all" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_eventify_all_descriptor">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_eventify_all_descriptor</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_eventify_all_descriptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_eventify_all_descriptor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_eventify_descriptor">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_eventify_descriptor</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_eventify_descriptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_eventify_descriptor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_fill_events">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_fill_events</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_fill_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_fill_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="shed.tests.test_streams.test_filter">
 <code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_filter</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_filter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_filter_args">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_filter_args</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_filter_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_filter_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_filter_args_kwargs">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_filter_args_kwargs</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_filter_args_kwargs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_filter_args_kwargs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_filter_descriptor">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_filter_descriptor</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_filter_descriptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_filter_descriptor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_filter_descriptor_negative">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_filter_descriptor_negative</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_filter_descriptor_negative"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_filter_descriptor_negative" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -287,8 +340,23 @@
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="shed.tests.test_streams.test_filter_full_header">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_filter_full_header</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_filter_full_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_filter_full_header" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="shed.tests.test_streams.test_map">
 <code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_map</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_map_args">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_map_args</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_map_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_map_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_map_args_kwargs">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_map_args_kwargs</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_map_args_kwargs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_map_args_kwargs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -307,6 +375,21 @@
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="shed.tests.test_streams.test_map_nested_input_info">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_map_nested_input_info</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_map_nested_input_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_map_nested_input_info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_map_no_input_info">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_map_no_input_info</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_map_no_input_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_map_no_input_info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_map_no_input_info_full_event">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_map_no_input_info_full_event</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_map_no_input_info_full_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_map_no_input_info_full_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="shed.tests.test_streams.test_map_stream_input">
 <code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_map_stream_input</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_map_stream_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_map_stream_input" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -314,6 +397,11 @@
 <dl class="function">
 <dt id="shed.tests.test_streams.test_map_two_runs">
 <code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_map_two_runs</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_map_two_runs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_map_two_runs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_outputinfo_default">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_outputinfo_default</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_outputinfo_default"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_outputinfo_default" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -347,8 +435,28 @@
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="shed.tests.test_streams.test_scan_multi_header_False">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_scan_multi_header_False</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_scan_multi_header_False"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_scan_multi_header_False" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_scan_multi_header_True">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_scan_multi_header_True</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_scan_multi_header_True"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_scan_multi_header_True" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="shed.tests.test_streams.test_scan_start_func">
 <code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_scan_start_func</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_scan_start_func"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_scan_start_func" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_split">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_split</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_split"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_split" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_string_workflow">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_string_workflow</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_string_workflow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_string_workflow" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -361,27 +469,45 @@
 <code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_zip</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em>, <em>start_uid3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_zip" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="function">
+<dt id="shed.tests.test_streams.test_zip_latest">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_zip_latest</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em>, <em>start_uid3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_zip_latest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_zip_latest" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_zip_latest_double">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_zip_latest_double</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em>, <em>start_uid3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_zip_latest_double"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_zip_latest_double" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_zip_latest_double_interleaved">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_zip_latest_double_interleaved</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em>, <em>start_uid3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_zip_latest_double_interleaved"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_zip_latest_double_interleaved" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_zip_latest_double_reverse">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_zip_latest_double_reverse</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em>, <em>start_uid3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_zip_latest_double_reverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_zip_latest_double_reverse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.test_streams.test_zip_latest_reverse">
+<code class="descclassname">shed.tests.test_streams.</code><code class="descname">test_zip_latest_reverse</code><span class="sig-paren">(</span><em>exp_db</em>, <em>start_uid1</em>, <em>start_uid3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/test_streams.html#test_zip_latest_reverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.test_streams.test_zip_latest_reverse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 <div class="section" id="module-shed.tests.utils">
 <span id="shed-tests-utils-module"></span><h2>shed.tests.utils module<a class="headerlink" href="#module-shed.tests.utils" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
-<dt id="shed.tests.utils.build_pymongo_backed_broker">
-<code class="descclassname">shed.tests.utils.</code><code class="descname">build_pymongo_backed_broker</code><span class="sig-paren">(</span><em>request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/utils.html#build_pymongo_backed_broker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.utils.build_pymongo_backed_broker" title="Permalink to this definition">¶</a></dt>
-<dd><p>Provide a function level scoped MDS instance talking to
-temporary database on localhost:27017 with v1 schema.</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="shed.tests.utils.insert_imgs">
-<code class="descclassname">shed.tests.utils.</code><code class="descname">insert_imgs</code><span class="sig-paren">(</span><em>mds</em>, <em>fs</em>, <em>n</em>, <em>shape</em>, <em>save_dir=’/tmp/tmpxhbm7kqr’</em>, <em>start_uid=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/utils.html#insert_imgs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.utils.insert_imgs" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">shed.tests.utils.</code><code class="descname">insert_imgs</code><span class="sig-paren">(</span><em>RE</em>, <em>reg</em>, <em>n</em>, <em>shape</em>, <em>save_dir='/tmp/tmpkd05rris'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/utils.html#insert_imgs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.utils.insert_imgs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Insert images into mds and fs for testing</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>mds</strong></li>
-<li><strong>fs</strong></li>
+<li><strong>RE</strong> (<em>bluesky.run_engine.RunEngine instance</em>)</li>
+<li><strong>db</strong></li>
 <li><strong>n</strong></li>
 <li><strong>shape</strong></li>
 <li><strong>save_dir</strong></li>
@@ -407,6 +533,8 @@ temporary database on localhost:27017 with v1 schema.</p>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tutorials.html" class="btn btn-neutral float-right" title="Tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="shed.html" class="btn btn-neutral" title="shed package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

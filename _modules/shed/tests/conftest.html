@@ -88,6 +88,7 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../shed.html">shed package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
 </ul>
 
             
@@ -172,25 +173,29 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pytest</span>
 
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">build_pymongo_backed_broker</span><span class="p">,</span> <span class="n">insert_imgs</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">insert_imgs</span>
 <span class="kn">import</span> <span class="nn">tempfile</span>
-<span class="kn">from</span> <span class="nn">uuid</span> <span class="k">import</span> <span class="n">uuid4</span>
-<span class="kn">from</span> <span class="nn">bluesky.tests.conftest</span> <span class="k">import</span> <span class="n">fresh_RE</span>
+<span class="kn">from</span> <span class="nn">bluesky.tests.conftest</span> <span class="k">import</span> <span class="n">fresh_RE</span><span class="p">,</span> <span class="n">db</span>
+<span class="kn">from</span> <span class="nn">bluesky.examples</span> <span class="k">import</span> <span class="n">ReaderWithRegistryHandler</span>
 
 
-<div class="viewcode-block" id="start_uid1"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.start_uid1">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">start_uid1</span><span class="p">():</span>
-    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span></div>
+<div class="viewcode-block" id="start_uid1"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.start_uid1">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;function&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">start_uid1</span><span class="p">(</span><span class="n">exp_db</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exp_db</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="s1">&#39;start_uid1&#39;</span> <span class="ow">in</span> <span class="n">exp_db</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">exp_db</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">][</span><span class="s1">&#39;uid&#39;</span><span class="p">])</span></div>
 
 
-<div class="viewcode-block" id="start_uid2"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.start_uid2">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">start_uid2</span><span class="p">():</span>
-    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span></div>
+<div class="viewcode-block" id="start_uid2"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.start_uid2">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;function&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">start_uid2</span><span class="p">(</span><span class="n">exp_db</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="s1">&#39;start_uid2&#39;</span> <span class="ow">in</span> <span class="n">exp_db</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">exp_db</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">][</span><span class="s1">&#39;uid&#39;</span><span class="p">])</span></div>
 
 
-<div class="viewcode-block" id="start_uid3"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.start_uid3">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">start_uid3</span><span class="p">():</span>
-    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span></div>
+<div class="viewcode-block" id="start_uid3"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.start_uid3">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;function&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">start_uid3</span><span class="p">(</span><span class="n">exp_db</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="s1">&#39;start_uid3&#39;</span> <span class="ow">in</span> <span class="n">exp_db</span><span class="p">[</span><span class="mi">6</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">exp_db</span><span class="p">[</span><span class="mi">6</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">][</span><span class="s1">&#39;uid&#39;</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="img_size"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.img_size">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
@@ -199,30 +204,33 @@
     <span class="k">yield</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="db"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.db">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="p">[</span>
-    <span class="c1"># &#39;sqlite&#39;,</span>
-    <span class="s1">&#39;mongo&#39;</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">db</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-    <span class="n">param_map</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="c1"># &#39;sqlite&#39;: build_sqlite_backed_broker,</span>
-        <span class="s1">&#39;mongo&#39;</span><span class="p">:</span> <span class="n">build_pymongo_backed_broker</span><span class="p">}</span>
+<span class="c1"># @pytest.fixture(params=[</span>
+<span class="c1">#     # &#39;sqlite&#39;,</span>
+<span class="c1">#     &#39;mongo&#39;], scope=&#39;module&#39;)</span>
+<span class="c1"># def db(request):</span>
+<span class="c1">#     param_map = {</span>
+<span class="c1">#         # &#39;sqlite&#39;: build_sqlite_backed_broker,</span>
+<span class="c1">#         &#39;mongo&#39;: build_pymongo_backed_broker}</span>
+<span class="c1">#</span>
+<span class="c1">#     return param_map[request.param](request)</span>
 
-    <span class="k">return</span> <span class="n">param_map</span><span class="p">[</span><span class="n">request</span><span class="o">.</span><span class="n">param</span><span class="p">](</span><span class="n">request</span><span class="p">)</span></div>
 
-
-<div class="viewcode-block" id="exp_db"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.exp_db">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">exp_db</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">,</span> <span class="n">start_uid2</span><span class="p">,</span> <span class="n">start_uid3</span><span class="p">):</span>
+<div class="viewcode-block" id="exp_db"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.exp_db">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;function&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">exp_db</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">fresh_RE</span><span class="p">):</span>
     <span class="n">db2</span> <span class="o">=</span> <span class="n">db</span>
-    <span class="n">mds</span> <span class="o">=</span> <span class="n">db2</span><span class="o">.</span><span class="n">mds</span>
-    <span class="n">fs</span> <span class="o">=</span> <span class="n">db2</span><span class="o">.</span><span class="n">fs</span>
-    <span class="n">insert_imgs</span><span class="p">(</span><span class="n">mds</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">start_uid3</span><span class="p">)</span>
-    <span class="n">insert_imgs</span><span class="p">(</span><span class="n">mds</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">)</span>
-    <span class="n">insert_imgs</span><span class="p">(</span><span class="n">mds</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">start_uid2</span><span class="p">)</span>
-    <span class="k">yield</span> <span class="n">db2</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DROPPING MDS&quot;</span><span class="p">)</span>
-    <span class="n">mds</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">drop_database</span><span class="p">(</span><span class="n">mds</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">])</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DROPPING FS&quot;</span><span class="p">)</span>
-    <span class="n">fs</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">drop_database</span><span class="p">(</span><span class="n">fs</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">])</span></div>
+    <span class="n">reg</span> <span class="o">=</span> <span class="n">db2</span><span class="o">.</span><span class="n">reg</span>
+    <span class="c1"># reg.register_handler(&#39;npy&#39;, NpyHandler)</span>
+    <span class="n">reg</span><span class="o">.</span><span class="n">register_handler</span><span class="p">(</span><span class="s1">&#39;RWFS_NPY&#39;</span><span class="p">,</span> <span class="n">ReaderWithRegistryHandler</span><span class="p">)</span>
+    <span class="n">RE</span> <span class="o">=</span> <span class="n">fresh_RE</span>
+    <span class="n">RE</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">insert</span><span class="p">)</span>
+
+    <span class="n">uid1</span> <span class="o">=</span> <span class="n">insert_imgs</span><span class="p">(</span><span class="n">RE</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span>
+                       <span class="n">bt_safN</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">pi_name</span><span class="o">=</span><span class="s1">&#39;chris&#39;</span><span class="p">,</span> <span class="n">start_uid1</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">uid2</span> <span class="o">=</span> <span class="n">insert_imgs</span><span class="p">(</span><span class="n">RE</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span>
+                       <span class="n">pi_name</span><span class="o">=</span><span class="s1">&#39;tim&#39;</span><span class="p">,</span> <span class="n">bt_safN</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">start_uid2</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">uid3</span> <span class="o">=</span> <span class="n">insert_imgs</span><span class="p">(</span><span class="n">RE</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span>
+                       <span class="n">pi_name</span><span class="o">=</span><span class="s1">&#39;chris&#39;</span><span class="p">,</span> <span class="n">bt_safN</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">start_uid3</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">yield</span> <span class="n">db2</span></div>
 
 
 <div class="viewcode-block" id="tmp_dir"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.tmp_dir">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>

@@ -7,6 +7,7 @@
 ./_sources/index.rst.txt
 ./_sources/shed.rst.txt
 ./_sources/shed.tests.rst.txt
+./_sources/tutorials.rst.txt
 ./_static/ajax-loader.gif
 ./_static/basic.css
 ./_static/comment-bright.png
@@ -49,3 +50,4 @@
 ./searchindex.js
 ./shed.html
 ./shed.tests.html
+./tutorials.html
