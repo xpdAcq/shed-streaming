@@ -640,8 +640,7 @@ def test_filter_descriptor_negative(exp_db, start_uid1):
             assert l[1] != s[1]
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
-    for n in ['start', 'stop']:
-        assert n in assert_docs
+    assert {'start', 'stop'} == assert_docs
 
 
 def test_filter_full_header(exp_db, start_uid1):
