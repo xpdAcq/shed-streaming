@@ -1083,37 +1083,37 @@ class BundleSingleStream(EventStream):
             if x[0] == 'start':
                 self.buffers.append(deque())
             self.buffers[-1].append(x)
-        if len(self.buffers) == self.n_hdrs:
-            # if all the docs are of the same type and not an event, issue
-            # new documents which are combined
-            rvs = []
-            while all(self.buffers):
-                first_doc_name = self.buffers[0][0][0]
-                if all([b[0][0] == first_doc_name and b[0][0] != 'event'
-                        for b in self.buffers]):
-                    res = self.dispatch(
-                        tuple([b.popleft() for b in self.buffers]))
-                    rvs.append(self.emit(res))
-                elif any([b[0][0] == 'event' for b in self.buffers]):
-                    for b in self.buffers:
-                        while b:
-                            nd_pair = b[0]
-                            # run the buffers down until no events are left
-                            if nd_pair[0] != 'event':
-                                break
-                            else:
-                                nd_pair = b.popleft()
-                                new_nd_pair = super().event(
-                                    self.refresh_event(nd_pair[1]))
-                                rvs.append(self.emit(new_nd_pair))
+            if len(self.buffers) == self.n_hdrs:
+                # if all the docs are of the same type and not an event, issue
+                # new documents which are combined
+                rvs = []
+                while all(self.buffers):
+                    first_doc_name = self.buffers[0][0][0]
+                    if all([b[0][0] == first_doc_name and b[0][0] != 'event'
+                            for b in self.buffers]):
+                        res = self.dispatch(
+                            tuple([b.popleft() for b in self.buffers]))
+                        rvs.append(self.emit(res))
+                    elif any([b[0][0] == 'event' for b in self.buffers]):
+                        for b in self.buffers:
+                            while b:
+                                nd_pair = b[0]
+                                # run the buffers down until no events are left
+                                if nd_pair[0] != 'event':
+                                    break
+                                else:
+                                    nd_pair = b.popleft()
+                                    new_nd_pair = super().event(
+                                        self.refresh_event(nd_pair[1]))
+                                    rvs.append(self.emit(new_nd_pair))
 
-                else:
-                    raise RuntimeError("There is a mismatch of docs, but none "
-                                       "of them are events so we have reached "
-                                       "a potential deadlock, so we raise "
-                                       "this error instead")
+                    else:
+                        raise RuntimeError("There is a mismatch of docs, but none "
+                                           "of them are events so we have reached "
+                                           "a potential deadlock, so we raise "
+                                           "this error instead")
 
-            return rvs
+                return rvs
 
 
 class combine_latest(EventStream):
