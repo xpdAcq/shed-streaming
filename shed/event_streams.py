@@ -378,16 +378,8 @@ class EventStream(Stream):
                                   run_start=self.run_start_uid,
                                   name='primary')
             if self.output_info:
-                try:
-                    new_descriptor.update(
-                        data_keys={k: v for k, v in self.output_info})
-                except Exception as e:
-                    print('ERROR REPORT=======================')
-                    print(self.stream_name)
-                    print(self.md)
-                    print(traceback.format_exc())
-                    print(repr(docs))
-                    raise e
+                new_descriptor.update(
+                    data_keys={k: v for k, v in self.output_info})
 
             # no truly new data needed
             # XXX: giant hack only look at the keys because () != []
@@ -791,11 +783,6 @@ class filter(EventStream):
                                                   **self.func_kwargs)
 
             except Exception as e:
-                print('ERROR REPORT=======================')
-                print(self.stream_name)
-                print(self.md)
-                print(traceback.format_exc())
-                print(repr(docs))
                 return self.emit(super().stop(e))
         if self.truth_value:
             return self.emit((name, docs))
