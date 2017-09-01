@@ -20,6 +20,7 @@ from ..event_streams import dstar, star
 import pytest
 from bluesky.callbacks.core import CallbackBase
 from itertools import zip_longest
+from ..utils import to_event_model
 
 
 class SinkAssertion(CallbackBase):
@@ -649,16 +650,16 @@ def test_filter_descriptor_negative(exp_db, start_uid1):
 def test_filter_full_header(exp_db, start_uid1):
     source = Stream()
 
-    def f(docs):
-        d = docs[0]
+    def f(d):
         return d['sample_name'] != 'hi'
 
-    def g(docs):
-        d = docs[0]
+    def g(d):
         return d['sample_name'] == 'hi'
 
-    dp = es.filter(f, source, input_info=None, document_name='start')
-    dp2 = es.filter(g, source, input_info=None, document_name='start')
+    dp = es.filter(f, source, input_info={0: ()}, document_name='start',
+                   full_event=True)
+    dp2 = es.filter(g, source, input_info={0: ()}, document_name='start',
+                    full_event=True)
 
     L = dp.sink_to_list()
     L2 = dp2.sink_to_list()
@@ -1471,6 +1472,33 @@ def test_eventify_all_descriptor(exp_db, start_uid1):
         if l[0] == 'event':
             for k in set(dk.keys()) | set(l[1]['data'].keys()):
                 assert l[1]['data'][k] == dk[k]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_eventify_no_event():
+    source = Stream()
+
+    dp = es.Eventify(source, 'source',
+                     output_info=[('name', {
+                         'dtype': 'str',
+                         'source': 'testing'})])
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+
+    for a in to_event_model([], output_info=[('img', {})]):
+        source.emit(a)
+
+    assert len(L) == 4
+    assert_docs = set()
+    # zip them since we know they're same length and order
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert l[1]['data']['name'] == 'to_event_model'
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
     for n in ['start', 'descriptor', 'event', 'stop']:

@@ -378,8 +378,16 @@ class EventStream(Stream):
                                   run_start=self.run_start_uid,
                                   name='primary')
             if self.output_info:
-                new_descriptor.update(
-                    data_keys={k: v for k, v in self.output_info})
+                try:
+                    new_descriptor.update(
+                        data_keys={k: v for k, v in self.output_info})
+                except Exception as e:
+                    print('ERROR REPORT=======================')
+                    print(self.stream_name)
+                    print(self.md)
+                    print(traceback.format_exc())
+                    print(repr(docs))
+                    raise e
 
             # no truly new data needed
             # XXX: giant hack only look at the keys because () != []
@@ -442,6 +450,7 @@ class EventStream(Stream):
                             )
             if isinstance(docs, Exception):
                 self.bypass = True
+                print('ERROR REPORT=======================')
                 print(self.stream_name)
                 print(self.md)
                 print(traceback.format_exc())
@@ -459,7 +468,7 @@ class EventStream(Stream):
         elif self.raise_upon_error and self.excep:
             raise self.excep
 
-    def event_contents(self, docs, full_event=False):
+    def doc_contents(self, docs, full_event=False):
         """
         Provide some of the event data as a dict, which may be used as kwargs
 
@@ -667,7 +676,7 @@ class map(EventStream):
     def event(self, docs):
         try:
             # we need to expose the event data
-            res_args, res_kwargs = self.event_contents(docs, self.full_event)
+            res_args, res_kwargs = self.doc_contents(docs, self.full_event)
             # take the event contents and add them to the args/kwargs
             result = self.func(*res_args, *self.func_args,
                                **res_kwargs, **self.func_kwargs)
@@ -775,9 +784,21 @@ class filter(EventStream):
         # TODO: should we have something like event_contents for starts?
         name, docs = self.curate_streams(x, False)
         if name == 'start':
-            self.truth_value = self.predicate(docs)
+            try:
+                res_args, res_kwargs = self.doc_contents(docs, self.full_event)
+                self.truth_value = self.predicate(*res_args, *self.func_args,
+                                                  **res_kwargs,
+                                                  **self.func_kwargs)
+
+            except Exception as e:
+                print('ERROR REPORT=======================')
+                print(self.stream_name)
+                print(self.md)
+                print(traceback.format_exc())
+                print(repr(docs))
+                return self.emit(super().stop(e))
         if self.truth_value:
-            self.emit((name, docs))
+            return self.emit((name, docs))
 
     def _descriptor_update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
@@ -800,7 +821,7 @@ class filter(EventStream):
             return self.emit(ret)
 
     def event(self, doc):
-        res_args, res_kwargs = self.event_contents(doc, self.full_event)
+        res_args, res_kwargs = self.doc_contents(doc, self.full_event)
         try:
             if self.predicate(*res_args, *self.func_args,
                               **res_kwargs, **self.func_kwargs):
@@ -882,7 +903,7 @@ class accumulate(EventStream):
 
     def event(self, doc):
         # TODO: can accumulate support args/kwargs?
-        args, data = self.event_contents(doc, self.full_event)
+        args, data = self.doc_contents(doc, self.full_event)
 
         if self.state is no_default:
             self.state = {}
@@ -1108,10 +1129,11 @@ class BundleSingleStream(EventStream):
                                     rvs.append(self.emit(new_nd_pair))
 
                     else:
-                        raise RuntimeError("There is a mismatch of docs, but none "
-                                           "of them are events so we have reached "
-                                           "a potential deadlock, so we raise "
-                                           "this error instead")
+                        raise RuntimeError(
+                            "There is a mismatch of docs, but none "
+                            "of them are events so we have reached "
+                            "a potential deadlock, so we raise "
+                            "this error instead")
 
                 return rvs
 
@@ -1312,6 +1334,7 @@ class Eventify(EventStream):
         self.document = document
         self.vals = list()
         self.emit_event = False
+        self.unseen_docs = ['start', 'descriptor', 'event', 'stop']
 
         EventStream.__init__(self, child, output_info=output_info, **kwargs)
         self.init_output_info = self.output_info
@@ -1335,28 +1358,24 @@ class Eventify(EventStream):
             if len(self.output_info) != len(self.vals):
                 raise RuntimeError('The output_info does not match the values')
 
-    def dispatch(self, nds):
-        """Dispatch to methods expecting particular doc types.
-
-        Parameters
-        ----------
-        nds: tuple
-            Name document pair
-
-        Returns
-        -------
-        tuple:
-            New name document pair
-        """
-        name, docs = self.curate_streams(nds, False)
+    def update(self, x, who=None):
+        name, docs = self.curate_streams(x, False)
         if name == 'start':
             self.vals = list()
+            self.unseen_docs = ['start', 'descriptor', 'event', 'stop']
             self.emit_event = False
             self.keys = self.init_keys
             self.output_info = self.init_output_info
-        if name == self.document:
-            self._extract_info(docs)
-        return getattr(self, name)(docs)
+        if self.unseen_docs:
+            if name == self.document:
+                self._extract_info(docs)
+                rv = [self.emit(self.dispatch((residual_name, docs))) for
+                      residual_name in self.unseen_docs]
+                self.unseen_docs.clear()
+                return rv
+            else:
+                self.unseen_docs.pop(self.unseen_docs.index(name))
+                return self.emit(self.dispatch((name, docs)))
 
     def event(self, docs):
         if not self.emit_event:
