@@ -437,7 +437,8 @@ class EventStream(Stream):
                             time=time.time(),
                             run_start=self.run_start_uid,
                             provenance=self.provenance,
-                            parents=self.parent_uids
+                            parents=self.parent_uids,
+                            md=self.md
                             )
             if isinstance(docs, Exception):
                 self.bypass = True
@@ -1376,7 +1377,8 @@ class Query(EventStream):
     query_decider: callable, optional
         A function to decide among the query results. The signature must be
         func(list of headers, docs) and returns a single header. If not
-        provided use all the headers returned. Defaults to None.
+        provided use all the headers returned. Defaults to None. Note that the
+        query_decider must return an iterable.
     max_n_hdrs: int, optional
         Maximum number of headers returned, if the number of headers returned
         is greater than the max then the node raises a RuntimeError
@@ -1397,16 +1399,18 @@ class Query(EventStream):
     def start(self, docs):
         # XXX: If we don't have a decider we return all the results
         # TODO: should this issue a stop on failure?
-        self.uid = None
+        self.uids = []
         res = self.query_function(self.db, docs)
         if self.query_decider:
-            res = [self.query_decider(res, docs), ]
-        self.uid = [next(iter(r.stream(fill=False)))[1]['uid'] for r in res]
-        if len(self.uid) > self.max_n_hdrs:
-            raise RuntimeError("Query returned more headers than the max "
-                               "number of headers, either your query was too "
-                               "broad or you need to up the max_n_hdrs.")
-        self.md.update(n_hdrs=len(self.uid))
+            res = self.query_decider(res, docs)
+        if res:
+            print(res)
+            self.uids = [next(iter(r.stream(fill=False)))[1]['uid'] for r in res]
+            if len(self.uids) > self.max_n_hdrs:
+                raise RuntimeError("Query returned more headers than the max "
+                                   "number of headers, either your query was too "
+                                   "broad or you need to up the max_n_hdrs.")
+        self.md.update(n_hdrs=len(self.uids))
         return super().start(docs)
 
     def update(self, x, who=None):
@@ -1414,8 +1418,8 @@ class Query(EventStream):
         if name == 'start':
             el = [self.emit(self.start(docs)),
                   self.emit(self.descriptor(docs))]
-            if isinstance(self.uid, list):
-                for u in self.uid:
+            if isinstance(self.uids, list):
+                for u in self.uids:
                     el.append(self.emit(super().event(self.issue_event(u))))
             el.append(self.emit(self.stop(docs)))
             return el
