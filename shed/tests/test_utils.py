@@ -8,14 +8,16 @@ from bluesky.callbacks.core import CallbackBase
 def test_to_event_model():
     det = [1, 2, 3]
     g = to_event_model(det, [('det', {'source': 'to_event_model',
-                                      'dtype': 'float'})])
+                                      'dtype': 'float'})],
+                       md={'hello': 'world'})
 
     class AssertCallback(CallbackBase):
         def _check(self, doc, keys):
             assert all([k in doc.keys() for k in keys])
 
         def start(self, doc):
-            self._check(doc, ['uid', 'time', 'source'])
+            self._check(doc, ['uid', 'time', 'source', 'hello'])
+            assert doc.get('hello', False) == 'world'
 
         def descriptor(self, doc):
             self._check(doc, ['uid', 'data_keys', ])

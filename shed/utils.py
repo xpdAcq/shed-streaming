@@ -1,7 +1,7 @@
 from .event_streams import EventStream
 
 
-def to_event_model(data, output_info, md={}):
+def to_event_model(data, output_info, md=None):
     """Take an iterable of data and put it into the event model
 
     Parameters
@@ -25,9 +25,11 @@ def to_event_model(data, output_info, md={}):
     -----
     This is only for demonstration/example use, do not use for production.
     """
-    es = EventStream(md={'source': 'to_event_model'}, output_info=output_info)
+    if md is None:
+        md = {}
     # add some metadata
-    es.md = md
+    md.update({'source': 'to_event_model'})
+    es = EventStream(md=md, output_info=output_info)
 
     yield es.dispatch(('start', None))
     yield es.dispatch(('descriptor', None))
