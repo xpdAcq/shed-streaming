@@ -7,9 +7,11 @@ from bluesky.callbacks.core import CallbackBase
 
 def test_to_event_model():
     det = [1, 2, 3]
+    new_md = {'hello': 'world'}
+    new_md_copy = new_md.copy()
     g = to_event_model(det, [('det', {'source': 'to_event_model',
                                       'dtype': 'float'})],
-                       md={'hello': 'world'})
+                       md=new_md)
 
     class AssertCallback(CallbackBase):
         def _check(self, doc, keys):
@@ -32,6 +34,6 @@ def test_to_event_model():
 
     source = Stream()
     source.sink(star(AssertCallback()))
-    source.sink(print)
+    assert new_md == new_md_copy
     for e in g:
         source.emit(e)
