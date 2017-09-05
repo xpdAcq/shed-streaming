@@ -1,7 +1,7 @@
 from .event_streams import EventStream
 
 
-def to_event_model(data, output_info, md):
+def to_event_model(data, output_info, md={}):
     """Take an iterable of data and put it into the event model
 
     Parameters
