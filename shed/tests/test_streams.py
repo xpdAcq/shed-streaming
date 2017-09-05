@@ -1379,12 +1379,20 @@ def test_eventify(exp_db, start_uid1):
                       output_info=[
                           ('name', {'dtype': 'str', 'source': 'testing'}),
                           ('name2', {'dtype': 'str', 'source': 'testing'})])
+
+    # try without output_info, no keys
+    dp3 = es.Eventify(source)
+
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
     dp.sink(print)
     L2 = dp2.sink_to_list()
     dp2.sink(star(SinkAssertion(False)))
     dp2.sink(print)
+
+    L3 = dp3.sink_to_list()
+    dp3.sink(star(SinkAssertion(False)))
+    dp3.sink(print)
 
     ih1 = exp_db[start_uid1]
     s = exp_db.restream(ih1, fill=True)
@@ -1393,12 +1401,15 @@ def test_eventify(exp_db, start_uid1):
 
     assert len(L) == 4
     assert len(L2) == 4
+    assert len(L3) == 4
     assert_docs = set()
     assert_docs2 = set()
+    assert_docs3 = set()
     # zip them since we know they're same length and order
-    for l, l2 in zip(L, L2):
+    for l, l2, l3 in zip(L, L2, L3):
         assert_docs.add(l[0])
         assert_docs2.add(l2[0])
+        assert_docs3.add(l3[0])
         if l[0] == 'event':
             assert l[1]['data']['name'] == 'test'
             assert l2[1]['data']['name'] == 'test'
@@ -1406,6 +1417,9 @@ def test_eventify(exp_db, start_uid1):
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
             assert l2[1]['exit_status'] == 'success'
+        if l3[0] == 'descriptor':
+            assert l3[1]['data_keys']['name'] == {}
+
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
 

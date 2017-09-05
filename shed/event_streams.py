@@ -1413,7 +1413,7 @@ class Eventify(EventStream):
         if not self.output_info:
             self.output_info = []
             for key in self.keys:
-                self.output_info.append((key, key))
+                self.output_info.append((key, {}))
 
         if len(self.output_info) == 1:
             self.vals = self.vals[0]
