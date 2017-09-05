@@ -512,7 +512,7 @@ class EventStream(Stream):
 
         n_args = len(args_positions)
         if args_positions and (args_positions[-1] != n_args - 1 or
-                                       args_positions[0] != 0):
+                               args_positions[0] != 0):
             errormsg = """Error, arguments supplied must be a set of integers
             ranging from 0 to number of arguments\n
             Got {} instead""".format(args_positions)
@@ -1099,11 +1099,14 @@ class BundleSingleStream(EventStream):
             # Stash the start header in case we issue a stop on the first one
             if name == 'start':
                 self.start_docs = docs
-            if (name == 'start' and  # if a start doc
-                self.emitted.get(name, False) and  # and we haven't emitted one
-                name in self.predicate_against and  # and to test the cond.
-                self.predicate(docs)  # and it satisfies the condition
-                ):
+            # if a start doc
+            if (name == 'start' and
+                # and we haven't emitted one
+                    self.emitted.get(name, False) and
+                # and to test the cond.
+                    name in self.predicate_against and
+                # and it satisfies the condition
+                    self.predicate(docs)):
                 # Reset the state
                 for k in self.emitted:
                     self.emitted[k] = False

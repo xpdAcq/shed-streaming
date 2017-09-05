@@ -1638,7 +1638,7 @@ def test_bundle_single_stream_callable_control2():
 
     dpf = es.BundleSingleStream(source,
                                 lambda x: x[0].get('stitch_with_previous',
-                                                   False) == False,
+                                                   False) is False,
                                 predicate_against='start')
 
     L = dpf.sink_to_list()
