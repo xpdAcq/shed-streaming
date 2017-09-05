@@ -27,6 +27,8 @@ def to_event_model(data, output_info, md=None):
     """
     if md is None:
         md = {}
+    else:
+        md = md.copy()
     # add some metadata
     md.update({'source': 'to_event_model'})
     es = EventStream(md=md, output_info=output_info)
