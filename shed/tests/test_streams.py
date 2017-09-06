@@ -747,6 +747,28 @@ def test_filter_fail(exp_db, start_uid1):
         source.emit(a)
 
 
+def test_filter_fail_no_except(exp_db, start_uid1):
+    source = Stream()
+
+    def f(img1):
+        return img1 is not None
+
+    dp = es.filter(f, source,
+                   input_info={'img1': 'no_such_key'},
+                   document_name='start', full_event=True,
+                   raise_upon_error=False)
+    dp.sink(star(SinkAssertion(expected_docs={'start', 'stop'})))
+    L = dp.sink_to_list()
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+    for n, d in L:
+        if n == 'stop':
+            assert d['exit_status'] == 'failure'
+
+
 def test_filter_full_event(exp_db, start_uid1):
     source = Stream()
 

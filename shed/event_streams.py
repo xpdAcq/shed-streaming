@@ -783,7 +783,9 @@ class filter(EventStream):
                                                   **self.func_kwargs)
 
             except Exception as e:
-                return self.emit(super().stop(e))
+                rv = [self.emit(super().start(docs)),
+                      self.emit(super().stop(e))]
+                return rv
         if self.truth_value:
             return self.emit((name, docs))
 
