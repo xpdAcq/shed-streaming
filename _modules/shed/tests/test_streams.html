@@ -1466,6 +1466,36 @@
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
 
+<div class="viewcode-block" id="test_double_eventify"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_double_eventify">[docs]</a><span class="k">def</span> <span class="nf">test_double_eventify</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+
+    <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Eventify</span><span class="p">(</span><span class="n">source</span><span class="p">,</span>
+                     <span class="n">output_info</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="p">{</span>
+                         <span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;testing&#39;</span><span class="p">})])</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">dp</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+    <span class="n">dp</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="n">star</span><span class="p">(</span><span class="n">SinkAssertion</span><span class="p">(</span><span class="kc">False</span><span class="p">)))</span>
+    <span class="n">dp</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+
+    <span class="n">ih1</span> <span class="o">=</span> <span class="n">exp_db</span><span class="p">[</span><span class="n">start_uid1</span><span class="p">]</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">exp_db</span><span class="o">.</span><span class="n">restream</span><span class="p">(</span><span class="n">ih1</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="n">L</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">exp_db</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">documents</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
+    <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
+        <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
+
+
 <div class="viewcode-block" id="test_eventify_all"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_eventify_all">[docs]</a><span class="k">def</span> <span class="nf">test_eventify_all</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 
@@ -1612,7 +1642,7 @@
     <span class="n">s</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">documents</span><span class="p">()</span>
 
     <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Query</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">qf</span><span class="p">,</span>
-                  <span class="n">query_decider</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+                  <span class="n">query_decider</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">x</span><span class="p">))])</span>
     <span class="n">L</span> <span class="o">=</span> <span class="n">dp</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
 
     <span class="n">dp2</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">QueryUnpacker</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">dp</span><span class="p">)</span>
@@ -1641,6 +1671,44 @@
             <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
     <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
+
+
+<div class="viewcode-block" id="test_empty_query"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_empty_query">[docs]</a><span class="k">def</span> <span class="nf">test_empty_query</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">EventStream</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">qf</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">db</span><span class="p">(</span><span class="n">hello</span><span class="o">=</span><span class="s1">&#39;world&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">qd</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">rv</span> <span class="o">=</span> <span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">res</span><span class="p">))]</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="n">rv</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="n">rv</span>
+
+    <span class="n">hdr</span> <span class="o">=</span> <span class="n">exp_db</span><span class="p">[</span><span class="n">start_uid1</span><span class="p">]</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">documents</span><span class="p">()</span>
+
+    <span class="n">dp</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Query</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">qf</span><span class="p">,</span>
+                  <span class="n">query_decider</span><span class="o">=</span><span class="n">qd</span><span class="p">)</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">dp</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+
+    <span class="n">dp2</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">QueryUnpacker</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">dp</span><span class="p">)</span>
+    <span class="n">L2</span> <span class="o">=</span> <span class="n">dp2</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
+        <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;start&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;n_hdrs&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="test_query_many_headers"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_query_many_headers">[docs]</a><span class="k">def</span> <span class="nf">test_query_many_headers</span><span class="p">(</span><span class="n">exp_db</span><span class="p">):</span>

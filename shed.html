@@ -653,7 +653,8 @@ start document of the stream. Note that the signature must be
 the valid headers.</li>
 <li><strong>query_decider</strong> (<em>callable, optional</em>) – A function to decide among the query results. The signature must be
 func(list of headers, docs) and returns a single header. If not
-provided use all the headers returned. Defaults to None.</li>
+provided use all the headers returned. Defaults to None. Note that the
+query_decider must return an iterable.</li>
 <li><strong>max_n_hdrs</strong> (<em>int, optional</em>) – Maximum number of headers returned, if the number of headers returned
 is greater than the max then the node raises a RuntimeError</li>
 </ul>
