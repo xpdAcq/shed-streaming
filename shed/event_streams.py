@@ -541,7 +541,7 @@ class EventStream(Stream):
 
         n_args = len(args_positions)
         if args_positions and (args_positions[-1] != n_args - 1 or
-                                       args_positions[0] != 0):
+                               args_positions[0] != 0):
             errormsg = """Error, arguments supplied must be a set of integers
             ranging from 0 to number of arguments\n
             Got {} instead""".format(args_positions)
@@ -812,12 +812,9 @@ class filter(EventStream):
             self.descriptor_truth_values = {}
         self.generate_provenance(predicate=predicate)
 
-        self._initial_state.update(_update_initial_state_helper(self,
-                                                                ['func_kwargs',
-                                                                 'func_args',
-                                                                 'full_event',
-                                                                 'document_name',
-                                                                 'truth_value']))
+        self._initial_state.update(_update_initial_state_helper(
+            self, ['func_kwargs', 'func_args', 'full_event', 'document_name',
+                   'truth_value']))
 
     def _start_update(self, x, who=None):
         # TODO: should we have something like event_contents for starts?
@@ -851,7 +848,7 @@ class filter(EventStream):
             if self.descriptor_truth_values[docs[0]['uid']]:
                 ret = ('descriptor', docs)
         elif (name == 'event' and
-                  self.descriptor_truth_values[docs[0]['descriptor']]):
+              self.descriptor_truth_values[docs[0]['descriptor']]):
             ret = super().event(docs)
         elif name == 'stop':
             ret = super().stop(docs)
@@ -937,11 +934,7 @@ class accumulate(EventStream):
             self.start = self._across_start_start
         self.generate_provenance(function=func)
         self._initial_state.update(_update_initial_state_helper(self,
-                                   ['func',
-                                    'start',
-                                    'state_key',
-                                    'start_state',
-                                   ]))
+                                                                ['state_key']))
 
     def _not_across_start_start(self, docs):
         self.state = self.start_state
@@ -1534,7 +1527,7 @@ class QueryUnpacker(EventStream):
         EventStream.__init__(self, child, **kwargs)
         self.fill = fill
         self._initial_state.update(_update_initial_state_helper(self,
-                                                                ['fill',]))
+                                                                ['fill', ]))
 
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
