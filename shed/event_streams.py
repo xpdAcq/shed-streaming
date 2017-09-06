@@ -1330,9 +1330,8 @@ class zip_latest(EventStream):
                     self.lossless_emitted.clear()
                     if self.clear_on_lossless_stop:
                         self.last = [None for _ in self.children]
-                        self.special_last = {k: [None for _ in self.children] for k
-                                             in
-                                             self.special_docs_names}
+                        self.special_last = {k: [None for _ in self.children]
+                                             for k in self.special_docs_names}
                         self.missing = set(self.children)
                         self.special_missing = {k: set(self.children) for k in
                                                 self.special_docs_names}
