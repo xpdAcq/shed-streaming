@@ -1635,7 +1635,7 @@ def test_bundle_single_stream(exp_db):
         source.emit(a)
 
     assert_docs = set()
-    assert len(L) == 3 + 5 + 5 + 2
+    assert len(L) == 3 + (5 + 5 + 2)
     for l in L:
         assert_docs.add(l[0])
         assert l[0]
@@ -1666,7 +1666,7 @@ def test_bundle_single_stream_control_int(exp_db):
         source.emit(a)
 
     assert_docs = set()
-    assert len(L) == 3 + 5 + 2
+    assert len(L) == (5 + 5 + 1 + 1 + 1) + (1 + 1 + 2)
     for l in L:
         assert_docs.add(l[0])
         assert l[0]
@@ -1674,6 +1674,66 @@ def test_bundle_single_stream_control_int(exp_db):
             assert l[1]['exit_status'] == 'success'
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
+
+
+def test_bundle_single_stream_callable_control(exp_db, start_uid3):
+    source = Stream()
+
+    dpf = es.BundleSingleStream(source,
+                                lambda x: x[0].get('uid', None) == start_uid3)
+
+    L = dpf.sink_to_list()
+    dpf.sink(print)
+
+    for a in exp_db[start_uid3].documents():
+        source.emit(a)
+
+    assert_docs = set()
+    assert len(L) == (1 + 1 + 2 + 1)
+    for l in L:
+        assert_docs.add(l[0])
+        assert l[0]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_bundle_single_stream_callable_control2():
+    from ..utils import to_event_model
+
+    source = Stream()
+
+    dpf = es.BundleSingleStream(source,
+                                lambda x: x[0].get('stitch_with_previous',
+                                                   False) is False,
+                                predicate_against='start')
+
+    L = dpf.sink_to_list()
+    dpf.sink(print)
+
+    for b in [to_event_model([1, 2, 3], output_info=[('ct', {})]),  # start
+              to_event_model([1, 2, 3], output_info=[('ct', {})],  # continue
+                             md={'stitch_with_previous': True}),
+              to_event_model([1, 2, 3], output_info=[('ct', {})],  # continue
+                             md={'stitch_with_previous': True}),
+              to_event_model([1, 2, 3],
+                             output_info=[('ct', {})])]:  # start new
+        for a in b:
+            source.emit(a)
+
+    assert_docs = set()
+    n_stops = 0
+    assert len(L) == ((1 + 1) + 3 * 3 + 1) + 3 + 2
+    for l in L:
+        assert_docs.add(l[0])
+        assert l[0]
+        if l[0] == 'stop':
+            n_stops += 1
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+    assert n_stops == 1
 
 
 def test_workflow(exp_db, start_uid1):

@@ -1037,10 +1037,21 @@ class BundleSingleStream(EventStream):
     ----------
     child: EventStream instances
         The event stream containing the data to be zipped together
-    control_stream: {EventStream, int}
+    control_stream: {EventStream, int, callable}
         Information to control the buffering. If int, bundle that many
         header together. If an EventStream, pull from the start document
-        ``n_hdrs`` to determine the number of headers to bundle
+        ``n_hdrs`` to determine the number of headers to bundle. If callable,
+        run predicate on both start and stop (note that one should use
+        ``dict.get(key, False)`` so as not to ``KeyError`` when desiginging
+        the predicate). If the predicate is True then the stop is issued
+        and a new stream of events (with its own start) is generated.
+    predicate_against: {('start', stop'), 'start', 'stop}, optional
+        Which documents to run the predicate against.
+        Defaults to ``('start', 'stop')``. Note that the ``start``
+        option will not run against the first start document, as there is
+        nothing to bundle. Additionally if given only a 'start' it is possible
+        that a stop document will not come down if the predicate is never
+        met.
 
     Examples
     --------
@@ -1060,60 +1071,83 @@ class BundleSingleStream(EventStream):
     >>> assert len(L) == 9
     """
 
-    def __init__(self, child, control_stream, **kwargs):
+    def __init__(self, child, control, predicate_against=('start', 'stop'),
+                 **kwargs):
+        self.predicate_against = predicate_against
         self.maxsize = kwargs.pop('maxsize', 100)
         self.buffers = []
         self.desc_start_map = {}
         self.condition = Condition()
         self.prior = ()
-        self.control_stream = control_stream
-        if isinstance(control_stream, int):
+        self.control = control
+        self.start_count = 0
+        if isinstance(control, int):
             EventStream.__init__(self, child=child)
-            self.n_hdrs = control_stream
-        else:
-            EventStream.__init__(self, children=(child, control_stream))
+            self.n_hdrs = control
+            self.predicate = lambda x: self.start_count == self.n_hdrs
+        elif callable(control):
+            EventStream.__init__(self, child=child)
             self.n_hdrs = None
+            self.predicate = control
+        else:
+            EventStream.__init__(self, children=(child, control))
+            self.n_hdrs = None
+            self.predicate = lambda x: self.start_count == self.n_hdrs
         self.generate_provenance()
+        self.emitted = {'start': False, 'descriptor': False}
+        self.start_docs = None
 
     def update(self, x, who=None):
-        if who == self.control_stream:
-            if x[0] == 'start':
+        return_values = []
+        name, docs = self.curate_streams(x, False)
+        if who == self.control:
+            if name == 'start':
                 self.n_hdrs = x[1]['n_hdrs']
         else:
-            if x[0] == 'start':
-                self.buffers.append(deque())
-            self.buffers[-1].append(x)
-        if len(self.buffers) == self.n_hdrs:
-            # if all the docs are of the same type and not an event, issue
-            # new documents which are combined
-            rvs = []
-            while all(self.buffers):
-                first_doc_name = self.buffers[0][0][0]
-                if all([b[0][0] == first_doc_name and b[0][0] != 'event'
-                        for b in self.buffers]):
-                    res = self.dispatch(
-                        tuple([b.popleft() for b in self.buffers]))
-                    rvs.append(self.emit(res))
-                elif any([b[0][0] == 'event' for b in self.buffers]):
-                    for b in self.buffers:
-                        while b:
-                            nd_pair = b[0]
-                            # run the buffers down until no events are left
-                            if nd_pair[0] != 'event':
-                                break
-                            else:
-                                nd_pair = b.popleft()
-                                new_nd_pair = super().event(
-                                    self.refresh_event(nd_pair[1]))
-                                rvs.append(self.emit(new_nd_pair))
+            # Stash the start header in case we issue a stop on the first one
+            if name == 'start':
+                self.start_docs = docs
+            # if a start doc
+            if (name == 'start' and
+                # and we haven't emitted one
+                    self.emitted.get(name, False) and
+                # and to test the cond.
+                    name in self.predicate_against and
+                # and it satisfies the condition
+                    self.predicate(docs)):
+                # Reset the state
+                for k in self.emitted:
+                    self.emitted[k] = False
+                self.start_count = 0
+                self.start_docs = None
+                # Issue a stop
+                return_values.append(super().stop(docs))
+            # If we have emitted that kind of document
+            if self.emitted.get(name, False):
+                # If start stash the parent uids and increment the count
+                if name == 'start':
+                    self.parent_uids.extend([doc['uid'] for doc in docs])
+                    self.start_count += 1
+            elif name != 'stop':
+                # If not a stop emit it
+                return_values.append(getattr(self, name)(docs))
+                if name == 'start':
+                    self.emitted[x[0]] = True
+                    self.start_count += 1
+                elif name == 'descriptor':
+                    self.emitted[x[0]] = True
+            elif (name in self.predicate_against and
+                  (self.predicate(docs) or self.predicate(self.start_docs))
+                  ):
+                # Reset the state
+                for k in self.emitted:
+                    self.emitted[k] = False
+                self.start_count = 0
+                self.start_docs = None
+                # Issue a stop
+                return_values.append(super().stop(docs))
 
-                else:
-                    raise RuntimeError("There is a mismatch of docs, but none "
-                                       "of them are events so we have reached "
-                                       "a potential deadlock, so we raise "
-                                       "this error instead")
-
-            return rvs
+        return [self.emit(r) for r in return_values]
 
 
 class combine_latest(EventStream):
