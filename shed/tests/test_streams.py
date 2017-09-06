@@ -12,6 +12,8 @@
 # See LICENSE.txt for license information.
 #
 ##############################################################################
+# TODO: this should be broken up into a module per node, that way we
+# can test individual nodes without having to test everything
 from numpy.testing import assert_allclose, assert_equal, assert_raises
 from streamz.core import Stream
 
@@ -1376,14 +1378,15 @@ def test_double_eventify(exp_db, start_uid1):
 
 def test_eventify_all(exp_db, start_uid1):
     source = Stream()
+    # source.sink(print)
 
     dp = es.Eventify(source)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
-    dp.sink(print)
+    # dp.sink(print)
 
     ih1 = exp_db[start_uid1]
-    s = exp_db.restream(ih1, fill=True)
+    s = exp_db.restream(ih1)
     for a in s:
         source.emit(a)
 
@@ -1399,7 +1402,7 @@ def test_eventify_all(exp_db, start_uid1):
         assert n in assert_docs
 
     L.clear()
-    s = exp_db.restream(ih1, fill=True)
+    s = exp_db.restream(ih1)
     for a in s:
         source.emit(a)
 

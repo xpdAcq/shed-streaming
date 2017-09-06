@@ -29,6 +29,10 @@ import copy
 # TODO: if mismatch includes error stop doc be more verbose
 
 
+def _update_initial_state_helper(node, attr_list):
+    return {k: copy.deepcopy(getattr(node, k)) for k in attr_list}
+
+
 def star(f):
     """Take tuple and unpack it into args"""
 
@@ -116,6 +120,9 @@ class EventStream(Stream):
     the EventStream properly issues the new document with its name and other
     needed internal flow control.
 
+    Nodes clean themselves when the receive a start document (with a few
+    exceptions, see BundleSingleStream).
+
     """
     # these are sacred kwargs which can never be passed to operator nodes
     pop_kwargs = ['output_info', 'input_info', 'md', 'stream_name',
@@ -193,19 +200,20 @@ class EventStream(Stream):
                 input_info[k] = (v[0], self.children.index(v[1]))
 
         # Build dict of initial state to clear upon new start, maybe
-        self._initial_state = {k: copy.deepcopy(getattr(self, k)) for k in
-                               ['stream_name',
-                                'parent_uids',
-                                'outbound_descriptor_uid',
-                                'md',
-                                'output_info',
-                                'input_info',
-                                'i',
-                                'run_start_uid',
-                                'bypass',
-                                'excep'
-                                ]
-                               }
+        self._initial_state = _update_initial_state_helper(
+            self,
+            ['stream_name',
+             'parent_uids',
+             'outbound_descriptor_uid',
+             'md',
+             'output_info',
+             'input_info',
+             'i',
+             'run_start_uid',
+             'bypass',
+             'excep'
+             ]
+        )
 
     def emit(self, x):
         """ Push data into the stream at this point
@@ -346,7 +354,7 @@ class EventStream(Stream):
 
         self.provenance = d
 
-    def start(self, docs):
+    def start(self, docs, clear=True):
         """
         Issue new start document for input documents
 
@@ -360,6 +368,9 @@ class EventStream(Stream):
         doc: dict
             The document
         """
+        # When we get a start document reset to the initial status
+        if clear:
+            self._clear()
         self.run_start_uid = str(uuid.uuid4())
         self.parent_uids = [doc['uid'] for doc in docs if doc]
         new_start_doc = dict(uid=self.run_start_uid,
@@ -472,8 +483,6 @@ class EventStream(Stream):
                 self.excep = docs
             else:
                 new_stop.update(exit_status='success')
-            self.outbound_descriptor_uid = None
-            self.run_start_uid = None
             return 'stop', new_stop
         elif self.raise_upon_error and self.excep:
             raise self.excep
@@ -638,7 +647,7 @@ class EventStream(Stream):
 
         """
         for k, v in self._initial_state.items():
-            setattr(self, k, v)
+            setattr(self, k, copy.deepcopy(v))
 
 
 class map(EventStream):
@@ -693,6 +702,8 @@ class map(EventStream):
         self.func_args = args
         self.full_event = full_event
         self.generate_provenance(function=func)
+        self._initial_state.update(_update_initial_state_helper(
+            self, ['func_kwargs', 'func_args', 'full_event']))
 
     def event(self, docs):
         try:
@@ -801,11 +812,18 @@ class filter(EventStream):
             self.descriptor_truth_values = {}
         self.generate_provenance(predicate=predicate)
 
+        self._initial_state.update(_update_initial_state_helper(self,
+                                                                ['func_kwargs',
+                                                                 'func_args',
+                                                                 'full_event',
+                                                                 'document_name',
+                                                                 'truth_value']))
+
     def _start_update(self, x, who=None):
         # TODO: should we have something like event_contents for starts?
         name, docs = self.curate_streams(x, False)
         if name == 'start':
-            self.truth_value = None
+            self._clear()
             try:
                 res_args, res_kwargs = self.doc_contents(docs, self.full_event)
                 self.truth_value = self.predicate(*res_args, *self.func_args,
@@ -823,6 +841,7 @@ class filter(EventStream):
         name, docs = self.curate_streams(x, False)
         ret = None
         if name == 'start':
+            self._clear()
             self.descriptor_truth_values = {}
             ret = super().start(docs)
         elif name == 'descriptor':
@@ -914,11 +933,23 @@ class accumulate(EventStream):
         self.full_event = full_event
         if not across_start:
             self.start = self._not_across_start_start
+        else:
+            self.start = self._across_start_start
         self.generate_provenance(function=func)
+        self._initial_state.update(_update_initial_state_helper(self,
+                                   ['func',
+                                    'start',
+                                    'state_key',
+                                    'start_state',
+                                   ]))
 
     def _not_across_start_start(self, docs):
         self.state = self.start_state
         return super().start(docs)
+
+    def _across_start_start(self, docs):
+        # We want to store state so store it
+        return super().start(docs, clear=False)
 
     def event(self, doc):
         # TODO: can accumulate support args/kwargs?
@@ -1346,7 +1377,6 @@ class Eventify(EventStream):
                  document='start',
                  **kwargs):
         # TODO: maybe allow start_key to be a list of relevent keys?
-        self.init_keys = keys
         self.keys = keys
         if document == 'event':
             raise ValueError("Can't eventify event, its an event already")
@@ -1356,7 +1386,9 @@ class Eventify(EventStream):
         self.unseen_docs = ['start', 'descriptor', 'event', 'stop']
 
         EventStream.__init__(self, child, output_info=output_info, **kwargs)
-        self.init_output_info = self.output_info
+        self._initial_state.update(_update_initial_state_helper(
+            self, ['keys', 'document', 'vals', 'emit_event',
+                   'unseen_docs']))
 
     def _extract_info(self, docs):
         # If there are no start keys, then use all the keys
@@ -1380,21 +1412,26 @@ class Eventify(EventStream):
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
         if name == 'start':
-            self.vals = list()
-            self.unseen_docs = ['start', 'descriptor', 'event', 'stop']
-            self.emit_event = False
-            self.keys = self.init_keys
-            self.output_info = self.init_output_info
+            self._clear()
         if self.unseen_docs:
             if name == self.document:
                 self._extract_info(docs)
-                rv = [self.emit(self.dispatch((residual_name, docs))) for
-                      residual_name in self.unseen_docs]
+                rv = []
+                for residual_name in self.unseen_docs:
+                    if residual_name == 'start':
+                        # Don't clear the start yet
+                        rv.append(self.emit(super().start(docs, False)))
+                    else:
+                        rv.append(self.emit(
+                            self.dispatch((residual_name, docs))))
                 self.unseen_docs.clear()
                 return rv
             else:
                 self.unseen_docs.pop(self.unseen_docs.index(name))
-                return self.emit(self.dispatch((name, docs)))
+                if name == 'start':
+                    return self.emit(super().start(docs, False))
+                else:
+                    return self.emit(self.dispatch((name, docs)))
 
     def event(self, docs):
         if not self.emit_event:
@@ -1433,15 +1470,22 @@ class Query(EventStream):
         self.db = db
         self.query_function = query_function
         self.query_decider = query_decider
-        EventStream.__init__(self, child, **kwargs)
+        EventStream.__init__(self, child,
+                             output_info=[('hdr_uid',
+                                           {'dtype': 'str',
+                                            'source': 'query'})],
+                             **kwargs)
         self.generate_provenance(query_function=query_function,
                                  query_decider=query_decider)
-        self.output_info = [('hdr_uid', {'dtype': 'str', 'source': 'query'})]
+        self.uids = []
+        self._initial_state.update(_update_initial_state_helper(self,
+                                                                ['uids',
+                                                                 ]))
 
     def start(self, docs):
+        self._clear()
         # XXX: If we don't have a decider we return all the results
         # TODO: should this issue a stop on failure?
-        self.uids = []
         res = self.query_function(self.db, docs)
         if self.query_decider:
             res = self.query_decider(res, docs)
@@ -1454,7 +1498,7 @@ class Query(EventStream):
                                    "too broad or you need to up the "
                                    "max_n_hdrs.")
         self.md.update(n_hdrs=len(self.uids))
-        return super().start(docs)
+        return super().start(docs, False)
 
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
@@ -1489,9 +1533,13 @@ class QueryUnpacker(EventStream):
         self.db = db
         EventStream.__init__(self, child, **kwargs)
         self.fill = fill
+        self._initial_state.update(_update_initial_state_helper(self,
+                                                                ['fill',]))
 
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
+        if name == 'start':
+            self._clear()
         doc = docs[0]
         if name == 'event':
             return [self.emit(nd) for nd in
