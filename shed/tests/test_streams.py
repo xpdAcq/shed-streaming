@@ -52,6 +52,16 @@ class SinkAssertion(CallbackBase):
         assert self.expected_docs == set(self.docs)
 
 
+def test_clear():
+    s = es.EventStream(md={'hello': 'world'})
+    print(s._initial_state)
+    s.md.update({'hello': 'globe'})
+    print(s._initial_state)
+    assert s.md == {'hello': 'globe'}
+    s._clear()
+    assert s.md == {'hello': 'world'}
+
+
 def test_map(exp_db, start_uid1):
     source = Stream()
 

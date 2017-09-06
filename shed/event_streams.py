@@ -23,6 +23,7 @@ from collections import deque
 
 from streamz.core import Stream, no_default
 from tornado.locks import Condition
+import copy
 
 
 # TODO: if mismatch includes error stop doc be more verbose
@@ -190,6 +191,21 @@ class EventStream(Stream):
                 input_info[k] = (v, 0)
             elif isinstance(v[1], Stream):
                 input_info[k] = (v[0], self.children.index(v[1]))
+
+        # Build dict of initial state to clear upon new start, maybe
+        self._initial_state = {k: copy.deepcopy(getattr(self, k)) for k in
+                               ['stream_name',
+                                'parent_uids',
+                                'outbound_descriptor_uid',
+                                'md',
+                                'output_info',
+                                'input_info',
+                                'i',
+                                'run_start_uid',
+                                'bypass',
+                                'excep'
+                                ]
+                               }
 
     def emit(self, x):
         """ Push data into the stream at this point
@@ -516,7 +532,7 @@ class EventStream(Stream):
 
         n_args = len(args_positions)
         if args_positions and (args_positions[-1] != n_args - 1 or
-                               args_positions[0] != 0):
+                                       args_positions[0] != 0):
             errormsg = """Error, arguments supplied must be a set of integers
             ranging from 0 to number of arguments\n
             Got {} instead""".format(args_positions)
@@ -612,6 +628,17 @@ class EventStream(Stream):
         for k in self.pop_kwargs:
             if k in kwargs:
                 kwargs.pop(k)
+
+    def _clear(self):
+        """
+        Clear the state of the node
+
+        Returns
+        -------
+
+        """
+        for k, v in self._initial_state.items():
+            setattr(self, k, v)
 
 
 class map(EventStream):
@@ -805,7 +832,7 @@ class filter(EventStream):
             if self.descriptor_truth_values[docs[0]['uid']]:
                 ret = ('descriptor', docs)
         elif (name == 'event' and
-              self.descriptor_truth_values[docs[0]['descriptor']]):
+                  self.descriptor_truth_values[docs[0]['descriptor']]):
             ret = super().event(docs)
         elif name == 'stop':
             ret = super().stop(docs)
