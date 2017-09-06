@@ -1404,12 +1404,13 @@ class Query(EventStream):
         if self.query_decider:
             res = self.query_decider(res, docs)
         if res:
-            print(res)
-            self.uids = [next(iter(r.stream(fill=False)))[1]['uid'] for r in res]
+            self.uids = [next(iter(
+                r.stream(fill=False)))[1]['uid'] for r in res]
             if len(self.uids) > self.max_n_hdrs:
                 raise RuntimeError("Query returned more headers than the max "
-                                   "number of headers, either your query was too "
-                                   "broad or you need to up the max_n_hdrs.")
+                                   "number of headers, either your query was "
+                                   "too broad or you need to up the "
+                                   "max_n_hdrs.")
         self.md.update(n_hdrs=len(self.uids))
         return super().start(docs)
 
