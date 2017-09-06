@@ -1286,7 +1286,10 @@ class zip_latest(EventStream):
 
     special_docs_names = ['start', 'descriptor', 'stop']
 
-    def __init__(self, lossless, *children, **kwargs):
+    def __init__(self, lossless, *children, clear_on_lossless_stop=False,
+                 **kwargs):
+        self.clear_on_lossless_stop = clear_on_lossless_stop
+        self.lossless = lossless
         children = (lossless,) + children
         self.last = [None for _ in children]
         self.special_last = {k: [None for _ in children] for k in
@@ -1294,7 +1297,6 @@ class zip_latest(EventStream):
         self.missing = set(children)
         self.special_missing = {k: set(children) for k in
                                 self.special_docs_names}
-        self.lossless = lossless
         self.lossless_buffer = deque()
         # Keep track of the emitted docuement types
         self.lossless_emitted = set()
@@ -1326,6 +1328,17 @@ class zip_latest(EventStream):
                 if name == 'stop':
                     # Clear with each stop doc
                     self.lossless_emitted.clear()
+                    if self.clear_on_lossless_stop:
+                        self.last = [None for _ in self.children]
+                        self.special_last = {k: [None for _ in self.children] for k
+                                             in
+                                             self.special_docs_names}
+                        self.missing = set(self.children)
+                        self.special_missing = {k: set(self.children) for k in
+                                                self.special_docs_names}
+                        self.lossless_buffer = deque()
+                        # Keep track of the emitted docuement types
+                        self.lossless_emitted = set()
                 return self.emit(tuple(local_last))
             # check start and descriptors emitted if not buffer
             if {'start', 'descriptor'} == self.lossless_emitted:
