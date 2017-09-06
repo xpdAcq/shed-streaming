@@ -1314,6 +1314,7 @@ class Eventify(EventStream):
         self.emit_event = False
 
         EventStream.__init__(self, child, output_info=output_info, **kwargs)
+        self.init_output_info = self.output_info
 
     def _extract_info(self, docs):
         # If there are no start keys, then use all the keys
@@ -1352,6 +1353,7 @@ class Eventify(EventStream):
             self.vals = list()
             self.emit_event = False
             self.keys = self.init_keys
+            self.output_info = self.init_output_info
         if name == self.document:
             self._extract_info(docs)
         return getattr(self, name)(docs)
