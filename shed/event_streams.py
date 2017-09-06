@@ -1305,6 +1305,7 @@ class Eventify(EventStream):
                  document='start',
                  **kwargs):
         # TODO: maybe allow start_key to be a list of relevent keys?
+        self.init_keys = keys
         self.keys = keys
         if document == 'event':
             raise ValueError("Can't eventify event, its an event already")
@@ -1350,6 +1351,7 @@ class Eventify(EventStream):
         if name == 'start':
             self.vals = list()
             self.emit_event = False
+            self.keys = self.init_keys
         if name == self.document:
             self._extract_info(docs)
         return getattr(self, name)(docs)
