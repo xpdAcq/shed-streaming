@@ -1311,6 +1311,36 @@ def test_eventify(exp_db, start_uid1):
         assert n in assert_docs
 
 
+def test_double_eventify(exp_db, start_uid1):
+    source = Stream()
+
+    dp = es.Eventify(source,
+                     output_info=[('name', {
+                         'dtype': 'str',
+                         'source': 'testing'})])
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    L.clear()
+    for a in exp_db[-1].documents(fill=True):
+        source.emit(a)
+
+    assert len(L) == 4
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_eventify_all(exp_db, start_uid1):
     source = Stream()
 
@@ -1457,7 +1487,7 @@ def test_query(exp_db, start_uid1):
     s = hdr.documents()
 
     dp = es.Query(exp_db, source, qf,
-                  query_decider=lambda x, y: next(iter(x)))
+                  query_decider=lambda x, y: [next(iter(x))])
     L = dp.sink_to_list()
 
     dp2 = es.QueryUnpacker(exp_db, dp)
@@ -1486,6 +1516,44 @@ def test_query(exp_db, start_uid1):
             assert l[1]['exit_status'] == 'success'
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
+
+
+def test_empty_query(exp_db, start_uid1):
+    source = es.EventStream()
+
+    def qf(db, docs):
+        return db(hello='world')
+
+    def qd(res, docs):
+        try:
+            rv = [next(iter(res))]
+        except StopIteration:
+            rv = []
+        return rv
+
+    hdr = exp_db[start_uid1]
+    s = hdr.documents()
+
+    dp = es.Query(exp_db, source, qf,
+                  query_decider=qd)
+    L = dp.sink_to_list()
+
+    dp2 = es.QueryUnpacker(exp_db, dp)
+    L2 = dp2.sink_to_list()
+
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'start':
+            assert l[1]['n_hdrs'] == 0
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'stop']:
+        assert n in assert_docs
+    assert len(L2) == 0
 
 
 def test_query_many_headers(exp_db):
