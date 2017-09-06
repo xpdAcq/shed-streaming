@@ -1083,7 +1083,7 @@ class BundleSingleStream(EventStream):
             if x[0] == 'start':
                 self.buffers.append(deque())
             self.buffers[-1].append(x)
-        if len(self.buffers) == self.n_hdrs:
+        if len(self.buffers) == self.n_hdrs and who != self.control_stream:
             # if all the docs are of the same type and not an event, issue
             # new documents which are combined
             rvs = []
