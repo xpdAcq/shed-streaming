@@ -1044,6 +1044,13 @@ class BundleSingleStream(EventStream):
         ``dict.get(key, False)`` so as not to ``KeyError`` when desiginging
         the predicate). If the predicate is True then the stop is issued
         and a new stream of events (with its own start) is generated.
+    predicate_against: {('start', stop'), 'start', 'stop}, optional
+        Which documents to run the predicate against.
+        Defaults to ``('start', 'stop')``. Note that the ``start``
+        option will not run against the first start document, as there is
+        nothing to bundle. Additionally if given only a 'start' it is possible
+        that a stop document will not come down if the predicate is never
+        met.
 
     Examples
     --------
