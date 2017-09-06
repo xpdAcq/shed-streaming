@@ -368,6 +368,8 @@ class EventStream(Stream):
         """
         if not self.bypass:
             if self.run_start_uid is None:
+                print(self.stream_name)
+                print(self.md)
                 raise RuntimeError("Received EventDescriptor before "
                                    "RunStart.")
             # If we had to describe the output information then we need an
@@ -776,6 +778,7 @@ class filter(EventStream):
         # TODO: should we have something like event_contents for starts?
         name, docs = self.curate_streams(x, False)
         if name == 'start':
+            self.truth_value = None
             try:
                 res_args, res_kwargs = self.doc_contents(docs, self.full_event)
                 self.truth_value = self.predicate(*res_args, *self.func_args,
