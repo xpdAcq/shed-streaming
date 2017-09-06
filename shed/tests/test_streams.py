@@ -23,6 +23,7 @@ import pytest
 from bluesky.callbacks.core import CallbackBase
 from itertools import zip_longest
 from ..utils import to_event_model
+from pprint import pprint
 
 
 class SinkAssertion(CallbackBase):
@@ -1302,6 +1303,55 @@ def test_zip_latest_double_interleaved(exp_db, start_uid1, start_uid3):
         assert n in assert_docs
     assert len(L) == len(list(exp_db.restream(ih1)))
 
+
+def test_zip_latest_double_clear():
+    source = Stream()
+    source2 = Stream()
+
+    dp = es.zip_latest(source, source2, clear_on_lossless_stop=True)
+    L = dp.sink_to_list()
+    g1 = list(to_event_model([1, 2, 3], [('det', {})]))
+    g2 = list(to_event_model(['a', 'b', 'c'], [('det', {})]))
+    g3 = list(to_event_model([5], [('det', {})]))
+    for b in g1:
+        source.emit(b)
+    for a in g2:
+        source.emit(a)
+    for c in g3:
+        source2.emit(c)
+
+    assert_docs = set()
+    assert len(L) == len(g2)
+    for (name, (l1, l2)), (_, ll1) in zip(L, g2):
+        assert_docs.add(name)
+        assert l1 != l2
+        assert l1 == ll1
+        if name == 'event':
+            assert l2['data']['det'] == 5
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    L.clear()
+    g1 = list(to_event_model([10, 20, 30], [('det', {})]))
+    g2 = list(to_event_model(['aa', 'bb', 'cc'], [('det', {})]))
+    g3 = list(to_event_model([50], [('det', {})]))
+    for b in g1:
+        source.emit(b)
+    for a in g2:
+        source.emit(a)
+    for c in g3:
+        source2.emit(c)
+
+    assert_docs = set()
+    assert len(L) == len(g2)
+    for (name, (l1, l2)), (_, ll1) in zip(L, g2):
+        assert_docs.add(name)
+        assert l1 != l2
+        assert l1 == ll1
+        if name == 'event':
+            assert l2['data']['det'] == 50
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
 
 def test_eventify(exp_db, start_uid1):
     source = Stream()

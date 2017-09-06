@@ -1305,6 +1305,18 @@ class zip_latest(EventStream):
     def update(self, x, who=None):
         name, doc = x
         idx = self.children.index(who)
+        if who == self.lossless and name == 'start' and \
+                self.clear_on_lossless_stop:
+            self.last = [None for _ in self.children]
+            self.special_last = {k: [None for _ in self.children]
+                                 for k in self.special_docs_names}
+            self.missing = set(self.children)
+            self.special_missing = {k: set(self.children) for k in
+                                    self.special_docs_names}
+            self.lossless_buffer.clear()
+            # Keep track of the emitted docuement types
+            self.lossless_emitted = set()
+
         if name in self.special_docs_names:
             local_missing = self.special_missing[name]
             local_last = self.special_last[name]
@@ -1328,16 +1340,6 @@ class zip_latest(EventStream):
                 if name == 'stop':
                     # Clear with each stop doc
                     self.lossless_emitted.clear()
-                    if self.clear_on_lossless_stop:
-                        self.last = [None for _ in self.children]
-                        self.special_last = {k: [None for _ in self.children]
-                                             for k in self.special_docs_names}
-                        self.missing = set(self.children)
-                        self.special_missing = {k: set(self.children) for k in
-                                                self.special_docs_names}
-                        self.lossless_buffer = deque()
-                        # Keep track of the emitted docuement types
-                        self.lossless_emitted = set()
                 return self.emit(tuple(local_last))
             # check start and descriptors emitted if not buffer
             if {'start', 'descriptor'} == self.lossless_emitted:
@@ -1346,6 +1348,7 @@ class zip_latest(EventStream):
                     local_last[0] = self.lossless_buffer.popleft()
                     L.append(self.emit(tuple(local_last)))
                 return L
+
 
 
 class Eventify(EventStream):
