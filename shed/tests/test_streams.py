@@ -12,6 +12,8 @@
 # See LICENSE.txt for license information.
 #
 ##############################################################################
+# TODO: this should be broken up into a module per node, that way we
+# can test individual nodes without having to test everything
 from numpy.testing import assert_allclose, assert_equal, assert_raises
 from streamz.core import Stream
 
@@ -20,6 +22,7 @@ from ..event_streams import dstar, star
 import pytest
 from bluesky.callbacks.core import CallbackBase
 from itertools import zip_longest
+from ..utils import to_event_model
 
 
 class SinkAssertion(CallbackBase):
@@ -49,6 +52,16 @@ class SinkAssertion(CallbackBase):
                 print(doc.get('reason', None))
             assert not doc.get('reason', None)
         assert self.expected_docs == set(self.docs)
+
+
+def test_clear():
+    s = es.EventStream(md={'hello': 'world'})
+    print(s._initial_state)
+    s.md.update({'hello': 'globe'})
+    print(s._initial_state)
+    assert s.md == {'hello': 'globe'}
+    s._clear()
+    assert s.md == {'hello': 'world'}
 
 
 def test_map(exp_db, start_uid1):
@@ -649,16 +662,16 @@ def test_filter_descriptor_negative(exp_db, start_uid1):
 def test_filter_full_header(exp_db, start_uid1):
     source = Stream()
 
-    def f(docs):
-        d = docs[0]
+    def f(d):
         return d['sample_name'] != 'hi'
 
-    def g(docs):
-        d = docs[0]
+    def g(d):
         return d['sample_name'] == 'hi'
 
-    dp = es.filter(f, source, input_info=None, document_name='start')
-    dp2 = es.filter(g, source, input_info=None, document_name='start')
+    dp = es.filter(f, source, input_info={0: ()}, document_name='start',
+                   full_event=True)
+    dp2 = es.filter(g, source, input_info={0: ()}, document_name='start',
+                    full_event=True)
 
     L = dp.sink_to_list()
     L2 = dp2.sink_to_list()
@@ -744,6 +757,28 @@ def test_filter_fail(exp_db, start_uid1):
     s = exp_db.restream(ih1, fill=True)
     for a in s:
         source.emit(a)
+
+
+def test_filter_fail_no_except(exp_db, start_uid1):
+    source = Stream()
+
+    def f(img1):
+        return img1 is not None
+
+    dp = es.filter(f, source,
+                   input_info={'img1': 'no_such_key'},
+                   document_name='start', full_event=True,
+                   raise_upon_error=False)
+    dp.sink(star(SinkAssertion(expected_docs={'start', 'stop'})))
+    L = dp.sink_to_list()
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+    for n, d in L:
+        if n == 'stop':
+            assert d['exit_status'] == 'failure'
 
 
 def test_filter_full_event(exp_db, start_uid1):
@@ -1268,6 +1303,56 @@ def test_zip_latest_double_interleaved(exp_db, start_uid1, start_uid3):
     assert len(L) == len(list(exp_db.restream(ih1)))
 
 
+def test_zip_latest_double_clear():
+    source = Stream()
+    source2 = Stream()
+
+    dp = es.zip_latest(source, source2, clear_on_lossless_stop=True)
+    L = dp.sink_to_list()
+    g1 = list(to_event_model([1, 2, 3], [('det', {})]))
+    g2 = list(to_event_model(['a', 'b', 'c'], [('det', {})]))
+    g3 = list(to_event_model([5], [('det', {})]))
+    for b in g1:
+        source.emit(b)
+    for a in g2:
+        source.emit(a)
+    for c in g3:
+        source2.emit(c)
+
+    assert_docs = set()
+    assert len(L) == len(g2)
+    for (name, (l1, l2)), (_, ll1) in zip(L, g2):
+        assert_docs.add(name)
+        assert l1 != l2
+        assert l1 == ll1
+        if name == 'event':
+            assert l2['data']['det'] == 5
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+    L.clear()
+    g1 = list(to_event_model([10, 20, 30], [('det', {})]))
+    g2 = list(to_event_model(['aa', 'bb', 'cc'], [('det', {})]))
+    g3 = list(to_event_model([50], [('det', {})]))
+    for b in g1:
+        source.emit(b)
+    for a in g2:
+        source.emit(a)
+    for c in g3:
+        source2.emit(c)
+
+    assert_docs = set()
+    assert len(L) == len(g2)
+    for (name, (l1, l2)), (_, ll1) in zip(L, g2):
+        assert_docs.add(name)
+        assert l1 != l2
+        assert l1 == ll1
+        if name == 'event':
+            assert l2['data']['det'] == 50
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_eventify(exp_db, start_uid1):
     source = Stream()
 
@@ -1343,14 +1428,15 @@ def test_double_eventify(exp_db, start_uid1):
 
 def test_eventify_all(exp_db, start_uid1):
     source = Stream()
+    # source.sink(print)
 
     dp = es.Eventify(source)
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
-    dp.sink(print)
+    # dp.sink(print)
 
     ih1 = exp_db[start_uid1]
-    s = exp_db.restream(ih1, fill=True)
+    s = exp_db.restream(ih1)
     for a in s:
         source.emit(a)
 
@@ -1366,7 +1452,7 @@ def test_eventify_all(exp_db, start_uid1):
         assert n in assert_docs
 
     L.clear()
-    s = exp_db.restream(ih1, fill=True)
+    s = exp_db.restream(ih1)
     for a in s:
         source.emit(a)
 
@@ -1471,6 +1557,33 @@ def test_eventify_all_descriptor(exp_db, start_uid1):
         if l[0] == 'event':
             for k in set(dk.keys()) | set(l[1]['data'].keys()):
                 assert l[1]['data'][k] == dk[k]
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_eventify_no_event():
+    source = Stream()
+
+    dp = es.Eventify(source, 'source',
+                     output_info=[('name', {
+                         'dtype': 'str',
+                         'source': 'testing'})])
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+
+    for a in to_event_model([], output_info=[('img', {})]):
+        source.emit(a)
+
+    assert len(L) == 4
+    assert_docs = set()
+    # zip them since we know they're same length and order
+    for l in L:
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            assert l[1]['data']['name'] == 'to_event_model'
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
     for n in ['start', 'descriptor', 'event', 'stop']:
