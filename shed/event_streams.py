@@ -967,7 +967,7 @@ class accumulate(EventStream):
         else:
             data[self.state_key] = self.state
             try:
-                result = self.func(data)
+                result = self.func(**data)
             except Exception as e:
                 return super().stop(e)
             self.state = result

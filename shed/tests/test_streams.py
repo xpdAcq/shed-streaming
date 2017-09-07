@@ -815,7 +815,7 @@ def test_scan(exp_db, start_uid1):
     def add(img1, img2):
         return img1 + img2
 
-    dp = es.accumulate(dstar(add), source,
+    dp = es.accumulate(add, source,
                        state_key='img1',
                        input_info={'img2': 'pe1_image'},
                        output_info=[('img', {
@@ -852,7 +852,7 @@ def test_scan_fail(exp_db, start_uid1):
     def add(img1, img2):
         return img1 + img2
 
-    dp = es.accumulate(dstar(add), source,
+    dp = es.accumulate(add, source,
                        state_key='i',
                        input_info={'i': 'pe1_image'},
                        output_info=[('img', {
@@ -891,7 +891,7 @@ def test_scan_start_func(exp_db, start_uid1):
     def get_array(img2):
         return img2
 
-    dp = es.accumulate(dstar(add), source,
+    dp = es.accumulate(add, source,
                        start=dstar(get_array),
                        state_key='img1',
                        input_info={'img2': 'pe1_image'},
@@ -928,7 +928,7 @@ def test_scan_full_event(exp_db, start_uid1):
     def add(i, j):
         return i + j
 
-    dp = es.accumulate(dstar(add), source,
+    dp = es.accumulate(add, source,
                        state_key='i',
                        input_info={'j': 'seq_num'},
                        output_info=[('total', {
@@ -966,7 +966,7 @@ def test_scan_multi_header_False(exp_db, start_uid1):
     def add(img1, img2):
         return img1 + img2
 
-    dp = es.accumulate(dstar(add), source,
+    dp = es.accumulate(add, source,
                        state_key='img1',
                        input_info={'img2': 'pe1_image'},
                        output_info=[('img', {
@@ -1021,7 +1021,7 @@ def test_scan_multi_header_True(exp_db, start_uid1):
     def add(img1, img2):
         return img1 + img2
 
-    dp = es.accumulate(dstar(add), source,
+    dp = es.accumulate(add, source,
                        state_key='img1',
                        input_info={'img2': 'pe1_image'},
                        output_info=[('img', {
