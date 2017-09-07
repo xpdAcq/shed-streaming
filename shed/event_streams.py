@@ -294,6 +294,12 @@ class EventStream(Stream):
         if isinstance(nds[0], tuple):
             names, docs = list(zzip(*nds))
             if len(set(names)) > 1:
+                print('ERROR REPORT=======================')
+                print(self.stream_name)
+                print(self.md)
+                print(self.__class__.__name__)
+                print(docs)
+                print(names)
                 raise RuntimeError('Misaligned Streams')
             name = names[0]
             newdocs = list()
@@ -1000,7 +1006,7 @@ class zip(EventStream):
         self.buffers = [deque() for _ in children]
         self.condition = Condition()
         self.prior = ()
-        EventStream.__init__(self, children=children)
+        EventStream.__init__(self, children=children, **kwargs)
 
     def update(self, x, who=None):
         L = self.buffers[self.children.index(who)]
