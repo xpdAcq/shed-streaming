@@ -876,20 +876,13 @@ def test_scan_fail_input_info(exp_db, start_uid1):
     def add(img1, img2):
         return img1 + img2
 
-    dp = es.accumulate(dstar(add), source,
-                       state_key='i',
-                       input_info={'i': 'pe1_image', 'i2': 'pe2_image'},
-                       output_info=[('img', {
-                           'dtype': 'array',
-                           'source': 'testing'})])
-    sa = SinkAssertion()
-    sa.expected_docs = {'start', 'descriptor', 'event', 'stop'}
-    dp.sink(star(sa))
-
-    ih1 = exp_db[start_uid1]
-    s = exp_db.restream(ih1, fill=True)
-    for a in s:
-        source.emit(a)
+    # just test this raises ValueError
+    es.accumulate(dstar(add), source,
+                  state_key='i',
+                  input_info={'i': 'pe1_image', 'i2': 'pe2_image'},
+                  output_info=[('img', {
+                               'dtype': 'array',
+                               'source': 'testing'})])
 
 
 def test_scan_start_func(exp_db, start_uid1):
