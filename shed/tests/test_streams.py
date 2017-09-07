@@ -849,8 +849,10 @@ def test_scan(exp_db, start_uid1):
 def test_scan_fail(exp_db, start_uid1):
     source = Stream()
 
-    # some dummy function
-    dp = es.accumulate(dstar(lambda a, b : a), source,
+    def add(img1, img2):
+        return img1 + img2
+
+    dp = es.accumulate(dstar(add), source,
                        state_key='i',
                        input_info={'i': 'pe1_image'},
                        output_info=[('img', {
@@ -871,11 +873,8 @@ def test_scan_fail_input_info(exp_db, start_uid1):
     ''' should fail on bad input info (more than one input).'''
     source = Stream()
 
-    def add(img1, img2):
-        return img1 + img2
-
     # just test this raises ValueError
-    es.accumulate(dstar(add), source,
+    es.accumulate(dstar(lambda x: x), source,
                   state_key='i',
                   input_info={'i': 'pe1_image', 'i2': 'pe2_image'},
                   output_info=[('img', {
