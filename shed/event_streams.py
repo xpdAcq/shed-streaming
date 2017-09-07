@@ -1350,7 +1350,6 @@ class zip_latest(EventStream):
                 return L
 
 
-
 class Eventify(EventStream):
     """Generate events from data in starts
 

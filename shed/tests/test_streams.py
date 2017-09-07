@@ -23,7 +23,6 @@ import pytest
 from bluesky.callbacks.core import CallbackBase
 from itertools import zip_longest
 from ..utils import to_event_model
-from pprint import pprint
 
 
 class SinkAssertion(CallbackBase):
@@ -1352,6 +1351,7 @@ def test_zip_latest_double_clear():
             assert l2['data']['det'] == 50
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
+
 
 def test_eventify(exp_db, start_uid1):
     source = Stream()
