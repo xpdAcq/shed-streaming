@@ -328,6 +328,8 @@ c) override multiple document methods (see eventify) although this is rare</p>
 follows the pattern of <code class="docutils literal"><span class="pre">super().document_name(new_document)</span></code>. This way
 the EventStream properly issues the new document with its name and other
 needed internal flow control.</p>
+<p>Nodes clean themselves when the receive a start document (with a few
+exceptions, see BundleSingleStream).</p>
 <dl class="method">
 <dt id="shed.event_streams.EventStream.curate_streams">
 <code class="descname">curate_streams</code><span class="sig-paren">(</span><em>nds</em>, <em>outbound</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#EventStream.curate_streams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.EventStream.curate_streams" title="Permalink to this definition">¶</a></dt>
@@ -395,6 +397,32 @@ Otherwise (name, (doc,))</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="shed.event_streams.EventStream.doc_contents">
+<code class="descname">doc_contents</code><span class="sig-paren">(</span><em>docs</em>, <em>full_event=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#EventStream.doc_contents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.EventStream.doc_contents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide some of the event data as a dict, which may be used as kwargs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>docs</strong> (<em>tuple of dicts</em>)</li>
+<li><strong>full_event</strong> (<em>bool, optional</em>) – If True expose the data from full event, else only expose data
+from the ‘data’ dictionary inside the event, defaults to False</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>args</strong> (<em>tuple</em>) – The arguments to be passed to a function</li>
+<li><strong>kwargs</strong> (<em>dict</em>) – The keyword arguments to be passed to a function</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="shed.event_streams.EventStream.emit">
 <code class="descname">emit</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#EventStream.emit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.EventStream.emit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Push data into the stream at this point</p>
@@ -418,32 +446,6 @@ from a node function and emit it into a subsampled output stream.
 <li><strong>name</strong> (<em>‘event’</em>)</li>
 <li><strong>doc</strong> (<em>dict</em>) – The document</li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="shed.event_streams.EventStream.event_contents">
-<code class="descname">event_contents</code><span class="sig-paren">(</span><em>docs</em>, <em>full_event=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#EventStream.event_contents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.EventStream.event_contents" title="Permalink to this definition">¶</a></dt>
-<dd><p>Provide some of the event data as a dict, which may be used as kwargs</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>docs</strong> (<em>tuple of dicts</em>)</li>
-<li><strong>full_event</strong> (<em>bool, optional</em>) – If True expose the data from full event, else only expose data
-from the ‘data’ dictionary inside the event, defaults to False</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
-<li><strong>args</strong> (<em>tuple</em>) – The arguments to be passed to a function</li>
-<li><strong>kwargs</strong> (<em>dict</em>) – The keyword arguments to be passed to a function</li>
-</ul>
-</p>
 </td>
 </tr>
 </tbody>
@@ -511,7 +513,7 @@ created, but a stop document will be issued.</p>
 
 <dl class="method">
 <dt id="shed.event_streams.EventStream.start">
-<code class="descname">start</code><span class="sig-paren">(</span><em>docs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#EventStream.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.EventStream.start" title="Permalink to this definition">¶</a></dt>
+<code class="descname">start</code><span class="sig-paren">(</span><em>docs</em>, <em>clear=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#EventStream.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.EventStream.start" title="Permalink to this definition">¶</a></dt>
 <dd><p>Issue new start document for input documents</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -611,26 +613,13 @@ If none supplied, then load all start keys into event</li>
 </pre></div>
 </div>
 <dl class="method">
-<dt id="shed.event_streams.Eventify.dispatch">
-<code class="descname">dispatch</code><span class="sig-paren">(</span><em>nds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Eventify.dispatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Eventify.dispatch" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dispatch to methods expecting particular doc types.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nds</strong> (<em>tuple</em>) – Name document pair</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New name document pair</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">tuple</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="shed.event_streams.Eventify.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>docs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Eventify.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Eventify.event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="shed.event_streams.Eventify.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>x</em>, <em>who=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Eventify.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Eventify.update" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1031,7 +1020,7 @@ only expose the data from the event</li>
 
 <dl class="class">
 <dt id="shed.event_streams.zip_latest">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">zip_latest</code><span class="sig-paren">(</span><em>lossless</em>, <em>*children</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#zip_latest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.zip_latest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">zip_latest</code><span class="sig-paren">(</span><em>lossless</em>, <em>*children</em>, <em>clear_on_lossless_stop=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#zip_latest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.zip_latest" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Combine multiple streams together to a stream of tuples</p>
 <p>This will emit a new tuple of the elements from the lossless stream paired
