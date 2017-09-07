@@ -927,6 +927,8 @@ class accumulate(EventStream):
         self.state = start
         EventStream.__init__(self, child, input_info=input_info,
                              output_info=output_info)
+        if len(input_info) != 1:
+            raise ValueError("Error : only one key allowed for accumulate")
         self.full_event = full_event
         if not across_start:
             self.start = self._not_across_start_start
@@ -952,6 +954,7 @@ class accumulate(EventStream):
             self.state = {}
             # Note that there is only one input_info key allowed for this
             # stream function so this works
+
             self.state = data[next(iter(self.input_info.keys()))]
         # in case we need a bit more flexibility eg lambda x: np.empty(x.shape)
         elif hasattr(self.state, '__call__'):
