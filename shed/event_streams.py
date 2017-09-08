@@ -935,6 +935,8 @@ class accumulate(EventStream):
                              output_info=output_info)
         if input_info is not None and len(input_info) != 1:
             raise ValueError("Error : only one key allowed for accumulate")
+        # only one input expected
+        self.input_key = list(self.input_info)[0]
         self.full_event = full_event
         if not across_start:
             self.start = self._not_across_start_start
@@ -967,7 +969,7 @@ class accumulate(EventStream):
         else:
             data[self.state_key] = self.state
             try:
-                result = self.func(**data)
+                result = self.func(data[self.state_key], data[self.input_key])
             except Exception as e:
                 return super().stop(e)
             self.state = result
