@@ -1123,12 +1123,13 @@ def test_zip_strict_fail():
     for a in s:
         source.emit(a)
 
-    assert_docs = set()
-    for name, (l1, l2) in L:
-        assert_docs.add(name)
-        assert l1 != l2
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+
+@pytest.mark.xfail(raises=NotImplementedError)
+def test_zip_not_imp_fail():
+    source = Stream()
+    source2 = Stream()
+
+    es.zip(source, source2, zip_type='not implemented').sink_to_list()
 
 
 def test_zip_truncate():
