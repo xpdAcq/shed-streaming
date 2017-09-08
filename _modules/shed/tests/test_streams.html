@@ -1534,12 +1534,20 @@
                       <span class="n">output_info</span><span class="o">=</span><span class="p">[</span>
                           <span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span> <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;testing&#39;</span><span class="p">}),</span>
                           <span class="p">(</span><span class="s1">&#39;name2&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span> <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;testing&#39;</span><span class="p">})])</span>
+
+    <span class="c1"># try without output_info, no keys</span>
+    <span class="n">dp3</span> <span class="o">=</span> <span class="n">es</span><span class="o">.</span><span class="n">Eventify</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+
     <span class="n">L</span> <span class="o">=</span> <span class="n">dp</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
     <span class="n">dp</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="n">star</span><span class="p">(</span><span class="n">SinkAssertion</span><span class="p">(</span><span class="kc">False</span><span class="p">)))</span>
     <span class="n">dp</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
     <span class="n">L2</span> <span class="o">=</span> <span class="n">dp2</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
     <span class="n">dp2</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="n">star</span><span class="p">(</span><span class="n">SinkAssertion</span><span class="p">(</span><span class="kc">False</span><span class="p">)))</span>
     <span class="n">dp2</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+
+    <span class="n">L3</span> <span class="o">=</span> <span class="n">dp3</span><span class="o">.</span><span class="n">sink_to_list</span><span class="p">()</span>
+    <span class="n">dp3</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="n">star</span><span class="p">(</span><span class="n">SinkAssertion</span><span class="p">(</span><span class="kc">False</span><span class="p">)))</span>
+    <span class="n">dp3</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
 
     <span class="n">ih1</span> <span class="o">=</span> <span class="n">exp_db</span><span class="p">[</span><span class="n">start_uid1</span><span class="p">]</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">exp_db</span><span class="o">.</span><span class="n">restream</span><span class="p">(</span><span class="n">ih1</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1548,12 +1556,15 @@
 
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
     <span class="n">assert_docs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="n">assert_docs2</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">assert_docs3</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="c1"># zip them since we know they&#39;re same length and order</span>
-    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">l2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">L2</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">l2</span><span class="p">,</span> <span class="n">l3</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">L2</span><span class="p">,</span> <span class="n">L3</span><span class="p">):</span>
         <span class="n">assert_docs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">assert_docs2</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l2</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">assert_docs3</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l3</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;test&#39;</span>
             <span class="k">assert</span> <span class="n">l2</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;test&#39;</span>
@@ -1561,6 +1572,9 @@
         <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
             <span class="k">assert</span> <span class="n">l2</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;exit_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;success&#39;</span>
+        <span class="k">if</span> <span class="n">l3</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">l3</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data_keys&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="p">{}</span>
+
     <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]:</span>
         <span class="k">assert</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">assert_docs</span></div>
 
