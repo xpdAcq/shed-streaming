@@ -1023,6 +1023,20 @@
         <span class="n">source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="test_scan_fail_input_info"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_scan_fail_input_info">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">xfail</span><span class="p">(</span><span class="n">raises</span><span class="o">=</span><span class="ne">ValueError</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">test_scan_fail_input_info</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; should fail on bad input info (more than one input).&#39;&#39;&#39;</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+
+    <span class="c1"># just test this raises ValueError</span>
+    <span class="n">es</span><span class="o">.</span><span class="n">accumulate</span><span class="p">(</span><span class="n">dstar</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">),</span> <span class="n">source</span><span class="p">,</span>
+                  <span class="n">state_key</span><span class="o">=</span><span class="s1">&#39;i&#39;</span><span class="p">,</span>
+                  <span class="n">input_info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;i&#39;</span><span class="p">:</span> <span class="s1">&#39;pe1_image&#39;</span><span class="p">,</span> <span class="s1">&#39;i2&#39;</span><span class="p">:</span> <span class="s1">&#39;pe2_image&#39;</span><span class="p">},</span>
+                  <span class="n">output_info</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;img&#39;</span><span class="p">,</span> <span class="p">{</span>
+                               <span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;array&#39;</span><span class="p">,</span>
+                               <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;testing&#39;</span><span class="p">})])</span></div>
+
+
 <div class="viewcode-block" id="test_scan_start_func"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.test_streams.test_scan_start_func">[docs]</a><span class="k">def</span> <span class="nf">test_scan_start_func</span><span class="p">(</span><span class="n">exp_db</span><span class="p">,</span> <span class="n">start_uid1</span><span class="p">):</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
 

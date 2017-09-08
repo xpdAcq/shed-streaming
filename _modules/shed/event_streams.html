@@ -1082,6 +1082,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">start</span>
         <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="n">input_info</span><span class="p">,</span>
                              <span class="n">output_info</span><span class="o">=</span><span class="n">output_info</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_info</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Error : only one key allowed for accumulate&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">full_event</span> <span class="o">=</span> <span class="n">full_event</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">across_start</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_not_across_start_start</span>
