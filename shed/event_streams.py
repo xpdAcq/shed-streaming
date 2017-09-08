@@ -1364,6 +1364,9 @@ class Eventify(EventStream):
         If none supplied, then load all start keys into event
     output_info: list of tuples, optional
         describes the resulting stream
+    document : {'start', 'descriptor', 'stop}, optional
+        The document to generate events from. Defaults to 'start'
+
 
     Examples
     --------
