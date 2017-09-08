@@ -927,6 +927,8 @@ class accumulate(EventStream):
         self.state = start
         EventStream.__init__(self, child, input_info=input_info,
                              output_info=output_info)
+        if len(input_info) != 1:
+            raise ValueError("Error : only one key allowed for accumulate")
         self.full_event = full_event
         if not across_start:
             self.start = self._not_across_start_start

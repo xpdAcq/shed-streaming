@@ -868,6 +868,20 @@ def test_scan_fail(exp_db, start_uid1):
         source.emit(a)
 
 
+@pytest.mark.xfail(raises=ValueError)
+def test_scan_fail_input_info(exp_db, start_uid1):
+    ''' should fail on bad input info (more than one input).'''
+    source = Stream()
+
+    # just test this raises ValueError
+    es.accumulate(dstar(lambda x: x), source,
+                  state_key='i',
+                  input_info={'i': 'pe1_image', 'i2': 'pe2_image'},
+                  output_info=[('img', {
+                               'dtype': 'array',
+                               'source': 'testing'})])
+
+
 def test_scan_start_func(exp_db, start_uid1):
     source = Stream()
 
