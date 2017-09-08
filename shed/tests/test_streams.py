@@ -1090,6 +1090,71 @@ def test_zip(exp_db, start_uid1, start_uid3):
         assert n in assert_docs
 
 
+def test_zip_strict():
+    source = Stream()
+    source2 = Stream()
+
+    L = es.zip(source, source2, zip_type='strict').sink_to_list()
+    s = to_event_model([1, 2, 3], output_info=[('det', {})])
+    s2 = to_event_model(['a', 'b', 'c'], output_info=[('det', {})])
+    for b in s2:
+        source2.emit(b)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
+        assert l1 != l2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+@pytest.mark.xfail(raises=RuntimeError)
+def test_zip_strict_fail():
+    source = Stream()
+    source2 = Stream()
+
+    L = es.zip(source, source2, zip_type='strict').sink_to_list()
+    s = to_event_model([1, 2, 3], output_info=[('det', {})])
+    s2 = to_event_model(['a', 'b'], output_info=[('det', {})])
+    for b in s2:
+        source2.emit(b)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    for name, (l1, l2) in L:
+        assert_docs.add(name)
+        assert l1 != l2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
+def test_zip_truncate():
+    source = Stream()
+    source2 = Stream()
+
+    L = es.zip(source, source2, zip_type='truncate').sink_to_list()
+    s = list(to_event_model([1, 2], output_info=[('det', {})]))
+    s2 = list(to_event_model(['a', 'b', 'c'], output_info=[('det', {})]))
+    for b in s2:
+        source2.emit(b)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    assert len(L) == len(s)
+    for (name, (l1, l2)), (n1, ll1), (n2, ll2) in zip(L, s, s2):
+        assert_docs.add(name)
+        assert l1 != l2
+        assert l1 == ll1
+        if name != 'stop':
+            assert l2 == ll2
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 def test_bundle(exp_db, start_uid1, start_uid3):
     source = Stream()
     source2 = Stream()

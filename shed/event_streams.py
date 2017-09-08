@@ -1003,14 +1003,33 @@ class zip(EventStream):
     >>> assert len(L) == 6
     """
 
-    def __init__(self, *children, **kwargs):
+    def __init__(self, *children, zip_type='extend', **kwargs):
         self.maxsize = kwargs.pop('maxsize', 10)
         self.buffers = [deque() for _ in children]
         self.condition = Condition()
         self.prior = ()
         EventStream.__init__(self, children=children, **kwargs)
+        if zip_type == 'strict':
+            self.update = self._strict_update
+        elif zip_type == 'extend':
+            self.update = self._extend_update
+        elif zip_type == 'truncate':
+            self.update = self._truncate_update
+        else:
+            raise NotImplementedError()
 
-    def update(self, x, who=None):
+    def _strict_update(self, x, who=None):
+        L = self.buffers[self.children.index(who)]
+        L.append(x)
+        if len(L) == 1 and all(self.buffers):
+            tup = tuple(buf.popleft() for buf in self.buffers)
+            self.condition.notify_all()
+            self.prior = tup
+            return self.emit(tup)
+        elif len(L) > self.maxsize:
+            return self.condition.wait()
+
+    def _extend_update(self, x, who=None):
         L = self.buffers[self.children.index(who)]
         L.append(x)
         if len(L) == 1 and all(self.buffers):
@@ -1026,6 +1045,21 @@ class zip(EventStream):
         elif len(L) > self.maxsize:
             return self.condition.wait()
 
+    def _truncate_update(self, x, who=None):
+        L = self.buffers[self.children.index(who)]
+        L.append(x)
+        if len(L) == 1 and all(self.buffers):
+            for i in range(len(self.buffers)):
+                # If the docs don't match, do nothing
+                if self.buffers[i][0][0] != self.buffers[0][0][0]:
+                    self.buffers[i].popleft()
+            if all(self.buffers):
+                tup = tuple(buf.popleft() for buf in self.buffers)
+                self.condition.notify_all()
+                self.prior = tup
+                return self.emit(tup)
+        elif len(L) > self.maxsize:
+            return self.condition.wait()
 
 class Bundle(EventStream):
     """Combine multiple event streams into one
