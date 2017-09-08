@@ -981,6 +981,13 @@ class zip(EventStream):
     ----------
     children: EventStream instances
         The event streams to be zipped together
+    zip_type: {'extend', 'strict', 'truncate}, optional
+        What type of zip to perform. If strict then the streams are assumed
+        to be equal length, and raises an error otherwise. If extend then
+        streams in the secondary positions (not the first arg) will be extended
+        to match the length of the first stream with the latest event repeated
+        as needed. If truncate documents will be emitted to match the length
+        of the first stream by shortenin the secondary streams.
 
     Examples
     --------
@@ -1060,6 +1067,7 @@ class zip(EventStream):
                 return self.emit(tup)
         elif len(L) > self.maxsize:
             return self.condition.wait()
+
 
 class Bundle(EventStream):
     """Combine multiple event streams into one
