@@ -1115,7 +1115,7 @@ def test_zip_strict_fail():
     source = Stream()
     source2 = Stream()
 
-    L = es.zip(source, source2, zip_type='strict').sink_to_list()
+    es.zip(source, source2, zip_type='strict')
     s = to_event_model([1, 2, 3], output_info=[('det', {})])
     s2 = to_event_model(['a', 'b'], output_info=[('det', {})])
     for b in s2:
