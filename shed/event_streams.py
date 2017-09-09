@@ -294,6 +294,12 @@ class EventStream(Stream):
         if isinstance(nds[0], tuple):
             names, docs = list(zzip(*nds))
             if len(set(names)) > 1:
+                print('ERROR REPORT=======================')
+                print(self.stream_name)
+                print(self.md)
+                print(self.__class__.__name__)
+                print(docs)
+                print(names)
                 raise RuntimeError('Misaligned Streams')
             name = names[0]
             newdocs = list()
@@ -927,7 +933,7 @@ class accumulate(EventStream):
         self.state = start
         EventStream.__init__(self, child, input_info=input_info,
                              output_info=output_info)
-        if len(input_info) != 1:
+        if input_info is not None and len(input_info) != 1:
             raise ValueError("Error : only one key allowed for accumulate")
         self.full_event = full_event
         if not across_start:
@@ -975,6 +981,13 @@ class zip(EventStream):
     ----------
     children: EventStream instances
         The event streams to be zipped together
+    zip_type: {'extend', 'strict', 'truncate}, optional
+        What type of zip to perform. If strict then the streams are assumed
+        to be equal length, and raises an error otherwise. If extend then
+        streams in the secondary positions (not the first arg) will be extended
+        to match the length of the first stream with the latest event repeated
+        as needed. If truncate documents will be emitted to match the length
+        of the first stream by shortenin the secondary streams.
 
     Examples
     --------
@@ -997,14 +1010,33 @@ class zip(EventStream):
     >>> assert len(L) == 6
     """
 
-    def __init__(self, *children, **kwargs):
+    def __init__(self, *children, zip_type='extend', **kwargs):
         self.maxsize = kwargs.pop('maxsize', 10)
         self.buffers = [deque() for _ in children]
         self.condition = Condition()
         self.prior = ()
-        EventStream.__init__(self, children=children)
+        EventStream.__init__(self, children=children, **kwargs)
+        if zip_type == 'strict':
+            self.update = self._strict_update
+        elif zip_type == 'extend':
+            self.update = self._extend_update
+        elif zip_type == 'truncate':
+            self.update = self._truncate_update
+        else:
+            raise NotImplementedError()
 
-    def update(self, x, who=None):
+    def _strict_update(self, x, who=None):
+        L = self.buffers[self.children.index(who)]
+        L.append(x)
+        if len(L) == 1 and all(self.buffers):
+            tup = tuple(buf.popleft() for buf in self.buffers)
+            self.condition.notify_all()
+            self.prior = tup
+            return self.emit(tup)
+        elif len(L) > self.maxsize:
+            return self.condition.wait()
+
+    def _extend_update(self, x, who=None):
         L = self.buffers[self.children.index(who)]
         L.append(x)
         if len(L) == 1 and all(self.buffers):
@@ -1017,6 +1049,22 @@ class zip(EventStream):
             self.condition.notify_all()
             self.prior = tup
             return self.emit(tup)
+        elif len(L) > self.maxsize:
+            return self.condition.wait()
+
+    def _truncate_update(self, x, who=None):
+        L = self.buffers[self.children.index(who)]
+        L.append(x)
+        if len(L) == 1 and all(self.buffers):
+            for i in range(len(self.buffers)):
+                # If the docs don't match, throw away
+                if self.buffers[i][0][0] != self.buffers[0][0][0]:
+                    self.buffers[i].popleft()
+            if all(self.buffers):
+                tup = tuple(buf.popleft() for buf in self.buffers)
+                self.condition.notify_all()
+                self.prior = tup
+                return self.emit(tup)
         elif len(L) > self.maxsize:
             return self.condition.wait()
 
