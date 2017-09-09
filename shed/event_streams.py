@@ -1057,7 +1057,7 @@ class zip(EventStream):
         L.append(x)
         if len(L) == 1 and all(self.buffers):
             for i in range(len(self.buffers)):
-                # If the docs don't match, do nothing
+                # If the docs don't match, throw away
                 if self.buffers[i][0][0] != self.buffers[0][0][0]:
                     self.buffers[i].popleft()
             if all(self.buffers):
