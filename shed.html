@@ -981,14 +981,23 @@ only expose the data from the event</li>
 
 <dl class="class">
 <dt id="shed.event_streams.zip">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">zip</code><span class="sig-paren">(</span><em>*children</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.zip" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">zip</code><span class="sig-paren">(</span><em>*children</em>, <em>zip_type='extend'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.zip" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Combine multiple streams together into a stream of tuples</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>children</strong> (<em>EventStream instances</em>) – The event streams to be zipped together</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>children</strong> (<em>EventStream instances</em>) – The event streams to be zipped together</li>
+<li><strong>zip_type</strong> (<em>{‘extend’, ‘strict’, ‘truncate}, optional</em>) – What type of zip to perform. If strict then the streams are assumed
+to be equal length, and raises an error otherwise. If extend then
+streams in the secondary positions (not the first arg) will be extended
+to match the length of the first stream with the latest event repeated
+as needed. If truncate documents will be emitted to match the length
+of the first stream by shortenin the secondary streams.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1012,11 +1021,6 @@ only expose the data from the event</li>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span>
 </pre></div>
 </div>
-<dl class="method">
-<dt id="shed.event_streams.zip.update">
-<code class="descname">update</code><span class="sig-paren">(</span><em>x</em>, <em>who=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#zip.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.zip.update" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="class">
