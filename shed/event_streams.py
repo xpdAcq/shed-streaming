@@ -903,6 +903,9 @@ class accumulate(EventStream):
     across_start: bool, optional
         If the accumulation should continue across multiple starts, defaults
         to False
+    returns_state : bool, optional
+        Determines whether the function given to the accumulator returns state
+        or not. Default is false.
 
     Examples
     --------
@@ -926,17 +929,25 @@ class accumulate(EventStream):
                  full_event=False,
                  output_info=None,
                  input_info=None, start=no_default,
-                 across_start=False):
+                 across_start=False, returns_state=False):
         self.state_key = state_key
         self.func = func
         self.start_state = start
         self.state = start
+        self.returns_state = returns_state
         EventStream.__init__(self, child, input_info=input_info,
                              output_info=output_info)
-        if input_info is not None and len(input_info) != 1:
-            raise ValueError("Error : only one key allowed for accumulate")
+        if input_info is not None and len(input_info) > 1:
+            errormsg = "Error : only one or no keys allowed for accumulate."
+            errormsg += "Got {} keys".format(len(input_info))
+            raise ValueError(errormsg)
         # only one input expected
-        self.input_key = list(self.input_info)[0]
+        if len(self.input_info) == 1:
+            self.input_key = list(self.input_info)[0]
+        else:  # it can only be zero
+            # no input key is meant for things like counters, that take no
+            # input
+            self.input_key = None
         self.full_event = full_event
         if not across_start:
             self.start = self._not_across_start_start
@@ -962,18 +973,34 @@ class accumulate(EventStream):
             self.state = {}
             # Note that there is only one input_info key allowed for this
             # stream function so this works
+
+            if self.input_info is None:
+                errormsg = "Error, if no input, initial state must be defined."
+                raise ValueError(errormsg)
+
             self.state = data[next(iter(self.input_info.keys()))]
+            result = self.state
         # in case we need a bit more flexibility eg lambda x: np.empty(x.shape)
         elif hasattr(self.state, '__call__'):
             self.state = self.state(data)
+            result = self.state
         else:
             data[self.state_key] = self.state
             try:
-                result = self.func(data[self.state_key], data[self.input_key])
+                if self.input_key is not None:
+                    result = self.func(data[self.state_key],
+                                       data[self.input_key])
+                else:
+                    # for things like counters
+                    result = self.func(data[self.state_key])
+                if self.returns_state:
+                    state, result = result
+                else:
+                    state = result
             except Exception as e:
                 return super().stop(e)
-            self.state = result
-        return super().event(self.issue_event(self.state))
+            self.state = state
+        return super().event(self.issue_event(result))
 
 
 class zip(EventStream):

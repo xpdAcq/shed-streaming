@@ -23,6 +23,7 @@ import pytest
 from bluesky.callbacks.core import CallbackBase
 from itertools import zip_longest
 from ..utils import to_event_model
+import numpy as np
 
 
 class SinkAssertion(CallbackBase):
@@ -809,7 +810,7 @@ def test_filter_full_event(exp_db, start_uid1):
         assert n in assert_docs
 
 
-def test_scan(exp_db, start_uid1):
+def test_accumulate(exp_db, start_uid1):
     source = Stream()
 
     def add(img1, img2):
@@ -821,6 +822,7 @@ def test_scan(exp_db, start_uid1):
                        output_info=[('img', {
                            'dtype': 'array',
                            'source': 'testing'})])
+
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
@@ -845,8 +847,48 @@ def test_scan(exp_db, start_uid1):
         assert n in assert_docs
 
 
+def test_accumulate_counter(exp_db, start_uid1):
+    source = Stream()
+
+    def counter(img1):
+        return img1 + 1
+
+    def start_initializer(img):
+        return np.zeros_like(img)
+
+    dp = es.accumulate(counter, source,
+                       state_key='img1',
+                       start=start_initializer,
+                       output_info=[('img', {
+                           'dtype': 'array',
+                           'source': 'testing'})])
+
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+
+    ih1 = exp_db[start_uid1]
+    s = exp_db.restream(ih1, fill=True)
+    for a in s:
+        source.emit(a)
+
+    assert_docs = set()
+    state = None
+    for o, l in zip(exp_db.restream(ih1, fill=True), L):
+        assert_docs.add(l[0])
+        if l[0] == 'event':
+            if state is None:
+                state = o[1]['data']['pe1_image']
+            else:
+                state += 1
+            assert_allclose(state, l[1]['data']['img'])
+        if l[0] == 'stop':
+            assert l[1]['exit_status'] == 'success'
+    for n in ['start', 'descriptor', 'event', 'stop']:
+        assert n in assert_docs
+
+
 @pytest.mark.xfail(raises=TypeError)
-def test_scan_fail(exp_db, start_uid1):
+def test_accumulate_fail(exp_db, start_uid1):
     source = Stream()
 
     def add(img1, img2):
@@ -869,7 +911,7 @@ def test_scan_fail(exp_db, start_uid1):
 
 
 @pytest.mark.xfail(raises=ValueError)
-def test_scan_fail_input_info(exp_db, start_uid1):
+def test_accumulate_fail_input_info(exp_db, start_uid1):
     ''' should fail on bad input info (more than one input).'''
     source = Stream()
 
@@ -882,7 +924,7 @@ def test_scan_fail_input_info(exp_db, start_uid1):
                                'source': 'testing'})])
 
 
-def test_scan_start_func(exp_db, start_uid1):
+def test_accumulate_start_func(exp_db, start_uid1):
     source = Stream()
 
     def add(img1, img2):
@@ -922,7 +964,7 @@ def test_scan_start_func(exp_db, start_uid1):
         assert n in assert_docs
 
 
-def test_scan_full_event(exp_db, start_uid1):
+def test_acumulate_full_event(exp_db, start_uid1):
     source = Stream()
 
     def add(i, j):
@@ -960,7 +1002,7 @@ def test_scan_full_event(exp_db, start_uid1):
         assert n in assert_docs
 
 
-def test_scan_multi_header_False(exp_db, start_uid1):
+def test_accumulate_multi_header_False(exp_db, start_uid1):
     source = Stream()
 
     def add(img1, img2):
@@ -1015,7 +1057,7 @@ def test_scan_multi_header_False(exp_db, start_uid1):
         assert n in assert_docs
 
 
-def test_scan_multi_header_True(exp_db, start_uid1):
+def test_accumulate_multi_header_True(exp_db, start_uid1):
     source = Stream()
 
     def add(img1, img2):
