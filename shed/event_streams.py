@@ -24,7 +24,7 @@ from collections import deque
 from streamz.core import Stream, no_default
 from tornado.locks import Condition
 import copy
-from pprint import pprint  
+from pprint import pprint
 
 
 # TODO: if mismatch includes error stop doc be more verbose
@@ -544,7 +544,6 @@ class EventStream(Stream):
                     try:
                         inner = docs[position]['data'][data_key]
                     except KeyError:
-                        
                         print('ERROR REPORT=======================')
                         print(self.stream_name)
                         print(self.md)
@@ -1026,7 +1025,8 @@ class zip(EventStream):
         self.buffers = [deque() for _ in children]
         self.condition = Condition()
         self.prior = ()
-        EventStream.__init__(self, children=children, zip_type=zip_type, **kwargs)
+        EventStream.__init__(self, children=children, zip_type=zip_type,
+                             **kwargs)
         if zip_type == 'strict':
             self.update = self._strict_update
         elif zip_type == 'extend':
