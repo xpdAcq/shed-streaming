@@ -179,6 +179,7 @@
 <span class="kn">from</span> <span class="nn">streamz.core</span> <span class="k">import</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">no_default</span>
 <span class="kn">from</span> <span class="nn">tornado.locks</span> <span class="k">import</span> <span class="n">Condition</span>
 <span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pprint</span>
 
 
 <span class="c1"># TODO: if mismatch includes error stop doc be more verbose</span>
@@ -453,8 +454,9 @@
                 <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stream_name</span><span class="p">)</span>
                 <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="p">)</span>
                 <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
+                <span class="n">pprint</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
                 <span class="nb">print</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;=====================&#39;</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Misaligned Streams&#39;</span><span class="p">)</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">newdocs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
@@ -694,7 +696,15 @@
                                        <span class="s1">&#39;near future please just use an empty &#39;</span>
                                        <span class="s1">&#39;data_key tuple&#39;</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">inner</span> <span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="n">position</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="n">data_key</span><span class="p">]</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">inner</span> <span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="n">position</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="n">data_key</span><span class="p">]</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR REPORT=======================&#39;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stream_name</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                        <span class="n">pprint</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;=====================&#39;</span><span class="p">)</span>
                 <span class="n">kwargs</span><span class="p">[</span><span class="n">input_kwarg</span><span class="p">]</span> <span class="o">=</span> <span class="n">inner</span>
 
         <span class="n">args_positions</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">int</span><span class="p">)]</span>
@@ -1170,7 +1180,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span> <span class="o">=</span> <span class="p">[</span><span class="n">deque</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">condition</span> <span class="o">=</span> <span class="n">Condition</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="p">()</span>
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="n">children</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="n">children</span><span class="p">,</span> <span class="n">zip_type</span><span class="o">=</span><span class="n">zip_type</span><span class="p">,</span>
+                             <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">zip_type</span> <span class="o">==</span> <span class="s1">&#39;strict&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">update</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strict_update</span>
         <span class="k">elif</span> <span class="n">zip_type</span> <span class="o">==</span> <span class="s1">&#39;extend&#39;</span><span class="p">:</span>
@@ -1757,8 +1768,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_clear</span><span class="p">()</span>
         <span class="n">doc</span> <span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="n">doc</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;hdr_uid&#39;</span><span class="p">]]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;==============&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;==============&#39;</span><span class="p">)</span>
             <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">nd</span><span class="p">)</span> <span class="k">for</span> <span class="n">nd</span> <span class="ow">in</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="n">doc</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;hdr_uid&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">documents</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="p">)]</span></div></div>
+                    <span class="n">a</span><span class="o">.</span><span class="n">documents</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="p">)]</span></div></div>
 
 
 <div class="viewcode-block" id="split"><a class="viewcode-back" href="../../shed.html#shed.event_streams.split">[docs]</a><span class="k">class</span> <span class="nc">split</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1782,11 +1797,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">descs</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="fill_events.start"><a class="viewcode-back" href="../../shed.html#shed.event_streams.fill_events.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">descs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">return</span> <span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">docs</span></div>
 
 <div class="viewcode-block" id="fill_events.descriptor"><a class="viewcode-back" href="../../shed.html#shed.event_streams.fill_events.descriptor">[docs]</a>    <span class="k">def</span> <span class="nf">descriptor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">descs</span> <span class="o">=</span> <span class="n">docs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">return</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="n">docs</span></div>
 
 <div class="viewcode-block" id="fill_events.event"><a class="viewcode-back" href="../../shed.html#shed.event_streams.fill_events.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
