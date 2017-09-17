@@ -24,6 +24,7 @@ from collections import deque
 from streamz.core import Stream, no_default
 from tornado.locks import Condition
 import copy
+from pprint import pprint
 
 
 # TODO: if mismatch includes error stop doc be more verbose
@@ -298,8 +299,9 @@ class EventStream(Stream):
                 print(self.stream_name)
                 print(self.md)
                 print(self.__class__.__name__)
-                print(docs)
+                pprint(docs)
                 print(names)
+                print('=====================')
                 raise RuntimeError('Misaligned Streams')
             name = names[0]
             newdocs = list()
@@ -539,7 +541,15 @@ class EventStream(Stream):
                                        'near future please just use an empty '
                                        'data_key tuple')
                 else:
-                    inner = docs[position]['data'][data_key]
+                    try:
+                        inner = docs[position]['data'][data_key]
+                    except KeyError:
+                        print('ERROR REPORT=======================')
+                        print(self.stream_name)
+                        print(self.md)
+                        print(self.__class__.__name__)
+                        pprint(docs)
+                        print('=====================')
                 kwargs[input_kwarg] = inner
 
         args_positions = [k for k in kwargs.keys() if isinstance(k, int)]
@@ -1015,7 +1025,8 @@ class zip(EventStream):
         self.buffers = [deque() for _ in children]
         self.condition = Condition()
         self.prior = ()
-        EventStream.__init__(self, children=children, **kwargs)
+        EventStream.__init__(self, children=children, zip_type=zip_type,
+                             **kwargs)
         if zip_type == 'strict':
             self.update = self._strict_update
         elif zip_type == 'extend':
@@ -1602,8 +1613,12 @@ class QueryUnpacker(EventStream):
             self._clear()
         doc = docs[0]
         if name == 'event':
+            a = self.db[doc['data']['hdr_uid']]
+            print('==============')
+            print(a)
+            print('==============')
             return [self.emit(nd) for nd in
-                    self.db[doc['data']['hdr_uid']].documents(fill=self.fill)]
+                    a.documents(fill=self.fill)]
 
 
 class split(EventStream):
@@ -1627,11 +1642,11 @@ class fill_events(EventStream):
         self.descs = None
 
     def start(self, docs):
-        self.descs = None
+        self.descs = []
         return 'start', docs
 
     def descriptor(self, docs):
-        self.descs = docs
+        self.descs.append(docs[0])
         return 'descriptor', docs
 
     def event(self, docs):
