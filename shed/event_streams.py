@@ -470,13 +470,13 @@ class EventStream(Stream):
         if not self.bypass:
             if self.run_start_uid is None:
                 raise RuntimeError("Received RunStop before RunStart.")
-            new_stop = dict(uid=str(uuid.uuid4()),
+            new_stop = self.md
+
+            new_stop.update(dict(uid=str(uuid.uuid4()),
                             time=time.time(),
                             run_start=self.run_start_uid,
                             provenance=self.provenance,
-                            parents=self.parent_uids,
-                            md=self.md
-                            )
+                            parents=self.parent_uids))
             if isinstance(docs, Exception):
                 self.bypass = True
                 print('ERROR REPORT=======================')
