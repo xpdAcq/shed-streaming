@@ -132,7 +132,7 @@ class EventStream(Stream):
     def __init__(self, child=None, children=None,
                  *, output_info=None, input_info=None, md=None,
                  stream_name=None,
-                 raise_upon_error=True,
+                 raise_upon_error=True, keep_start=False,
                  **kwargs):
         """Initialize the stream
 
@@ -148,6 +148,8 @@ class EventStream(Stream):
             describes the resulting stream
         md: dict, optional
             Additional metadata to be added to the run start document
+        keep_start : decide whether or not to keep the metadata from previous
+        start document
 
         Notes
         ------
@@ -177,6 +179,8 @@ class EventStream(Stream):
 
         self.parent_uids = None
         self.outbound_descriptor_uid = None
+
+        self.keep_start=keep_start
 
         self.md = md
         self.md.update(**kwargs)
@@ -381,7 +385,11 @@ class EventStream(Stream):
             self._clear()
         self.run_start_uid = str(uuid.uuid4())
         self.parent_uids = [doc['uid'] for doc in docs if doc]
-        new_start_doc = dict(uid=self.run_start_uid,
+        new_start_doc = dict()
+        if self.keep_start:
+            for doc in docs:
+                new_start_doc.update(doc)
+        new_start_doc.update(uid=self.run_start_uid,
                              time=time.time(), **self.md)
 
         self.bypass = False
