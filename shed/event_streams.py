@@ -550,6 +550,8 @@ class EventStream(Stream):
                         print(self.__class__.__name__)
                         pprint(docs)
                         print('=====================')
+                        if self.raise_upon_error:
+                            raise
                 kwargs[input_kwarg] = inner
 
         args_positions = [k for k in kwargs.keys() if isinstance(k, int)]

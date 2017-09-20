@@ -1,12 +1,12 @@
-from streamz import Stream
+import numpy as np
 import pytest
-from numpy.testing import assert_allclose, assert_raises, assert_equal
+from numpy.testing import assert_allclose
+from streamz import Stream
 
 from shed import event_streams as es
 from shed.event_streams import star
 from shed.tests.utils import SinkAssertion
 from shed.utils import to_event_model
-import numpy as np
 
 source = Stream()
 
@@ -93,7 +93,7 @@ def test_map_no_input_info(full_event):
         assert set(assert_docs) == {'start', 'descriptor', 'event', 'stop'}
 
 
-def test_map_full_event(exp_db, start_uid1):
+def test_map_full_event():
     source = Stream()
 
     def add5(i):
@@ -109,8 +109,10 @@ def test_map_full_event(exp_db, start_uid1):
     dp.sink(star(SinkAssertion(False)))
     L = dp.sink_to_list()
 
-    ih1 = exp_db[start_uid1]
-    s = exp_db.restream(ih1, fill=True)
+    s = list(to_event_model(
+        [np.random.random((10, 10)) for _ in range(5)],
+        output_info=[('pe1_image', {'dtype': 'array'})]
+    ))
     for a in s:
         source.emit(a)
 
@@ -122,22 +124,19 @@ def test_map_full_event(exp_db, start_uid1):
                 full_event=True)
 
     assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+    for l, sz in zip(L, s):
         assert_docs.add(l[0])
         if l[0] == 'event':
-            print(l[1])
-            print(s[1]['seq_num'])
             assert_allclose(l[1]['data']['i'],
-                            s[1]['seq_num'] + 5)
+                            sz[1]['seq_num'] + 5)
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
             assert l[1]['provenance'] == prov
-        assert l[1] != s[1]
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+        assert l[1] != sz[1]
+    assert set(assert_docs) == {'start', 'descriptor', 'event', 'stop'}
 
 
-def test_double_map(exp_db, start_uid1):
+def test_double_map():
     source = Stream()
     source2 = Stream()
 
@@ -154,26 +153,27 @@ def test_double_map(exp_db, start_uid1):
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
-    ih1 = exp_db[start_uid1]
-    s = exp_db.restream(ih1, fill=True)
+    s = list(to_event_model(
+        [np.random.random((10, 10)) for _ in range(5)],
+        output_info=[('pe1_image', {'dtype': 'array'})]
+    ))
     for a in s:
         source.emit(a)
         source2.emit(a)
 
     assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+    for l, sz in zip(L, s):
         assert_docs.add(l[0])
         if l[0] == 'event':
             assert_allclose(l[1]['data']['img'],
-                            add_imgs(s[1]['data']['pe1_image'],
-                                     s[1]['data']['pe1_image']))
+                            add_imgs(sz[1]['data']['pe1_image'],
+                                     sz[1]['data']['pe1_image']))
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    assert set(assert_docs) == {'start', 'descriptor', 'event', 'stop'}
 
 
-def test_double_internal_map(exp_db, start_uid1):
+def test_double_internal_map():
     source = Stream()
 
     def div(img1, ct):
@@ -189,25 +189,28 @@ def test_double_internal_map(exp_db, start_uid1):
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion(False)))
 
-    ih1 = exp_db[start_uid1]
-    s = exp_db.restream(ih1, fill=True)
+    s = list(to_event_model(
+        [(_, np.random.random((10, 10))) for _ in range(5)],
+        output_info=[('pe1_image', {'dtype': 'array'}),
+                     ('I0', {'dtype': 'float'})]
+    ))
     for a in s:
         source.emit(a)
 
     assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+    for l, sz in zip(L, s):
         assert_docs.add(l[0])
         if l[0] == 'event':
-            assert_allclose(l[1]['data']['img'], div(s[1]['data']['pe1_image'],
-                                                     s[1]['data']['I0']))
+            assert_allclose(l[1]['data']['img'],
+                            div(sz[1]['data']['pe1_image'],
+                                sz[1]['data']['I0']))
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'success'
-    for n in ['start', 'descriptor', 'event', 'stop']:
-        assert n in assert_docs
+    assert set(assert_docs) == {'start', 'descriptor', 'event', 'stop'}
 
 
 @pytest.mark.xfail(raises=TypeError)
-def test_map_fail(exp_db, start_uid1):
+def test_map_fail():
     source = Stream()
 
     def add5(img):
@@ -221,13 +224,15 @@ def test_map_fail(exp_db, start_uid1):
                 output_info=oi)
     dp.sink(star(SinkAssertion()))
 
-    ih1 = exp_db[start_uid1]
-    s = exp_db.restream(ih1, fill=True)
+    s = list(to_event_model(
+        [np.random.random((10, 10)) for _ in range(5)],
+        output_info=[('pe1_image', {'dtype': 'array'})]
+    ))
     for a in s:
         source.emit(a)
 
 
-def test_map_fail_dont_except(exp_db, start_uid1):
+def test_map_fail_dont_except():
     source = Stream()
 
     def add5(img):
@@ -242,16 +247,17 @@ def test_map_fail_dont_except(exp_db, start_uid1):
     L = dp.sink_to_list()
     dp.sink(star(SinkAssertion()))
 
-    ih1 = exp_db[start_uid1]
-    s = exp_db.restream(ih1, fill=True)
+    s = list(to_event_model(
+        [np.random.random((10, 10)) for _ in range(5)],
+        output_info=[('pe1_image', {'dtype': 'array'})]
+    ))
     for a in s:
         source.emit(a)
 
     assert_docs = set()
-    for l, s in zip(L, exp_db.restream(ih1, fill=True)):
+    for l, sz in zip(L, s):
         assert_docs.add(l[0])
         if l[0] == 'stop':
             assert l[1]['exit_status'] == 'failure'
-        assert l[1] != s[1]
-    for n in ['start', 'descriptor', 'stop']:
-        assert n in assert_docs
+        assert l[1] != sz[1]
+    assert set(assert_docs) == {'start', 'descriptor', 'stop'}
