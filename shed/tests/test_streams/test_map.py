@@ -143,7 +143,7 @@ def test_double_map():
     def add_imgs(img1, img2):
         return img1 + img2
 
-    dp = es.map((add_imgs), es.zip(source, source2),
+    dp = es.map(add_imgs, es.zip(source, source2),
                 input_info={'img1': ('pe1_image', 0),
                             'img2': ('pe1_image', 1)},
                 output_info=[
@@ -218,7 +218,7 @@ def test_map_fail():
 
     ii = {'i': 'pe1_image'}
     oi = [('image', {'dtype': 'array', 'source': 'testing'})]
-    dp = es.map((add5),
+    dp = es.map(add5,
                 source,
                 input_info=ii,
                 output_info=oi)
