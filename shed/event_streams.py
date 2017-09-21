@@ -381,8 +381,9 @@ class EventStream(Stream):
             self._clear()
         self.run_start_uid = str(uuid.uuid4())
         self.parent_uids = [doc['uid'] for doc in docs if doc]
-        new_start_doc = dict(uid=self.run_start_uid,
-                             time=time.time(), **self.md)
+        new_start_doc = self.md
+        new_start_doc.update(dict(uid=self.run_start_uid,
+                             time=time.time()))
 
         self.bypass = False
         return 'start', new_start_doc
