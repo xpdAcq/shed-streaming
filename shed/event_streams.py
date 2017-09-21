@@ -1070,9 +1070,10 @@ class zip(EventStream):
         L = self.buffers[self.children.index(who)]
         L.append(x)
         if len(L) == 1 and all(self.buffers):
-            for i in range(len(self.buffers)):
+            for i in range(1, len(self.buffers)):
                 # If the docs don't match, throw away
-                if self.buffers[i][0][0] != self.buffers[0][0][0]:
+                while (self.buffers[0][0][0] != self.buffers[i][0][0] and
+                       self.buffers[i]):
                     self.buffers[i].popleft()
             if all(self.buffers):
                 tup = tuple(buf.popleft() for buf in self.buffers)
