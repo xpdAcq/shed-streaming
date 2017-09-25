@@ -1486,6 +1486,7 @@ class Eventify(EventStream):
 
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
+        print(name)
         if name == 'start':
             self._clear()
         if self.unseen_docs:
