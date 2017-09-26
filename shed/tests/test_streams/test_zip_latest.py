@@ -10,9 +10,12 @@ from streamz.core import Stream
     (5, 5, 'forward', {}),
     (5, 2, 'forward', {}),
     (2, 5, 'forward', {}),
-    (5, 5, 'forward', {}),
+    (5, 5, 'reverse', {}),
     (5, 2, 'reverse', {}),
     (2, 5, 'reverse', {}),
+    (5, 5, 'interleaved', {}),
+    (5, 2, 'interleaved', {}),
+    (2, 5, 'interleaved', {}),
 
 ])
 def test_zip_latest(n, n2, order, kwargs):
