@@ -1,10 +1,9 @@
-from itertools import zip_longest
-from streamz.core import Stream
-import pytest
 import numpy as np
-
+import pytest
+from numpy.testing import assert_raises, assert_equal
 from shed import event_streams as es
 from shed.utils import to_event_model
+from streamz.core import Stream
 
 
 @pytest.mark.parametrize(('n', 'n2', 'order', 'kwargs'), [
@@ -56,7 +55,7 @@ def test_zip_latest(n, n2, order, kwargs):
         assert_docs = set()
         for name, (l1, l2) in L:
             assert_docs.add(name)
-            assert l1 != l2
+            assert_raises(AssertionError, assert_equal, l1, l2)
         assert set(assert_docs) == {'start', 'descriptor', 'event', 'stop'}
         assert len(L) == len(s)
 

@@ -1,7 +1,7 @@
-import pytest
-from streamz import Stream
 import numpy as np
-from numpy.testing import assert_allclose, assert_raises, assert_equal
+import pytest
+from numpy.testing import assert_raises, assert_equal
+from streamz import Stream
 
 from shed import event_streams as es
 from shed.utils import to_event_model
