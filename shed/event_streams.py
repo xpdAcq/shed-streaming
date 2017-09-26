@@ -1486,10 +1486,11 @@ class Eventify(EventStream):
 
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
-        print(name)
         if name == 'start':
             self._clear()
-        if self.unseen_docs:
+        # If we haven't seen this current type of doc
+        if name in self.unseen_docs:
+            # If the name of the current doc is the one we want to eventify
             if name == self.document:
                 self._extract_info(docs)
                 rv = []
