@@ -212,3 +212,23 @@ def test_eventify_descriptor_all(s):
             if l[0] == 'stop':
                 assert l[1]['exit_status'] == 'success'
         assert set(assert_docs) == {'start', 'descriptor', 'event', 'stop'}
+
+
+@pytest.mark.xfail(raises=RuntimeError)
+def test_eventify_fail():
+    source = Stream()
+
+    dp = es.Eventify(source, 'name', 'name', 'name',
+                     output_info=[('name', {'dtype': 'str',
+                                            'source': 'testing'}),
+                                  ('name2', {'dtype': 'str',
+                                             'source': 'testing'})
+                                  ])
+    L = dp.sink_to_list()
+    dp.sink(star(SinkAssertion(False)))
+    dp.sink(print)
+
+    for _ in range(2):
+        L.clear()
+        for a in s1:
+            source.emit(a)

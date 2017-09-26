@@ -1478,10 +1478,10 @@ class Eventify(EventStream):
             for key in self.keys:
                 self.output_info.append((key, {}))
 
+        # TODO: not very happy about this, could cause issues
         if len(self.output_info) == 1:
             self.vals = self.vals[0]
-        else:
-            if len(self.output_info) != len(self.vals):
+        elif len(self.output_info) != len(self.vals):
                 raise RuntimeError('The output_info does not match the values')
 
     def update(self, x, who=None):
