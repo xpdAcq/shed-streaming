@@ -347,6 +347,7 @@ def test_stop_before_start():
     for _ in range(2):
         for d in s:
             source.emit(d)
+    del m
 
 
 @pytest.mark.xfail(raises=RuntimeError,
@@ -364,3 +365,4 @@ def test_event_before_start():
     for _ in range(2):
         for d in s:
             source.emit(d)
+    del m

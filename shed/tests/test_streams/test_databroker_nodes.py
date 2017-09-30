@@ -139,6 +139,7 @@ def test_query_too_many_headers(exp_db):
 
     for a in s:
         source.emit(a)
+    del q
 
 
 def test_fill_events(exp_db, start_uid1):
