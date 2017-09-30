@@ -6,5 +6,5 @@ setup(
     packages=find_packages(),
     # description='data processing module',
     zip_safe=False,
-    url='http:/github.com/xpdAcq/shed', install_requires=['matplotlib']
+    url='http:/github.com/xpdAcq/shed',
 )
