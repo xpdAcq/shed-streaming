@@ -31,17 +31,6 @@ def start_uid1(exp_db):
     return str(exp_db[2]['start']['uid'])
 
 
-@pytest.fixture(scope='function')
-def start_uid2(exp_db):
-    assert 'start_uid2' in exp_db[4]['start']
-    return str(exp_db[4]['start']['uid'])
-
-
-@pytest.fixture(scope='function')
-def start_uid3(exp_db):
-    assert 'start_uid3' in exp_db[6]['start']
-    return str(exp_db[6]['start']['uid'])
-
 
 @pytest.fixture(scope='module')
 def img_size():

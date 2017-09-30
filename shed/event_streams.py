@@ -132,7 +132,7 @@ class EventStream(Stream):
     def __init__(self, child=None, children=None,
                  *, output_info=None, input_info=None, md=None,
                  stream_name=None,
-                 raise_upon_error=True,
+                 raise_upon_error=False,
                  **kwargs):
         """Initialize the stream
 
@@ -381,8 +381,9 @@ class EventStream(Stream):
             self._clear()
         self.run_start_uid = str(uuid.uuid4())
         self.parent_uids = [doc['uid'] for doc in docs if doc]
-        new_start_doc = dict(uid=self.run_start_uid,
-                             time=time.time(), **self.md)
+        new_start_doc = self.md
+        new_start_doc.update(dict(uid=self.run_start_uid,
+                             time=time.time()))
 
         self.bypass = False
         return 'start', new_start_doc
@@ -470,13 +471,13 @@ class EventStream(Stream):
         if not self.bypass:
             if self.run_start_uid is None:
                 raise RuntimeError("Received RunStop before RunStart.")
-            new_stop = dict(uid=str(uuid.uuid4()),
+            new_stop = self.md
+
+            new_stop.update(dict(uid=str(uuid.uuid4()),
                             time=time.time(),
                             run_start=self.run_start_uid,
                             provenance=self.provenance,
-                            parents=self.parent_uids,
-                            md=self.md
-                            )
+                            parents=self.parent_uids))
             if isinstance(docs, Exception):
                 self.bypass = True
                 print('ERROR REPORT=======================')
@@ -550,6 +551,8 @@ class EventStream(Stream):
                         print(self.__class__.__name__)
                         pprint(docs)
                         print('=====================')
+                        if self.raise_upon_error:
+                            raise
                 kwargs[input_kwarg] = inner
 
         args_positions = [k for k in kwargs.keys() if isinstance(k, int)]
@@ -936,13 +939,13 @@ class accumulate(EventStream):
                  full_event=False,
                  output_info=None,
                  input_info=None, start=no_default,
-                 across_start=False):
+                 across_start=False, **kwargs):
         self.state_key = state_key
         self.func = func
         self.start_state = start
         self.state = start
         EventStream.__init__(self, child, input_info=input_info,
-                             output_info=output_info)
+                             output_info=output_info, **kwargs)
         if input_info is not None and len(input_info) != 1:
             raise ValueError("Error : only one key allowed for accumulate")
         self.full_event = full_event
@@ -1067,9 +1070,10 @@ class zip(EventStream):
         L = self.buffers[self.children.index(who)]
         L.append(x)
         if len(L) == 1 and all(self.buffers):
-            for i in range(len(self.buffers)):
+            for i in range(1, len(self.buffers)):
                 # If the docs don't match, throw away
-                if self.buffers[i][0][0] != self.buffers[0][0][0]:
+                while (self.buffers[0][0][0] != self.buffers[i][0][0] and
+                       self.buffers[i]):
                     self.buffers[i].popleft()
             if all(self.buffers):
                 tup = tuple(buf.popleft() for buf in self.buffers)
@@ -1474,17 +1478,19 @@ class Eventify(EventStream):
             for key in self.keys:
                 self.output_info.append((key, {}))
 
+        # TODO: not very happy about this, could cause issues
         if len(self.output_info) == 1:
             self.vals = self.vals[0]
-        else:
-            if len(self.output_info) != len(self.vals):
+        elif len(self.output_info) != len(self.vals):
                 raise RuntimeError('The output_info does not match the values')
 
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
         if name == 'start':
             self._clear()
-        if self.unseen_docs:
+        # If we haven't seen this current type of doc
+        if name in self.unseen_docs:
+            # If the name of the current doc is the one we want to eventify
             if name == self.document:
                 self._extract_info(docs)
                 rv = []
