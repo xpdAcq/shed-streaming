@@ -173,7 +173,7 @@
 <li class="toctree-l2"><a class="reference internal" href="shed.tests.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shed.tests.html#module-shed.tests.conftest">shed.tests.conftest module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shed.tests.html#module-shed.tests.test_against_runengine">shed.tests.test_against_runengine module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="shed.tests.html#module-shed.tests.test_streams">shed.tests.test_streams module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shed.tests.html#shed-tests-test-streams-module">shed.tests.test_streams module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shed.tests.html#module-shed.tests.utils">shed.tests.utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shed.tests.html#module-shed.tests">Module contents</a></li>
 </ul>
@@ -273,7 +273,7 @@ header together. If an EventStream, pull from the start document
 
 <dl class="class">
 <dt id="shed.event_streams.EventStream">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">EventStream</code><span class="sig-paren">(</span><em>child=None</em>, <em>children=None</em>, <em>*</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>md=None</em>, <em>stream_name=None</em>, <em>raise_upon_error=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#EventStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.EventStream" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">EventStream</code><span class="sig-paren">(</span><em>child=None</em>, <em>children=None</em>, <em>*</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>md=None</em>, <em>stream_name=None</em>, <em>raise_upon_error=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#EventStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.EventStream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">streamz.core.Stream</span></code></p>
 <p>The EventStream class handles data of the form of an infinite
 sequence of events in the Event Model.</p>
@@ -693,7 +693,7 @@ a restream of the data for each header</p>
 
 <dl class="class">
 <dt id="shed.event_streams.accumulate">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">accumulate</code><span class="sig-paren">(</span><em>func</em>, <em>child</em>, <em>state_key=None</em>, <em>full_event=False</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>start='--no-default--'</em>, <em>across_start=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#accumulate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.accumulate" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">accumulate</code><span class="sig-paren">(</span><em>func</em>, <em>child</em>, <em>state_key=None</em>, <em>full_event=False</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>start='--no-default--'</em>, <em>across_start=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#accumulate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.accumulate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Accumulate results with previous state</p>
 <p>This preforms running or cumulative reductions, applying the function
