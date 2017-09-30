@@ -341,7 +341,7 @@ def test_stop_before_start():
     ))
     source = Stream()
     from operator import add
-    es.map(add, source, 1, input_info={0: 'pe1_image'}, raise_upon_error=True)
+    es.map(add, source, 1, input_info={0: 'pe1_image'})
 
     s = [s[-1]]
     for _ in range(2):
