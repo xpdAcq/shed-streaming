@@ -44,6 +44,4 @@ def test_zip(n, n2, kwargs, expected):
         for name, (l1, l2) in L:
             assert_docs.add(name)
             assert_raises(AssertionError, assert_equal, l1, l2)
-            if expected:
-                assert False
         assert set(assert_docs) == {'start', 'descriptor', 'event', 'stop'}
