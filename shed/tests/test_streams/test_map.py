@@ -221,7 +221,7 @@ def test_map_fail():
     dp = es.map(add5,
                 source,
                 input_info=ii,
-                output_info=oi)
+                output_info=oi, raise_upon_error=True)
     dp.sink(star(SinkAssertion()))
 
     s = list(to_event_model(

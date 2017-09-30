@@ -132,7 +132,7 @@ class EventStream(Stream):
     def __init__(self, child=None, children=None,
                  *, output_info=None, input_info=None, md=None,
                  stream_name=None,
-                 raise_upon_error=True,
+                 raise_upon_error=False,
                  **kwargs):
         """Initialize the stream
 
@@ -939,13 +939,13 @@ class accumulate(EventStream):
                  full_event=False,
                  output_info=None,
                  input_info=None, start=no_default,
-                 across_start=False):
+                 across_start=False, **kwargs):
         self.state_key = state_key
         self.func = func
         self.start_state = start
         self.state = start
         EventStream.__init__(self, child, input_info=input_info,
-                             output_info=output_info)
+                             output_info=output_info, **kwargs)
         if input_info is not None and len(input_info) != 1:
             raise ValueError("Error : only one key allowed for accumulate")
         self.full_event = full_event

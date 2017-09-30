@@ -229,7 +229,7 @@ def test_filter_fail(exp_db, start_uid1):
         return img1 is not None
 
     dp = es.filter(f, source,
-                   input_info={'i': 'pe1_image'})
+                   input_info={'i': 'pe1_image'}, raise_upon_error=True)
     dp.sink(star(SinkAssertion()))
 
     ih1 = exp_db[start_uid1]

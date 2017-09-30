@@ -130,6 +130,7 @@ def test_scan_fail(kwargs):
                        output_info=[('img', {
                            'dtype': 'array',
                            'source': 'testing'})],
+                       raise_upon_error=True,
                        **kwargs)
     sa = SinkAssertion()
     sa.expected_docs = {'start', 'descriptor', 'event', 'stop'}

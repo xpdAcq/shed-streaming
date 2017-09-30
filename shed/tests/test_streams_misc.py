@@ -146,7 +146,8 @@ def test_event_contents_fail():
                 source,
                 5,
                 input_info=ii,
-                output_info=oi)
+                output_info=oi,
+                raise_upon_error=True)
     dp.sink(star(SinkAssertion(True)))
 
     s = list(to_event_model(
@@ -215,7 +216,8 @@ def test_outputinfo_default(exp_db, start_uid1):
     es.map(empty_function, s, input_info={'x': 'pe1_image'})
 
     s2 = Stream()
-    s2_1 = es.map(bad_function, s2, input_info={'x': 'pe1_image'})
+    s2_1 = es.map(bad_function, s2, input_info={'x': 'pe1_image'},
+                  raise_upon_error=True)
     L = list()
     es.map(L.append, s2_1)
 
