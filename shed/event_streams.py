@@ -1623,9 +1623,6 @@ class QueryUnpacker(EventStream):
         doc = docs[0]
         if name == 'event':
             a = self.db[doc['data']['hdr_uid']]
-            print('==============')
-            print(a)
-            print('==============')
             return [self.emit(nd) for nd in
                     a.documents(fill=self.fill)]
 
