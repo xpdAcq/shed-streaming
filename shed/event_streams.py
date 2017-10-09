@@ -125,6 +125,10 @@ class EventStream(Stream):
     exceptions, see BundleSingleStream).
 
     """
+    _graphviz_shape = 'ellipse'
+    _graphviz_style = 'rounded,filled'
+    _graphviz_fillcolor = 'white'
+    _graphviz_orientation = 180
     # these are sacred kwargs which can never be passed to operator nodes
     pop_kwargs = ['output_info', 'input_info', 'md', 'stream_name',
                   'raise_upon_error']
@@ -557,7 +561,7 @@ class EventStream(Stream):
 
         n_args = len(args_positions)
         if args_positions and (args_positions[-1] != n_args - 1 or
-                               args_positions[0] != 0):
+                                       args_positions[0] != 0):
             errormsg = """Error, arguments supplied must be a set of integers
             ranging from 0 to number of arguments\n
             Got {} instead""".format(args_positions)
@@ -662,6 +666,7 @@ class EventStream(Stream):
         -------
 
         """
+        print('Clear called from {}'.format(self.stream_name))
         for k, v in self._initial_state.items():
             setattr(self, k, copy.deepcopy(v))
 
@@ -864,7 +869,7 @@ class filter(EventStream):
             if self.descriptor_truth_values[docs[0]['uid']]:
                 ret = ('descriptor', docs)
         elif (name == 'event' and
-              self.descriptor_truth_values[docs[0]['descriptor']]):
+                  self.descriptor_truth_values[docs[0]['descriptor']]):
             ret = super().event(docs)
         elif name == 'stop':
             ret = super().stop(docs)
@@ -931,6 +936,7 @@ class accumulate(EventStream):
     >>> for doc in g: z = source.emit(doc)
     >>> assert len(L) == 6
     """
+    _graphviz_shape = 'box'
 
     def __init__(self, func, child, state_key=None,
                  full_event=False,
@@ -1019,6 +1025,8 @@ class zip(EventStream):
     ...     zz = source2.emit(doc2)
     >>> assert len(L) == 6
     """
+    _graphviz_orientation = 180
+    _graphviz_shape = 'triangle'
 
     def __init__(self, *children, zip_type='extend', **kwargs):
         self.maxsize = kwargs.pop('maxsize', 10)
@@ -1344,7 +1352,8 @@ class zip_latest(EventStream):
     >>> for doc2 in gg: z = source2.emit(doc2)
     >>> assert len(L) == 6
     """
-
+    _graphviz_orientation = 180
+    _graphviz_shape = 'triangle'
     special_docs_names = ['start', 'descriptor', 'stop']
 
     def __init__(self, lossless, *children, clear_on_lossless_stop=False,
