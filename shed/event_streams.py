@@ -1025,7 +1025,7 @@ class zip(EventStream):
     ...     zz = source2.emit(doc2)
     >>> assert len(L) == 6
     """
-    _graphviz_orientation = 180
+    _graphviz_orientation = 270
     _graphviz_shape = 'triangle'
 
     def __init__(self, *children, zip_type='extend', **kwargs):
@@ -1352,7 +1352,7 @@ class zip_latest(EventStream):
     >>> for doc2 in gg: z = source2.emit(doc2)
     >>> assert len(L) == 6
     """
-    _graphviz_orientation = 180
+    _graphviz_orientation = 270
     _graphviz_shape = 'triangle'
     special_docs_names = ['start', 'descriptor', 'stop']
 
