@@ -1072,8 +1072,8 @@ class zip(EventStream):
         if len(L) == 1 and all(self.buffers):
             for i in range(1, len(self.buffers)):
                 # If the docs don't match, throw away
-                while (self.buffers[0][0][0] != self.buffers[i][0][0] and
-                       self.buffers[i]):
+                while (self.buffers[i] and
+                       self.buffers[0][0][0] != self.buffers[i][0][0]):
                     self.buffers[i].popleft()
             if all(self.buffers):
                 tup = tuple(buf.popleft() for buf in self.buffers)
