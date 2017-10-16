@@ -30,7 +30,7 @@ def test_clear():
     s.md.update({'hello': 'globe'})
     print(s._initial_state)
     assert s.md == {'hello': 'globe'}
-    s._clear()
+    s.clear()
     assert s.md == {'hello': 'world'}
 
 
