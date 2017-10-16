@@ -284,7 +284,7 @@
     <span class="n">pop_kwargs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;output_info&#39;</span><span class="p">,</span> <span class="s1">&#39;input_info&#39;</span><span class="p">,</span> <span class="s1">&#39;md&#39;</span><span class="p">,</span> <span class="s1">&#39;stream_name&#39;</span><span class="p">,</span>
                   <span class="s1">&#39;raise_upon_error&#39;</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upstreams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="o">*</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">md</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">stream_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">raise_upon_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -324,7 +324,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">stream_name</span> <span class="o">=</span> <span class="n">md</span><span class="p">[</span><span class="s1">&#39;stream_name&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">stream_name</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">Stream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">children</span><span class="p">,</span> <span class="n">stream_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stream_name</span><span class="p">)</span>
+        <span class="n">Stream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">upstreams</span><span class="p">,</span>
+                        <span class="n">stream_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stream_name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">output_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">output_info</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">input_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -353,7 +354,7 @@
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="n">input_info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Stream</span><span class="p">):</span>
-                <span class="n">input_info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="n">input_info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">upstreams</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
 
         <span class="c1"># Build dict of initial state to clear upon new start, maybe</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initial_state</span> <span class="o">=</span> <span class="n">_update_initial_state_helper</span><span class="p">(</span>
@@ -383,8 +384,8 @@
         <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curate_streams</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
             <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">:</span>
-                <span class="n">r</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">downstream</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">downstreams</span><span class="p">:</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">downstream</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
                     <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -831,7 +832,7 @@
 <span class="sd">    ----------</span>
 <span class="sd">    func: callable</span>
 <span class="sd">        The function to map on the event data</span>
-<span class="sd">    child: EventStream instance</span>
+<span class="sd">    upstream: EventStream instance</span>
 <span class="sd">        The source of the data</span>
 <span class="sd">    *args: tuple</span>
 <span class="sd">        args to be passed to the function,</span>
@@ -863,13 +864,13 @@
 <span class="sd">    &gt;&gt;&gt; assert len(L) == 6</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span>
                  <span class="n">full_event</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                  <span class="n">output_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
 
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="n">output_info</span><span class="p">,</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="n">output_info</span><span class="p">,</span>
                              <span class="n">input_info</span><span class="o">=</span><span class="n">input_info</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clean_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">func_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
@@ -902,7 +903,7 @@
 <span class="sd">    predicate: callable</span>
 <span class="sd">        The function which returns True if the event is to propagate</span>
 <span class="sd">        further in the pipeline</span>
-<span class="sd">    child: EventStream instance</span>
+<span class="sd">    upstream: EventStream instance</span>
 <span class="sd">        The source of the data</span>
 <span class="sd">    *args: tuple</span>
 <span class="sd">        args to be passed to the function,</span>
@@ -965,12 +966,12 @@
 <span class="sd">    &gt;&gt;&gt; assert len(L) == 2</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predicate</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predicate</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">full_event</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">document_name</span><span class="o">=</span><span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the node &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">predicate</span> <span class="o">=</span> <span class="n">predicate</span>
 
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="n">input_info</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="n">input_info</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clean_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">func_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
@@ -1052,7 +1053,7 @@
 <span class="sd">    ----------</span>
 <span class="sd">    func: callable</span>
 <span class="sd">        The function to map on the event data</span>
-<span class="sd">    child: EventStream instance</span>
+<span class="sd">    upstream: EventStream instance</span>
 <span class="sd">        The source of the data</span>
 <span class="sd">    state_key: str</span>
 <span class="sd">        The keyword for current accumulated state in the func</span>
@@ -1090,7 +1091,7 @@
 <span class="sd">    &gt;&gt;&gt; assert len(L) == 6</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">state_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">state_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">full_event</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                  <span class="n">output_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">input_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">no_default</span><span class="p">,</span>
@@ -1099,7 +1100,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_state</span> <span class="o">=</span> <span class="n">start</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">start</span>
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="n">input_info</span><span class="p">,</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">input_info</span><span class="o">=</span><span class="n">input_info</span><span class="p">,</span>
                              <span class="n">output_info</span><span class="o">=</span><span class="n">output_info</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">input_info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_info</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Error : only one key allowed for accumulate&quot;</span><span class="p">)</span>
@@ -1147,7 +1148,7 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    children: EventStream instances</span>
+<span class="sd">    upstreams: EventStream instances</span>
 <span class="sd">        The event streams to be zipped together</span>
 <span class="sd">    zip_type: {&#39;extend&#39;, &#39;strict&#39;, &#39;truncate}, optional</span>
 <span class="sd">        What type of zip to perform. If strict then the streams are assumed</span>
@@ -1178,12 +1179,12 @@
 <span class="sd">    &gt;&gt;&gt; assert len(L) == 6</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">children</span><span class="p">,</span> <span class="n">zip_type</span><span class="o">=</span><span class="s1">&#39;extend&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">upstreams</span><span class="p">,</span> <span class="n">zip_type</span><span class="o">=</span><span class="s1">&#39;extend&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;maxsize&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span> <span class="o">=</span> <span class="p">[</span><span class="n">deque</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span> <span class="o">=</span> <span class="p">[</span><span class="n">deque</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">upstreams</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">condition</span> <span class="o">=</span> <span class="n">Condition</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="p">()</span>
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="n">children</span><span class="p">,</span> <span class="n">zip_type</span><span class="o">=</span><span class="n">zip_type</span><span class="p">,</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstreams</span><span class="o">=</span><span class="n">upstreams</span><span class="p">,</span> <span class="n">zip_type</span><span class="o">=</span><span class="n">zip_type</span><span class="p">,</span>
                              <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">zip_type</span> <span class="o">==</span> <span class="s1">&#39;strict&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">update</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strict_update</span>
@@ -1195,7 +1196,7 @@
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_strict_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)]</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">upstreams</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)]</span>
         <span class="n">L</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">):</span>
             <span class="n">tup</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">buf</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span> <span class="k">for</span> <span class="n">buf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">)</span>
@@ -1206,7 +1207,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_extend_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)]</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">upstreams</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)]</span>
         <span class="n">L</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="p">:</span>
@@ -1222,7 +1223,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_truncate_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)]</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">upstreams</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)]</span>
         <span class="n">L</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">)):</span>
@@ -1244,7 +1245,7 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    children: EventStream instances</span>
+<span class="sd">    upstreams: EventStream instances</span>
 <span class="sd">        The event streams to be zipped together</span>
 
 <span class="sd">    Examples</span>
@@ -1268,16 +1269,16 @@
 <span class="sd">    &gt;&gt;&gt; assert len(L) == 9</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">children</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">upstreams</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;maxsize&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span> <span class="o">=</span> <span class="p">[</span><span class="n">deque</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span> <span class="o">=</span> <span class="p">[</span><span class="n">deque</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">upstreams</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">condition</span> <span class="o">=</span> <span class="n">Condition</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="p">()</span>
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="n">children</span><span class="p">)</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstreams</span><span class="o">=</span><span class="n">upstreams</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generate_provenance</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Bundle.update"><a class="viewcode-back" href="../../shed.html#shed.event_streams.Bundle.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)]</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">upstreams</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)]</span>
         <span class="n">L</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">):</span>
             <span class="c1"># if all the docs are of the same type and not an event, issue</span>
@@ -1319,7 +1320,7 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    child: EventStream instances</span>
+<span class="sd">    upstream: EventStream instances</span>
 <span class="sd">        The event stream containing the data to be zipped together</span>
 <span class="sd">    control_stream: {EventStream, int}</span>
 <span class="sd">        Information to control the buffering. If int, bundle that many</span>
@@ -1344,7 +1345,7 @@
 <span class="sd">    &gt;&gt;&gt; assert len(L) == 9</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">control_stream</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">control_stream</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;maxsize&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">desc_start_map</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1352,10 +1353,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">control_stream</span> <span class="o">=</span> <span class="n">control_stream</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">control_stream</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="o">=</span><span class="n">child</span><span class="p">)</span>
+            <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="o">=</span><span class="n">upstream</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">n_hdrs</span> <span class="o">=</span> <span class="n">control_stream</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">control_stream</span><span class="p">))</span>
+            <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstreams</span><span class="o">=</span><span class="p">(</span><span class="n">upstream</span><span class="p">,</span> <span class="n">control_stream</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">n_hdrs</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generate_provenance</span><span class="p">()</span>
 
@@ -1409,7 +1410,7 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    children: EventStream instances</span>
+<span class="sd">    upstreams: EventStream instances</span>
 <span class="sd">        The streams to combine</span>
 <span class="sd">    emit_on: EventStream, list of EventStreams or None</span>
 <span class="sd">        Only emit upon update of the streams listed.</span>
@@ -1436,24 +1437,24 @@
 
     <span class="n">special_docs_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">children</span><span class="p">,</span> <span class="n">emit_on</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">special_last</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">upstreams</span><span class="p">,</span> <span class="n">emit_on</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">upstreams</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">special_last</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">upstreams</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
                              <span class="bp">self</span><span class="o">.</span><span class="n">special_docs_names</span><span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">children</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">special_missing</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">upstreams</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">special_missing</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">upstreams</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">special_docs_names</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">emit_on</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">emit_on</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">):</span>
                 <span class="n">emit_on</span> <span class="o">=</span> <span class="p">(</span><span class="n">emit_on</span><span class="p">,)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">emit_on</span> <span class="o">=</span> <span class="n">emit_on</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">emit_on</span> <span class="o">=</span> <span class="n">children</span>
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="n">children</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">emit_on</span> <span class="o">=</span> <span class="n">upstreams</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstreams</span><span class="o">=</span><span class="n">upstreams</span><span class="p">)</span>
 
 <div class="viewcode-block" id="combine_latest.update"><a class="viewcode-back" href="../../shed.html#shed.event_streams.combine_latest.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">x</span>
-        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upstreams</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">special_docs_names</span><span class="p">:</span>
             <span class="n">local_missing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">special_missing</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
             <span class="n">local_last</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">special_last</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
@@ -1482,7 +1483,7 @@
 <span class="sd">    ----------</span>
 <span class="sd">    lossless : EventStream instance</span>
 <span class="sd">        The stream who&#39;s documents will always be emitted</span>
-<span class="sd">    children: EventStream instances</span>
+<span class="sd">    upstreams: EventStream instances</span>
 <span class="sd">        The streams to combine</span>
 
 <span class="sd">    Examples</span>
@@ -1506,32 +1507,32 @@
 
     <span class="n">special_docs_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lossless</span><span class="p">,</span> <span class="o">*</span><span class="n">children</span><span class="p">,</span> <span class="n">clear_on_lossless_stop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lossless</span><span class="p">,</span> <span class="o">*</span><span class="n">upstreams</span><span class="p">,</span> <span class="n">clear_on_lossless_stop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clear_on_lossless_stop</span> <span class="o">=</span> <span class="n">clear_on_lossless_stop</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lossless</span> <span class="o">=</span> <span class="n">lossless</span>
-        <span class="n">children</span> <span class="o">=</span> <span class="p">(</span><span class="n">lossless</span><span class="p">,)</span> <span class="o">+</span> <span class="n">children</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">special_last</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
+        <span class="n">upstreams</span> <span class="o">=</span> <span class="p">(</span><span class="n">lossless</span><span class="p">,)</span> <span class="o">+</span> <span class="n">upstreams</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">upstreams</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">special_last</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">upstreams</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
                              <span class="bp">self</span><span class="o">.</span><span class="n">special_docs_names</span><span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">children</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">special_missing</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">upstreams</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">special_missing</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">upstreams</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">special_docs_names</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lossless_buffer</span> <span class="o">=</span> <span class="n">deque</span><span class="p">()</span>
         <span class="c1"># Keep track of the emitted docuement types</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lossless_emitted</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="n">children</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstreams</span><span class="o">=</span><span class="n">upstreams</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="zip_latest.update"><a class="viewcode-back" href="../../shed.html#shed.event_streams.zip_latest.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">x</span>
-        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upstreams</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">who</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">who</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">lossless</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;start&#39;</span> <span class="ow">and</span> \
                 <span class="bp">self</span><span class="o">.</span><span class="n">clear_on_lossless_stop</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">special_last</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">upstreams</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">special_last</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">upstreams</span><span class="p">]</span>
                                  <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">special_docs_names</span><span class="p">}</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">special_missing</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upstreams</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">special_missing</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upstreams</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
                                     <span class="bp">self</span><span class="o">.</span><span class="n">special_docs_names</span><span class="p">}</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lossless_buffer</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
             <span class="c1"># Keep track of the emitted docuement types</span>
@@ -1575,7 +1576,7 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    child: EventStream instance</span>
+<span class="sd">    upstream: EventStream instance</span>
 <span class="sd">        The event stream to eventify</span>
 <span class="sd">    start_keys: str, optional</span>
 <span class="sd">        The run start keys to use to create the events</span>
@@ -1603,7 +1604,7 @@
 <span class="sd">    &gt;&gt;&gt; assert len(L) == 4</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">document</span><span class="o">=</span><span class="s1">&#39;start&#39;</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="c1"># TODO: maybe allow start_key to be a list of relevent keys?</span>
@@ -1615,7 +1616,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">emit_event</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unseen_docs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">]</span>
 
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="n">output_info</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">output_info</span><span class="o">=</span><span class="n">output_info</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initial_state</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_update_initial_state_helper</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;keys&#39;</span><span class="p">,</span> <span class="s1">&#39;document&#39;</span><span class="p">,</span> <span class="s1">&#39;vals&#39;</span><span class="p">,</span> <span class="s1">&#39;emit_event&#39;</span><span class="p">,</span>
                    <span class="s1">&#39;unseen_docs&#39;</span><span class="p">]))</span>
@@ -1678,7 +1679,7 @@
 <span class="sd">    -----------</span>
 <span class="sd">    db: databroker.Broker instance</span>
 <span class="sd">        The databroker to be queried</span>
-<span class="sd">    child: EventStream instance</span>
+<span class="sd">    upstream: EventStream instance</span>
 <span class="sd">        The stream to be subscribed to</span>
 <span class="sd">    query_function: callable</span>
 <span class="sd">        A function which executes a query against the databroker using the</span>
@@ -1696,13 +1697,13 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">query_function</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">query_function</span><span class="p">,</span>
                  <span class="n">query_decider</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_n_hdrs</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_n_hdrs</span> <span class="o">=</span> <span class="n">max_n_hdrs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">db</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">query_function</span> <span class="o">=</span> <span class="n">query_function</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">query_decider</span> <span class="o">=</span> <span class="n">query_decider</span>
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span>
                              <span class="n">output_info</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;hdr_uid&#39;</span><span class="p">,</span>
                                            <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span>
                                             <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;query&#39;</span><span class="p">})],</span>
@@ -1754,16 +1755,16 @@
 <span class="sd">    -----------</span>
 <span class="sd">    db: databroker.Broker instance</span>
 <span class="sd">        The databroker to be queried</span>
-<span class="sd">    child: EventStream instance</span>
+<span class="sd">    upstream: EventStream instance</span>
 <span class="sd">        The stream to be subscribed to</span>
 <span class="sd">    fill: bool, optional</span>
 <span class="sd">        Whether or not to fill the documents, defaults to True</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">db</span>
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initial_state</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_update_initial_state_helper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                                                                 <span class="p">[</span><span class="s1">&#39;fill&#39;</span><span class="p">,</span> <span class="p">]))</span>
@@ -1780,10 +1781,10 @@
 
 
 <div class="viewcode-block" id="split"><a class="viewcode-back" href="../../shed.html#shed.event_streams.split">[docs]</a><span class="k">class</span> <span class="nc">split</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">n_streams</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">n_streams</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">split_streams</span> <span class="o">=</span> <span class="p">[</span><span class="n">EventStream</span><span class="p">(</span>
             <span class="n">stream_name</span><span class="o">=</span><span class="s1">&#39;Split output-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_streams</span><span class="p">)]</span>
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="o">=</span><span class="n">child</span><span class="p">)</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="o">=</span><span class="n">upstream</span><span class="p">)</span>
 
 <div class="viewcode-block" id="split.update"><a class="viewcode-back" href="../../shed.html#shed.event_streams.split.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">name</span><span class="p">,</span> <span class="n">docs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curate_streams</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
@@ -1794,9 +1795,9 @@
 <div class="viewcode-block" id="fill_events"><a class="viewcode-back" href="../../shed.html#shed.event_streams.fill_events">[docs]</a><span class="k">class</span> <span class="nc">fill_events</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Fill events without provenence&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">upstream</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">db</span>
-        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="o">=</span><span class="n">child</span><span class="p">)</span>
+        <span class="n">EventStream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="o">=</span><span class="n">upstream</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">descs</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="fill_events.start"><a class="viewcode-back" href="../../shed.html#shed.event_streams.fill_events.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>

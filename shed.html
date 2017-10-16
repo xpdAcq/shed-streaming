@@ -190,14 +190,14 @@
 Model</p>
 <dl class="class">
 <dt id="shed.event_streams.Bundle">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">Bundle</code><span class="sig-paren">(</span><em>*children</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Bundle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Bundle" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">Bundle</code><span class="sig-paren">(</span><em>*upstreams</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Bundle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Bundle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Combine multiple event streams into one</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>children</strong> (<em>EventStream instances</em>) – The event streams to be zipped together</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>upstreams</strong> (<em>EventStream instances</em>) – The event streams to be zipped together</td>
 </tr>
 </tbody>
 </table>
@@ -230,7 +230,7 @@ Model</p>
 
 <dl class="class">
 <dt id="shed.event_streams.BundleSingleStream">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">BundleSingleStream</code><span class="sig-paren">(</span><em>child</em>, <em>control_stream</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#BundleSingleStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.BundleSingleStream" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">BundleSingleStream</code><span class="sig-paren">(</span><em>upstream</em>, <em>control_stream</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#BundleSingleStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.BundleSingleStream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Combine multiple headers in a single stream into one</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -238,7 +238,7 @@ Model</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>child</strong> (<em>EventStream instances</em>) – The event stream containing the data to be zipped together</li>
+<li><strong>upstream</strong> (<em>EventStream instances</em>) – The event stream containing the data to be zipped together</li>
 <li><strong>control_stream</strong> (<em>{EventStream, int}</em>) – Information to control the buffering. If int, bundle that many
 header together. If an EventStream, pull from the start document
 <code class="docutils literal"><span class="pre">n_hdrs</span></code> to determine the number of headers to bundle</li>
@@ -273,7 +273,7 @@ header together. If an EventStream, pull from the start document
 
 <dl class="class">
 <dt id="shed.event_streams.EventStream">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">EventStream</code><span class="sig-paren">(</span><em>child=None</em>, <em>children=None</em>, <em>*</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>md=None</em>, <em>stream_name=None</em>, <em>raise_upon_error=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#EventStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.EventStream" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">EventStream</code><span class="sig-paren">(</span><em>upstream=None</em>, <em>upstreams=None</em>, <em>*</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>md=None</em>, <em>stream_name=None</em>, <em>raise_upon_error=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#EventStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.EventStream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">streamz.core.Stream</span></code></p>
 <p>The EventStream class handles data of the form of an infinite
 sequence of events in the Event Model.</p>
@@ -579,7 +579,7 @@ created, but a stop document will be issued.</p>
 
 <dl class="class">
 <dt id="shed.event_streams.Eventify">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">Eventify</code><span class="sig-paren">(</span><em>child</em>, <em>*keys</em>, <em>output_info=None</em>, <em>document='start'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Eventify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Eventify" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">Eventify</code><span class="sig-paren">(</span><em>upstream</em>, <em>*keys</em>, <em>output_info=None</em>, <em>document='start'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Eventify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Eventify" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Generate events from data in starts</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -587,7 +587,7 @@ created, but a stop document will be issued.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>child</strong> (<em>EventStream instance</em>) – The event stream to eventify</li>
+<li><strong>upstream</strong> (<em>EventStream instance</em>) – The event stream to eventify</li>
 <li><strong>start_keys</strong> (<em>str, optional</em>) – The run start keys to use to create the events
 If none supplied, then load all start keys into event</li>
 <li><strong>output_info</strong> (<em>list of tuples, optional</em>) – describes the resulting stream</li>
@@ -627,7 +627,7 @@ If none supplied, then load all start keys into event</li>
 
 <dl class="class">
 <dt id="shed.event_streams.Query">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">Query</code><span class="sig-paren">(</span><em>db</em>, <em>child</em>, <em>query_function</em>, <em>query_decider=None</em>, <em>max_n_hdrs=10</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Query" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">Query</code><span class="sig-paren">(</span><em>db</em>, <em>upstream</em>, <em>query_function</em>, <em>query_decider=None</em>, <em>max_n_hdrs=10</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#Query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.Query" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Query a databroker for data</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -636,7 +636,7 @@ If none supplied, then load all start keys into event</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>db</strong> (<em>databroker.Broker instance</em>) – The databroker to be queried</li>
-<li><strong>child</strong> (<em>EventStream instance</em>) – The stream to be subscribed to</li>
+<li><strong>upstream</strong> (<em>EventStream instance</em>) – The stream to be subscribed to</li>
 <li><strong>query_function</strong> (<em>callable</em>) – A function which executes a query against the databroker using the
 start document of the stream. Note that the signature must be
 <code class="docutils literal"><span class="pre">func(Broker,</span> <span class="pre">docs)</span></code> where docs is a tuple of documents and returns
@@ -666,7 +666,7 @@ is greater than the max then the node raises a RuntimeError</li>
 
 <dl class="class">
 <dt id="shed.event_streams.QueryUnpacker">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">QueryUnpacker</code><span class="sig-paren">(</span><em>db</em>, <em>child</em>, <em>fill=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#QueryUnpacker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.QueryUnpacker" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">QueryUnpacker</code><span class="sig-paren">(</span><em>db</em>, <em>upstream</em>, <em>fill=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#QueryUnpacker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.QueryUnpacker" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Unpack Queries from the Query node</p>
 <p>This unpacks the start uids passed down from the Query node and creates
@@ -677,7 +677,7 @@ a restream of the data for each header</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>db</strong> (<em>databroker.Broker instance</em>) – The databroker to be queried</li>
-<li><strong>child</strong> (<em>EventStream instance</em>) – The stream to be subscribed to</li>
+<li><strong>upstream</strong> (<em>EventStream instance</em>) – The stream to be subscribed to</li>
 <li><strong>fill</strong> (<em>bool, optional</em>) – Whether or not to fill the documents, defaults to True</li>
 </ul>
 </td>
@@ -693,7 +693,7 @@ a restream of the data for each header</p>
 
 <dl class="class">
 <dt id="shed.event_streams.accumulate">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">accumulate</code><span class="sig-paren">(</span><em>func</em>, <em>child</em>, <em>state_key=None</em>, <em>full_event=False</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>start='--no-default--'</em>, <em>across_start=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#accumulate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.accumulate" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">accumulate</code><span class="sig-paren">(</span><em>func</em>, <em>upstream</em>, <em>state_key=None</em>, <em>full_event=False</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>start='--no-default--'</em>, <em>across_start=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#accumulate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.accumulate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Accumulate results with previous state</p>
 <p>This preforms running or cumulative reductions, applying the function
@@ -706,7 +706,7 @@ it should return a new accumulated state.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>func</strong> (<em>callable</em>) – The function to map on the event data</li>
-<li><strong>child</strong> (<em>EventStream instance</em>) – The source of the data</li>
+<li><strong>upstream</strong> (<em>EventStream instance</em>) – The source of the data</li>
 <li><strong>state_key</strong> (<em>str</em>) – The keyword for current accumulated state in the func</li>
 <li><strong>full_event</strong> (<em>bool, optional</em>) – If True expose the full event dict to the predicate, if False
 only expose the data from the event</li>
@@ -749,7 +749,7 @@ to False</li>
 
 <dl class="class">
 <dt id="shed.event_streams.combine_latest">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">combine_latest</code><span class="sig-paren">(</span><em>*children</em>, <em>emit_on=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#combine_latest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.combine_latest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">combine_latest</code><span class="sig-paren">(</span><em>*upstreams</em>, <em>emit_on=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#combine_latest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.combine_latest" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Combine multiple streams together to a stream of tuples</p>
 <p>This will emit a new tuple of all of the most recent elements seen from
@@ -759,7 +759,7 @@ any stream.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>children</strong> (<em>EventStream instances</em>) – The streams to combine</li>
+<li><strong>upstreams</strong> (<em>EventStream instances</em>) – The streams to combine</li>
 <li><strong>emit_on</strong> (<em>EventStream, list of EventStreams or None</em>) – Only emit upon update of the streams listed.
 If None, emit on update from any stream</li>
 </ul>
@@ -805,7 +805,7 @@ If None, emit on update from any stream</li>
 
 <dl class="class">
 <dt id="shed.event_streams.fill_events">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">fill_events</code><span class="sig-paren">(</span><em>db</em>, <em>child</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#fill_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.fill_events" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">fill_events</code><span class="sig-paren">(</span><em>db</em>, <em>upstream</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#fill_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.fill_events" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Fill events without provenence</p>
 <dl class="method">
@@ -832,7 +832,7 @@ If None, emit on update from any stream</li>
 
 <dl class="class">
 <dt id="shed.event_streams.filter">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">filter</code><span class="sig-paren">(</span><em>predicate</em>, <em>child</em>, <em>*args</em>, <em>input_info=None</em>, <em>full_event=False</em>, <em>document_name='event'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.filter" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">filter</code><span class="sig-paren">(</span><em>predicate</em>, <em>upstream</em>, <em>*args</em>, <em>input_info=None</em>, <em>full_event=False</em>, <em>document_name='event'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Only pass through events that satisfy the predicate</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -842,7 +842,7 @@ If None, emit on update from any stream</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>predicate</strong> (<em>callable</em>) – The function which returns True if the event is to propagate
 further in the pipeline</li>
-<li><strong>child</strong> (<em>EventStream instance</em>) – The source of the data</li>
+<li><strong>upstream</strong> (<em>EventStream instance</em>) – The source of the data</li>
 <li><strong>*args</strong> (<em>tuple</em>) – args to be passed to the function,
 which are appended to the args from <cite>input_info</cite></li>
 <li><strong>input_info</strong> (<em>dict</em>) – describe the incoming streams</li>
@@ -917,7 +917,7 @@ where the criteria is True in the descriptor. Defaults to ‘event’.</li>
 
 <dl class="class">
 <dt id="shed.event_streams.map">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">map</code><span class="sig-paren">(</span><em>func</em>, <em>child</em>, <em>*args</em>, <em>full_event=False</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.map" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">map</code><span class="sig-paren">(</span><em>func</em>, <em>upstream</em>, <em>*args</em>, <em>full_event=False</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Apply a function onto every event in the stream</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -926,7 +926,7 @@ where the criteria is True in the descriptor. Defaults to ‘event’.</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>func</strong> (<em>callable</em>) – The function to map on the event data</li>
-<li><strong>child</strong> (<em>EventStream instance</em>) – The source of the data</li>
+<li><strong>upstream</strong> (<em>EventStream instance</em>) – The source of the data</li>
 <li><strong>*args</strong> (<em>tuple</em>) – args to be passed to the function,
 which are appended to the args from <cite>input_info</cite></li>
 <li><strong>full_event</strong> (<em>bool, optional</em>) – If True expose the full event dict to the function, if False
@@ -964,7 +964,7 @@ only expose the data from the event</li>
 
 <dl class="class">
 <dt id="shed.event_streams.split">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">split</code><span class="sig-paren">(</span><em>child</em>, <em>n_streams</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#split"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.split" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">split</code><span class="sig-paren">(</span><em>upstream</em>, <em>n_streams</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#split"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.split" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <dl class="method">
 <dt id="shed.event_streams.split.update">
@@ -981,7 +981,7 @@ only expose the data from the event</li>
 
 <dl class="class">
 <dt id="shed.event_streams.zip">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">zip</code><span class="sig-paren">(</span><em>*children</em>, <em>zip_type='extend'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.zip" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">zip</code><span class="sig-paren">(</span><em>*upstreams</em>, <em>zip_type='extend'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.zip" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Combine multiple streams together into a stream of tuples</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -989,7 +989,7 @@ only expose the data from the event</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>children</strong> (<em>EventStream instances</em>) – The event streams to be zipped together</li>
+<li><strong>upstreams</strong> (<em>EventStream instances</em>) – The event streams to be zipped together</li>
 <li><strong>zip_type</strong> (<em>{‘extend’, ‘strict’, ‘truncate}, optional</em>) – What type of zip to perform. If strict then the streams are assumed
 to be equal length, and raises an error otherwise. If extend then
 streams in the secondary positions (not the first arg) will be extended
@@ -1025,7 +1025,7 @@ of the first stream by shortenin the secondary streams.</li>
 
 <dl class="class">
 <dt id="shed.event_streams.zip_latest">
-<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">zip_latest</code><span class="sig-paren">(</span><em>lossless</em>, <em>*children</em>, <em>clear_on_lossless_stop=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#zip_latest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.zip_latest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">zip_latest</code><span class="sig-paren">(</span><em>lossless</em>, <em>*upstreams</em>, <em>clear_on_lossless_stop=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#zip_latest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.zip_latest" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#shed.event_streams.EventStream" title="shed.event_streams.EventStream"><code class="xref py py-class docutils literal"><span class="pre">shed.event_streams.EventStream</span></code></a></p>
 <p>Combine multiple streams together to a stream of tuples</p>
 <p>This will emit a new tuple of the elements from the lossless stream paired
@@ -1036,7 +1036,7 @@ with the latest elements from the other streams.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>lossless</strong> (<em>EventStream instance</em>) – The stream who’s documents will always be emitted</li>
-<li><strong>children</strong> (<em>EventStream instances</em>) – The streams to combine</li>
+<li><strong>upstreams</strong> (<em>EventStream instances</em>) – The streams to combine</li>
 </ul>
 </td>
 </tr>
