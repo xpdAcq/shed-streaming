@@ -379,7 +379,7 @@ class EventStream(Stream):
         """
         # When we get a start document reset to the initial status
         if clear:
-            self._clear()
+            self.clear()
         self.run_start_uid = str(uuid.uuid4())
         self.parent_uids = [doc['uid'] for doc in docs if doc]
         new_start_doc = self.md
@@ -658,7 +658,7 @@ class EventStream(Stream):
             if k in kwargs:
                 kwargs.pop(k)
 
-    def _clear(self):
+    def clear(self, docs=None):
         """
         Clear the state of the node
 
@@ -668,7 +668,7 @@ class EventStream(Stream):
         """
         for k, v in self._initial_state.items():
             setattr(self, k, copy.deepcopy(v))
-
+        return 'clear', docs
 
 class map(EventStream):
     """Apply a function onto every event in the stream
@@ -840,7 +840,7 @@ class filter(EventStream):
         # TODO: should we have something like event_contents for starts?
         name, docs = self.curate_streams(x, False)
         if name == 'start':
-            self._clear()
+            self.clear()
             try:
                 res_args, res_kwargs = self.doc_contents(docs, self.full_event)
                 self.truth_value = self.predicate(*res_args, *self.func_args,
@@ -858,7 +858,7 @@ class filter(EventStream):
         name, docs = self.curate_streams(x, False)
         ret = None
         if name == 'start':
-            self._clear()
+            self.clear()
             self.descriptor_truth_values = {}
             ret = super().start(docs)
         elif name == 'descriptor':
@@ -1488,7 +1488,7 @@ class Eventify(EventStream):
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
         if name == 'start':
-            self._clear()
+            self.clear()
         # If we haven't seen this current type of doc
         if name in self.unseen_docs:
             # If the name of the current doc is the one we want to eventify
@@ -1561,7 +1561,7 @@ class Query(EventStream):
                                                                  ]))
 
     def start(self, docs):
-        self._clear()
+        self.clear()
         # XXX: If we don't have a decider we return all the results
         # TODO: should this issue a stop on failure?
         res = self.query_function(self.db, docs)
@@ -1617,7 +1617,7 @@ class QueryUnpacker(EventStream):
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
         if name == 'start':
-            self._clear()
+            self.clear()
         doc = docs[0]
         if name == 'event':
             a = self.db[doc['data']['hdr_uid']]
