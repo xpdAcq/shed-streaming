@@ -561,7 +561,7 @@ class EventStream(Stream):
 
         n_args = len(args_positions)
         if args_positions and (args_positions[-1] != n_args - 1 or
-                                       args_positions[0] != 0):
+                               args_positions[0] != 0):
             errormsg = """Error, arguments supplied must be a set of integers
             ranging from 0 to number of arguments\n
             Got {} instead""".format(args_positions)
@@ -869,7 +869,7 @@ class filter(EventStream):
             if self.descriptor_truth_values[docs[0]['uid']]:
                 ret = ('descriptor', docs)
         elif (name == 'event' and
-                  self.descriptor_truth_values[docs[0]['descriptor']]):
+              self.descriptor_truth_values[docs[0]['descriptor']]):
             ret = super().event(docs)
         elif name == 'stop':
             ret = super().stop(docs)
@@ -1084,7 +1084,7 @@ class zip(EventStream):
             for i in range(1, len(self.buffers)):
                 # If the docs don't match, throw away
                 while (self.buffers[i] and
-                               self.buffers[0][0][0] != self.buffers[i][0][0]):
+                       self.buffers[0][0][0] != self.buffers[i][0][0]):
                     self.buffers[i].popleft()
             if all(self.buffers):
                 tup = tuple(buf.popleft() for buf in self.buffers)
@@ -1385,7 +1385,7 @@ class zip_latest(EventStream):
     def update(self, x, who=None):
         name, doc = x
         if name == 'clear':
-            return self.emit(self.clear([None]*len(self.upstreams)))
+            return self.emit(self.clear([None] * len(self.upstreams)))
         idx = self.upstreams.index(who)
         if name in self.special_docs_names:
             local_missing = self.special_missing[name]
