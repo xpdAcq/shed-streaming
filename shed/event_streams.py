@@ -384,7 +384,7 @@ class EventStream(Stream):
         self.parent_uids = [doc['uid'] for doc in docs if doc]
         new_start_doc = self.md
         new_start_doc.update(dict(uid=self.run_start_uid,
-                             time=time.time()))
+                                  time=time.time()))
 
         self.bypass = False
         return 'start', new_start_doc
@@ -475,10 +475,10 @@ class EventStream(Stream):
             new_stop = self.md
 
             new_stop.update(dict(uid=str(uuid.uuid4()),
-                            time=time.time(),
-                            run_start=self.run_start_uid,
-                            provenance=self.provenance,
-                            parents=self.parent_uids))
+                                 time=time.time(),
+                                 run_start=self.run_start_uid,
+                                 provenance=self.provenance,
+                                 parents=self.parent_uids))
             if isinstance(docs, Exception):
                 self.bypass = True
                 print('ERROR REPORT=======================')
@@ -561,7 +561,7 @@ class EventStream(Stream):
 
         n_args = len(args_positions)
         if args_positions and (args_positions[-1] != n_args - 1 or
-                               args_positions[0] != 0):
+                                       args_positions[0] != 0):
             errormsg = """Error, arguments supplied must be a set of integers
             ranging from 0 to number of arguments\n
             Got {} instead""".format(args_positions)
@@ -669,6 +669,7 @@ class EventStream(Stream):
         for k, v in self._initial_state.items():
             setattr(self, k, copy.deepcopy(v))
         return 'clear', docs
+
 
 class map(EventStream):
     """Apply a function onto every event in the stream
@@ -868,7 +869,7 @@ class filter(EventStream):
             if self.descriptor_truth_values[docs[0]['uid']]:
                 ret = ('descriptor', docs)
         elif (name == 'event' and
-              self.descriptor_truth_values[docs[0]['descriptor']]):
+                  self.descriptor_truth_values[docs[0]['descriptor']]):
             ret = super().event(docs)
         elif name == 'stop':
             ret = super().stop(docs)
@@ -1041,6 +1042,9 @@ class zip(EventStream):
             raise NotImplementedError()
 
     def _strict_update(self, x, who=None):
+        name, docs = self.curate_streams(x, False)
+        if name == 'clear':
+            return self.emit(self.clear(None))
         L = self.buffers[self.upstreams.index(who)]
         L.append(x)
         if len(L) == 1 and all(self.buffers):
@@ -1052,6 +1056,9 @@ class zip(EventStream):
             return self.condition.wait()
 
     def _extend_update(self, x, who=None):
+        name, docs = self.curate_streams(x, False)
+        if name == 'clear':
+            return self.emit(self.clear(None))
         L = self.buffers[self.upstreams.index(who)]
         L.append(x)
         if len(L) == 1 and all(self.buffers):
@@ -1068,13 +1075,16 @@ class zip(EventStream):
             return self.condition.wait()
 
     def _truncate_update(self, x, who=None):
+        name, docs = self.curate_streams(x, False)
+        if name == 'clear':
+            return self.emit(self.clear(None))
         L = self.buffers[self.upstreams.index(who)]
         L.append(x)
         if len(L) == 1 and all(self.buffers):
             for i in range(1, len(self.buffers)):
                 # If the docs don't match, throw away
                 while (self.buffers[i] and
-                       self.buffers[0][0][0] != self.buffers[i][0][0]):
+                               self.buffers[0][0][0] != self.buffers[i][0][0]):
                     self.buffers[i].popleft()
             if all(self.buffers):
                 tup = tuple(buf.popleft() for buf in self.buffers)
@@ -1083,6 +1093,12 @@ class zip(EventStream):
                 return self.emit(tup)
         elif len(L) > self.maxsize:
             return self.condition.wait()
+
+    def clear(self, docs=None):
+        self.buffers = [deque() for _ in self.upstreams]
+        self.condition = Condition()
+        self.prior = ()
+        return super().clear(docs)
 
 
 class Bundle(EventStream):
@@ -1352,9 +1368,7 @@ class zip_latest(EventStream):
 
     special_docs_names = ['start', 'descriptor', 'stop']
 
-    def __init__(self, lossless, *upstreams, clear_on_lossless_stop=False,
-                 **kwargs):
-        self.clear_on_lossless_stop = clear_on_lossless_stop
+    def __init__(self, lossless, *upstreams, **kwargs):
         self.lossless = lossless
         upstreams = (lossless,) + upstreams
         self.last = [None for _ in upstreams]
@@ -1370,19 +1384,9 @@ class zip_latest(EventStream):
 
     def update(self, x, who=None):
         name, doc = x
+        if name == 'clear':
+            return self.emit(self.clear([None]*len(self.upstreams)))
         idx = self.upstreams.index(who)
-        if who == self.lossless and name == 'start' and \
-                self.clear_on_lossless_stop:
-            self.last = [None for _ in self.upstreams]
-            self.special_last = {k: [None for _ in self.upstreams]
-                                 for k in self.special_docs_names}
-            self.missing = set(self.upstreams)
-            self.special_missing = {k: set(self.upstreams) for k in
-                                    self.special_docs_names}
-            self.lossless_buffer.clear()
-            # Keep track of the emitted docuement types
-            self.lossless_emitted = set()
-
         if name in self.special_docs_names:
             local_missing = self.special_missing[name]
             local_last = self.special_last[name]
@@ -1414,6 +1418,18 @@ class zip_latest(EventStream):
                     local_last[0] = self.lossless_buffer.popleft()
                     L.append(self.emit(tuple(local_last)))
                 return L
+
+    def clear(self, docs=None):
+        self.last = [None for _ in self.upstreams]
+        self.special_last = {k: [None for _ in self.upstreams]
+                             for k in self.special_docs_names}
+        self.missing = set(self.upstreams)
+        self.special_missing = {k: set(self.upstreams) for k in
+                                self.special_docs_names}
+        self.lossless_buffer.clear()
+        # Keep track of the emitted docuement types
+        self.lossless_emitted = set()
+        return super().clear(docs)
 
 
 class Eventify(EventStream):
@@ -1483,7 +1499,7 @@ class Eventify(EventStream):
         if len(self.output_info) == 1:
             self.vals = self.vals[0]
         elif len(self.output_info) != len(self.vals):
-                raise RuntimeError('The output_info does not match the values')
+            raise RuntimeError('The output_info does not match the values')
 
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)

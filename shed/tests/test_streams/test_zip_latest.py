@@ -67,19 +67,21 @@ def test_zip_latest_double_clear():
     source = Stream()
     source2 = Stream()
 
-    dp = es.zip_latest(source, source2, clear_on_lossless_stop=True)
+    dp = es.zip_latest(source, source2)
     L = dp.sink_to_list()
     g1 = list(to_event_model([1, 2, 3], [('det', {})]))
     g2 = list(to_event_model(['a', 'b', 'c'], [('det', {})]))
     g3 = list(to_event_model([5], [('det', {})]))
     for b in g1:
         source.emit(b)
+    source.emit(('clear', None))
     for a in g2:
         source.emit(a)
     for c in g3:
         source2.emit(c)
 
     assert_docs = set()
+    L.pop(0)  # for the clear
     assert len(L) == len(g2)
     for (name, (l1, l2)), (_, ll1) in zip(L, g2):
         assert_docs.add(name)
@@ -94,13 +96,17 @@ def test_zip_latest_double_clear():
     g1 = list(to_event_model([10, 20, 30], [('det', {})]))
     g2 = list(to_event_model(['aa', 'bb', 'cc'], [('det', {})]))
     g3 = list(to_event_model([50], [('det', {})]))
+    source.emit(('clear', None))
     for b in g1:
         source.emit(b)
+    source.emit(('clear', None))
     for a in g2:
         source.emit(a)
     for c in g3:
         source2.emit(c)
 
+    L.pop(0)  # for the clear
+    L.pop(0)  # for the clear
     assert_docs = set()
     assert len(L) == len(g2)
     for (name, (l1, l2)), (_, ll1) in zip(L, g2):

@@ -24,7 +24,8 @@ def test_zip(n, n2, kwargs, expected):
     source = Stream()
     source2 = Stream()
 
-    L = es.zip(source, source2, **kwargs).sink_to_list()
+    dp = es.zip(source, source2, **kwargs)
+    L = dp.sink_to_list()
     s = list(to_event_model(
         [np.random.random((10, 10)) for _ in range(n)],
         output_info=[('pe1_image', {'dtype': 'array'})]
@@ -34,14 +35,18 @@ def test_zip(n, n2, kwargs, expected):
         output_info=[('pe1_image', {'dtype': 'array'})]
     ))
 
-    for _ in range(2):
-        L.clear()
-        for b in s2:
-            source2.emit(b)
-        for a in s:
-            source.emit(a)
-        assert_docs = set()
-        for name, (l1, l2) in L:
-            assert_docs.add(name)
-            assert_raises(AssertionError, assert_equal, l1, l2)
-        assert set(assert_docs) == {'start', 'descriptor', 'event', 'stop'}
+    for clear in [True, False]:
+        for _ in range(2):
+            if clear:
+                source.emit(('clear', None))
+                assert all([not buf for buf in dp.buffers])
+            L.clear()
+            for b in s2:
+                source2.emit(b)
+            for a in s:
+                source.emit(a)
+            assert_docs = set()
+            for name, (l1, l2) in L:
+                assert_docs.add(name)
+                assert_raises(AssertionError, assert_equal, l1, l2)
+            assert set(assert_docs) == {'start', 'descriptor', 'event', 'stop'}
