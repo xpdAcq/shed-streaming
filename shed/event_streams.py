@@ -129,7 +129,7 @@ class EventStream(Stream):
     pop_kwargs = ['output_info', 'input_info', 'md', 'stream_name',
                   'raise_upon_error']
 
-    def __init__(self, child=None, children=None,
+    def __init__(self, upstream=None, upstreams=None,
                  *, output_info=None, input_info=None, md=None,
                  stream_name=None,
                  raise_upon_error=False,
@@ -169,7 +169,8 @@ class EventStream(Stream):
             self.stream_name = md['stream_name']
         else:
             self.stream_name = None
-        Stream.__init__(self, child, children, stream_name=self.stream_name)
+        Stream.__init__(self, upstream, upstreams,
+                        stream_name=self.stream_name)
         if output_info is None:
             output_info = {}
         if input_info is None:
@@ -198,7 +199,7 @@ class EventStream(Stream):
             if isinstance(v, str) or len(v) < 2:
                 input_info[k] = (v, 0)
             elif isinstance(v[1], Stream):
-                input_info[k] = (v[0], self.children.index(v[1]))
+                input_info[k] = (v[0], self.upstreams.index(v[1]))
 
         # Build dict of initial state to clear upon new start, maybe
         self._initial_state = _update_initial_state_helper(
@@ -228,8 +229,8 @@ class EventStream(Stream):
         if x is not None:
             x = self.curate_streams(x, True)
             result = []
-            for parent in self.parents:
-                r = parent.update(x, who=self)
+            for downstream in self.downstreams:
+                r = downstream.update(x, who=self)
                 if type(r) is list:
                     result.extend(r)
                 else:
@@ -676,7 +677,7 @@ class map(EventStream):
     ----------
     func: callable
         The function to map on the event data
-    child: EventStream instance
+    upstream: EventStream instance
         The source of the data
     *args: tuple
         args to be passed to the function,
@@ -708,13 +709,13 @@ class map(EventStream):
     >>> assert len(L) == 6
     """
 
-    def __init__(self, func, child, *args,
+    def __init__(self, func, upstream, *args,
                  full_event=False,
                  output_info=None, input_info=None,
                  **kwargs):
         self.func = func
 
-        EventStream.__init__(self, child, output_info=output_info,
+        EventStream.__init__(self, upstream, output_info=output_info,
                              input_info=input_info, **kwargs)
         self._clean_kwargs(kwargs)
         self.func_kwargs = kwargs
@@ -747,7 +748,7 @@ class filter(EventStream):
     predicate: callable
         The function which returns True if the event is to propagate
         further in the pipeline
-    child: EventStream instance
+    upstream: EventStream instance
         The source of the data
     *args: tuple
         args to be passed to the function,
@@ -810,12 +811,12 @@ class filter(EventStream):
     >>> assert len(L) == 2
     """
 
-    def __init__(self, predicate, child, *args, input_info=None,
+    def __init__(self, predicate, upstream, *args, input_info=None,
                  full_event=False, document_name='event', **kwargs):
         """Initialize the node """
         self.predicate = predicate
 
-        EventStream.__init__(self, child, input_info=input_info, **kwargs)
+        EventStream.__init__(self, upstream, input_info=input_info, **kwargs)
         self._clean_kwargs(kwargs)
 
         self.func_kwargs = kwargs
@@ -897,7 +898,7 @@ class accumulate(EventStream):
     ----------
     func: callable
         The function to map on the event data
-    child: EventStream instance
+    upstream: EventStream instance
         The source of the data
     state_key: str
         The keyword for current accumulated state in the func
@@ -935,7 +936,7 @@ class accumulate(EventStream):
     >>> assert len(L) == 6
     """
 
-    def __init__(self, func, child, state_key=None,
+    def __init__(self, func, upstream, state_key=None,
                  full_event=False,
                  output_info=None,
                  input_info=None, start=no_default,
@@ -944,7 +945,7 @@ class accumulate(EventStream):
         self.func = func
         self.start_state = start
         self.state = start
-        EventStream.__init__(self, child, input_info=input_info,
+        EventStream.__init__(self, upstream, input_info=input_info,
                              output_info=output_info, **kwargs)
         if input_info is not None and len(input_info) != 1:
             raise ValueError("Error : only one key allowed for accumulate")
@@ -992,7 +993,7 @@ class zip(EventStream):
 
     Parameters
     ----------
-    children: EventStream instances
+    upstreams: EventStream instances
         The event streams to be zipped together
     zip_type: {'extend', 'strict', 'truncate}, optional
         What type of zip to perform. If strict then the streams are assumed
@@ -1023,12 +1024,12 @@ class zip(EventStream):
     >>> assert len(L) == 6
     """
 
-    def __init__(self, *children, zip_type='extend', **kwargs):
+    def __init__(self, *upstreams, zip_type='extend', **kwargs):
         self.maxsize = kwargs.pop('maxsize', 10)
-        self.buffers = [deque() for _ in children]
+        self.buffers = [deque() for _ in upstreams]
         self.condition = Condition()
         self.prior = ()
-        EventStream.__init__(self, children=children, zip_type=zip_type,
+        EventStream.__init__(self, upstreams=upstreams, zip_type=zip_type,
                              **kwargs)
         if zip_type == 'strict':
             self.update = self._strict_update
@@ -1040,7 +1041,7 @@ class zip(EventStream):
             raise NotImplementedError()
 
     def _strict_update(self, x, who=None):
-        L = self.buffers[self.children.index(who)]
+        L = self.buffers[self.upstreams.index(who)]
         L.append(x)
         if len(L) == 1 and all(self.buffers):
             tup = tuple(buf.popleft() for buf in self.buffers)
@@ -1051,7 +1052,7 @@ class zip(EventStream):
             return self.condition.wait()
 
     def _extend_update(self, x, who=None):
-        L = self.buffers[self.children.index(who)]
+        L = self.buffers[self.upstreams.index(who)]
         L.append(x)
         if len(L) == 1 and all(self.buffers):
             if self.prior:
@@ -1067,7 +1068,7 @@ class zip(EventStream):
             return self.condition.wait()
 
     def _truncate_update(self, x, who=None):
-        L = self.buffers[self.children.index(who)]
+        L = self.buffers[self.upstreams.index(who)]
         L.append(x)
         if len(L) == 1 and all(self.buffers):
             for i in range(1, len(self.buffers)):
@@ -1089,7 +1090,7 @@ class Bundle(EventStream):
 
     Parameters
     ----------
-    children: EventStream instances
+    upstreams: EventStream instances
         The event streams to be zipped together
 
     Examples
@@ -1113,16 +1114,16 @@ class Bundle(EventStream):
     >>> assert len(L) == 9
     """
 
-    def __init__(self, *children, **kwargs):
+    def __init__(self, *upstreams, **kwargs):
         self.maxsize = kwargs.pop('maxsize', 100)
-        self.buffers = [deque() for _ in children]
+        self.buffers = [deque() for _ in upstreams]
         self.condition = Condition()
         self.prior = ()
-        EventStream.__init__(self, children=children)
+        EventStream.__init__(self, upstreams=upstreams)
         self.generate_provenance()
 
     def update(self, x, who=None):
-        L = self.buffers[self.children.index(who)]
+        L = self.buffers[self.upstreams.index(who)]
         L.append(x)
         if len(L) == 1 and all(self.buffers):
             # if all the docs are of the same type and not an event, issue
@@ -1164,7 +1165,7 @@ class BundleSingleStream(EventStream):
 
     Parameters
     ----------
-    child: EventStream instances
+    upstream: EventStream instances
         The event stream containing the data to be zipped together
     control_stream: {EventStream, int}
         Information to control the buffering. If int, bundle that many
@@ -1189,7 +1190,7 @@ class BundleSingleStream(EventStream):
     >>> assert len(L) == 9
     """
 
-    def __init__(self, child, control_stream, **kwargs):
+    def __init__(self, upstream, control_stream, **kwargs):
         self.maxsize = kwargs.pop('maxsize', 100)
         self.buffers = []
         self.desc_start_map = {}
@@ -1197,10 +1198,10 @@ class BundleSingleStream(EventStream):
         self.prior = ()
         self.control_stream = control_stream
         if isinstance(control_stream, int):
-            EventStream.__init__(self, child=child)
+            EventStream.__init__(self, upstream=upstream)
             self.n_hdrs = control_stream
         else:
-            EventStream.__init__(self, children=(child, control_stream))
+            EventStream.__init__(self, upstreams=(upstream, control_stream))
             self.n_hdrs = None
         self.generate_provenance()
 
@@ -1254,7 +1255,7 @@ class combine_latest(EventStream):
 
     Parameters
     ----------
-    children: EventStream instances
+    upstreams: EventStream instances
         The streams to combine
     emit_on: EventStream, list of EventStreams or None
         Only emit upon update of the streams listed.
@@ -1281,24 +1282,24 @@ class combine_latest(EventStream):
 
     special_docs_names = ['start', 'descriptor', 'stop']
 
-    def __init__(self, *children, emit_on=None):
-        self.last = [None for _ in children]
-        self.special_last = {k: [None for _ in children] for k in
+    def __init__(self, *upstreams, emit_on=None):
+        self.last = [None for _ in upstreams]
+        self.special_last = {k: [None for _ in upstreams] for k in
                              self.special_docs_names}
-        self.missing = set(children)
-        self.special_missing = {k: set(children) for k in
+        self.missing = set(upstreams)
+        self.special_missing = {k: set(upstreams) for k in
                                 self.special_docs_names}
         if emit_on is not None:
             if not hasattr(emit_on, '__iter__'):
                 emit_on = (emit_on,)
             self.emit_on = emit_on
         else:
-            self.emit_on = children
-        EventStream.__init__(self, children=children)
+            self.emit_on = upstreams
+        EventStream.__init__(self, upstreams=upstreams)
 
     def update(self, x, who=None):
         name, doc = x
-        idx = self.children.index(who)
+        idx = self.upstreams.index(who)
         if name in self.special_docs_names:
             local_missing = self.special_missing[name]
             local_last = self.special_last[name]
@@ -1327,7 +1328,7 @@ class zip_latest(EventStream):
     ----------
     lossless : EventStream instance
         The stream who's documents will always be emitted
-    children: EventStream instances
+    upstreams: EventStream instances
         The streams to combine
 
     Examples
@@ -1351,32 +1352,32 @@ class zip_latest(EventStream):
 
     special_docs_names = ['start', 'descriptor', 'stop']
 
-    def __init__(self, lossless, *children, clear_on_lossless_stop=False,
+    def __init__(self, lossless, *upstreams, clear_on_lossless_stop=False,
                  **kwargs):
         self.clear_on_lossless_stop = clear_on_lossless_stop
         self.lossless = lossless
-        children = (lossless,) + children
-        self.last = [None for _ in children]
-        self.special_last = {k: [None for _ in children] for k in
+        upstreams = (lossless,) + upstreams
+        self.last = [None for _ in upstreams]
+        self.special_last = {k: [None for _ in upstreams] for k in
                              self.special_docs_names}
-        self.missing = set(children)
-        self.special_missing = {k: set(children) for k in
+        self.missing = set(upstreams)
+        self.special_missing = {k: set(upstreams) for k in
                                 self.special_docs_names}
         self.lossless_buffer = deque()
         # Keep track of the emitted docuement types
         self.lossless_emitted = set()
-        EventStream.__init__(self, children=children, **kwargs)
+        EventStream.__init__(self, upstreams=upstreams, **kwargs)
 
     def update(self, x, who=None):
         name, doc = x
-        idx = self.children.index(who)
+        idx = self.upstreams.index(who)
         if who == self.lossless and name == 'start' and \
                 self.clear_on_lossless_stop:
-            self.last = [None for _ in self.children]
-            self.special_last = {k: [None for _ in self.children]
+            self.last = [None for _ in self.upstreams]
+            self.special_last = {k: [None for _ in self.upstreams]
                                  for k in self.special_docs_names}
-            self.missing = set(self.children)
-            self.special_missing = {k: set(self.children) for k in
+            self.missing = set(self.upstreams)
+            self.special_missing = {k: set(self.upstreams) for k in
                                     self.special_docs_names}
             self.lossless_buffer.clear()
             # Keep track of the emitted docuement types
@@ -1420,7 +1421,7 @@ class Eventify(EventStream):
 
     Parameters
     ----------
-    child: EventStream instance
+    upstream: EventStream instance
         The event stream to eventify
     start_keys: str, optional
         The run start keys to use to create the events
@@ -1448,7 +1449,7 @@ class Eventify(EventStream):
     >>> assert len(L) == 4
     """
 
-    def __init__(self, child, *keys, output_info=None,
+    def __init__(self, upstream, *keys, output_info=None,
                  document='start',
                  **kwargs):
         # TODO: maybe allow start_key to be a list of relevent keys?
@@ -1460,7 +1461,7 @@ class Eventify(EventStream):
         self.emit_event = False
         self.unseen_docs = ['start', 'descriptor', 'event', 'stop']
 
-        EventStream.__init__(self, child, output_info=output_info, **kwargs)
+        EventStream.__init__(self, upstream, output_info=output_info, **kwargs)
         self._initial_state.update(_update_initial_state_helper(
             self, ['keys', 'document', 'vals', 'emit_event',
                    'unseen_docs']))
@@ -1523,7 +1524,7 @@ class Query(EventStream):
     -----------
     db: databroker.Broker instance
         The databroker to be queried
-    child: EventStream instance
+    upstream: EventStream instance
         The stream to be subscribed to
     query_function: callable
         A function which executes a query against the databroker using the
@@ -1541,13 +1542,13 @@ class Query(EventStream):
 
     """
 
-    def __init__(self, db, child, query_function,
+    def __init__(self, db, upstream, query_function,
                  query_decider=None, max_n_hdrs=10, **kwargs):
         self.max_n_hdrs = max_n_hdrs
         self.db = db
         self.query_function = query_function
         self.query_decider = query_decider
-        EventStream.__init__(self, child,
+        EventStream.__init__(self, upstream,
                              output_info=[('hdr_uid',
                                            {'dtype': 'str',
                                             'source': 'query'})],
@@ -1599,16 +1600,16 @@ class QueryUnpacker(EventStream):
     -----------
     db: databroker.Broker instance
         The databroker to be queried
-    child: EventStream instance
+    upstream: EventStream instance
         The stream to be subscribed to
     fill: bool, optional
         Whether or not to fill the documents, defaults to True
 
     """
 
-    def __init__(self, db, child, fill=True, **kwargs):
+    def __init__(self, db, upstream, fill=True, **kwargs):
         self.db = db
-        EventStream.__init__(self, child, **kwargs)
+        EventStream.__init__(self, upstream, **kwargs)
         self.fill = fill
         self._initial_state.update(_update_initial_state_helper(self,
                                                                 ['fill', ]))
@@ -1625,10 +1626,10 @@ class QueryUnpacker(EventStream):
 
 
 class split(EventStream):
-    def __init__(self, child, n_streams):
+    def __init__(self, upstream, n_streams):
         self.split_streams = [EventStream(
             stream_name='Split output-{}'.format(i)) for i in range(n_streams)]
-        EventStream.__init__(self, child=child)
+        EventStream.__init__(self, upstream=upstream)
 
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
@@ -1639,9 +1640,9 @@ class split(EventStream):
 class fill_events(EventStream):
     """Fill events without provenence"""
 
-    def __init__(self, db, child):
+    def __init__(self, db, upstream):
         self.db = db
-        EventStream.__init__(self, child=child)
+        EventStream.__init__(self, upstream=upstream)
         self.descs = None
 
     def start(self, docs):
