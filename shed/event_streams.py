@@ -23,10 +23,11 @@ from collections import deque
 
 from streamz.core import Stream, no_default
 from tornado.locks import Condition
+from tornado import gen
 import copy
 from pprint import pprint
 
-
+_global_sinks = set()
 # TODO: if mismatch includes error stop doc be more verbose
 
 
@@ -251,6 +252,7 @@ class EventStream(Stream):
             New name document pair
         """
         name, docs = self.curate_streams(nds, False)
+        print(self, name)
         return getattr(self, name)(docs)
 
     def update(self, x, who=None):
@@ -669,6 +671,45 @@ class EventStream(Stream):
         for k, v in self._initial_state.items():
             setattr(self, k, copy.deepcopy(v))
         return 'clear', docs
+
+
+@EventStream.register_api()
+class sink(EventStream):
+    """ Apply a function on every element
+
+    Examples
+    --------
+    >>> source = Stream()
+    >>> L = list()
+    >>> source.sink(L.append)
+    >>> source.sink(print)
+    >>> source.sink(print)
+    >>> source.emit(123)
+    123
+    123
+    >>> L
+    [123]
+
+    See Also
+    --------
+    map
+    Stream.sink_to_list
+    """
+    _graphviz_shape = 'trapezium'
+
+    def __init__(self, upstream, func, **kwargs):
+        self.func = func
+
+        Stream.__init__(self, upstream, **kwargs)
+        _global_sinks.add(self)
+
+    def update(self, x, who=None):
+        if x[0] in ['start', 'descriptor', 'event', 'stop']:
+            result = self.func(x)
+            if type(result) is gen.Future:
+                return result
+            else:
+                return []
 
 
 class map(EventStream):
@@ -1637,9 +1678,6 @@ class QueryUnpacker(EventStream):
         doc = docs[0]
         if name == 'event':
             a = self.db[doc['data']['hdr_uid']]
-            print('==============')
-            print(a)
-            print('==============')
             return [self.emit(nd) for nd in
                     a.documents(fill=self.fill)]
 
