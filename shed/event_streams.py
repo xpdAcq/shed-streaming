@@ -252,7 +252,6 @@ class EventStream(Stream):
             New name document pair
         """
         name, docs = self.curate_streams(nds, False)
-        print(self, name)
         return getattr(self, name)(docs)
 
     def update(self, x, who=None):
