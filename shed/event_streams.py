@@ -667,6 +667,7 @@ class EventStream(Stream):
         -------
 
         """
+        print('clear {}'.format(self.stream_name))
         for k, v in self._initial_state.items():
             setattr(self, k, copy.deepcopy(v))
         return 'clear', docs
@@ -1543,8 +1544,8 @@ class Eventify(EventStream):
 
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
-        if name == 'start':
-            self.clear()
+        if name == 'clear':
+            return self.emit(None)
         # If we haven't seen this current type of doc
         if name in self.unseen_docs:
             # If the name of the current doc is the one we want to eventify
