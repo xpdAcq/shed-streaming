@@ -1637,6 +1637,8 @@ class Query(EventStream):
 
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
+        if name == 'clear':
+            self.emit(self.clear(None))
         if name == 'start':
             el = [self.emit(self.start(docs)),
                   self.emit(self.descriptor(docs))]
@@ -1673,8 +1675,8 @@ class QueryUnpacker(EventStream):
 
     def update(self, x, who=None):
         name, docs = self.curate_streams(x, False)
-        if name == 'start':
-            self.clear()
+        if name == 'clear':
+            self.emit(self.clear(None))
         doc = docs[0]
         if name == 'event':
             a = self.db[doc['data']['hdr_uid']]
