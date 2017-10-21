@@ -667,7 +667,6 @@ class EventStream(Stream):
         -------
 
         """
-        print('clear {}'.format(self.stream_name))
         for k, v in self._initial_state.items():
             setattr(self, k, copy.deepcopy(v))
         return 'clear', docs
