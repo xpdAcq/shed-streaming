@@ -24,7 +24,7 @@ def test_all_add_5(fresh_RE):
 
     RE.subscribe('all', es.istar(s2.emit))
     RE(pchain(stepscan(det, motor), sleep(1), stepscan(det, motor)),
-       subs={'all': es.istar(source.emit)})
+       {'all': es.istar(source.emit)})
 
     assert_docs = set()
     for l, s in zip(L, L2):
