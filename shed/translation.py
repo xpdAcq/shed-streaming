@@ -24,17 +24,21 @@ def walk_up(node, graph, prior_node=None):
             return
         else:
             graph.add_edge(t, tt)
+            if isinstance(node, FromEventModel):
+                return
 
-    for nodes in node.upstreams:
-        for node2 in nodes:
-            if node2 is not None and not isinstance(node2, FromEventModel):
-                walk_up(node2, graph, node)
+    for node2 in node.upstreams:
+        # Stop at translation node
+        if node2 is not None:
+            walk_up(node2, graph, node)
 
 
 class FromEventModel(Stream):
     def __init__(self, upstream, doc_type, data_address, event_stream_name=ALL,
-                 stream_name=None):
+                 stream_name=None, principle=False):
         Stream.__init__(self, upstream, stream_name=stream_name)
+        self.stopped = False
+        self.principle = principle
         self.doc_type = doc_type
         if isinstance(data_address, str):
             data_address = tuple([data_address])
@@ -43,14 +47,18 @@ class FromEventModel(Stream):
         self.start_uid = None
         self.descriptor_uids = None
         self.run_start_uid = None
+        self.subs = []
 
     def update(self, x, who=None):
         name, doc = x
         if name == 'start':
+            self.stopped = False
             self.start_uid = doc['uid']
             self.descriptor_uids = {}
         if name == 'descriptor':
             self.descriptor_uids[doc['uid']] = doc.get('name', 'primary')
+        if name == 'stop':
+            [s._emit(s.create_stop(x)) for s in self.subs]
         inner = doc.copy()
         if (name == self.doc_type and
                 ((name == 'descriptor' and
@@ -82,12 +90,18 @@ class ToEventModel(Stream):
         self.graph = nx.DiGraph()
         walk_up(self, graph=self.graph)
 
-        self.translation_nodes = {n: n.stream for n in g.nodes if isinstance(
-            n, FromEventModel)}
+        self.translation_nodes = {k: n['stream'] for k, n in
+                                  self.graph.node.items()
+                                  if isinstance(n['stream'], FromEventModel)}
+        self.principle_nodes = [n for n in self.translation_nodes.values()
+                                if n.principle is True]
+        for p in self.principle_nodes:
+            p.subs.append(self)
 
     def update(self, x, who=None):
         # Need a way to address translation nodes and start_uids, maybe hash
-        current_start_uids = {k: v.uid for k, v in self.translation_nodes.items()}
+        current_start_uids = {k: v.start_uid for k, v in
+                              self.translation_nodes.items()}
 
         # Bootstrap
         if self.parent_uids is None:
@@ -107,8 +121,13 @@ class ToEventModel(Stream):
     def create_start(self, x):
         self.run_start_uid = str(uuid.uuid4())
         new_start_doc = self.md
-        new_start_doc.update(dict(uid=self.run_start_uid, time=time.time(),
-                                  graph=self.graph))
+        new_start_doc.update(
+            dict(
+                uid=self.run_start_uid,
+                time=time.time(),
+                graph=list(nx.generate_edgelist(self.graph, data=True)),
+                parent_uids={k: v.start_uid for k, v in
+                             self.translation_nodes.items()}))
         self.index_dict = dict()
         return 'start', new_start_doc
 
@@ -149,5 +168,5 @@ class ToEventModel(Stream):
     def create_stop(self, x):
         new_stop = dict(uid=str(uuid.uuid4()),
                         time=time.time(),
-                        run_start=self.run_start_uid,)
+                        run_start=self.run_start_uid)
         return 'stop', new_stop
