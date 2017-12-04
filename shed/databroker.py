@@ -33,7 +33,8 @@ class AssetInsert(Stream):
         for data_name in self.external_writers.keys():
             # data doesn't have to exist
             if data_name in fs_doc['data_keys']:
-                fs_doc['data_keys'][data_name] = dict(doc['data_keys'][data_name])
+                fs_doc['data_keys'][data_name] = dict(
+                    doc['data_keys'][data_name])
                 fs_doc['data_keys'][data_name].update(
                     external='FILESTORE:')
         return fs_doc
@@ -63,4 +64,3 @@ class AssetInsert(Stream):
             writer.close()
             self.writers.pop(data_key)
         return doc
-
