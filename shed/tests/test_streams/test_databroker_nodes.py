@@ -116,7 +116,7 @@ def test_query_many_headers(exp_db):
         assert n in assert_docs
 
     assert_docs = set()
-    assert len(L2) == 3 * 3 + 5 + 5 + 2
+    assert len(L2) == 3 * (3 + 2)
     for l in L2:
         assert_docs.add(l[0])
         assert l[0]
@@ -176,7 +176,7 @@ def test_bundle_single_stream(exp_db):
         source.emit(a)
 
     assert_docs = set()
-    assert len(L) == 3 + 5 + 5 + 2
+    assert len(L) == 3 + (2 * 3)
     for l in L:
         assert_docs.add(l[0])
         assert l[0]
@@ -207,7 +207,7 @@ def test_bundle_single_stream_control_int(exp_db):
         source.emit(a)
 
     assert_docs = set()
-    assert len(L) == 3 + 5 + 2
+    assert len(L) == 3 + 2 + 2
     for l in L:
         assert_docs.add(l[0])
         assert l[0]

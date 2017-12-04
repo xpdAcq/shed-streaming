@@ -274,7 +274,7 @@ def test_string_workflow(exp_db, start_uid1):
         assert_docs.add(n)
         if n == 'event':
             assert '2017' in d['data']['filename']
-            assert 'hi' in d['data']['filename']
+            assert 'uid' in d['data']['filename']
             assert '.tiff' in d['data']['filename']
     for n in ['start', 'descriptor', 'event', 'stop']:
         assert n in assert_docs
