@@ -57,10 +57,10 @@ install:
       conda install filestore metadatastore -c conda-forge -c lightsource2-dev -c lightsource-tag -c lightsource2 -c soft-matter
       pip install https://github.com/NSLS-II/portable-mds/zipball/master#egg=portable_mds;
       pip install https://github.com/NSLS-II/portable-fs/zipball/master#egg=portable_fs;
-      pip install https://github.com/xpdAcq/xpdsim/zipball/master#egg=xpdsim;
       python -c "from filestore import utils, conf; utils.install_sentinels(conf.connection_config, 1)" ;
     fi
   - 'pip install https://github.com/mrocklin/streamz/zipball/master#egg=streamz'
+  - 'pip install https://github.com/xpdAcq/xpdsim/zipball/master#egg=xpdsim'
   - python setup.py install
   # Need to clean the python build directory (and other cruft) or pytest is
   # going to find the build directory and get confused why there are two sets

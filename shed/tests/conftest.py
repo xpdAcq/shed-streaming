@@ -22,6 +22,7 @@ from .utils import insert_imgs
 import tempfile
 from bluesky.tests.conftest import NumpySeqHandler, RunEngine, asyncio
 import uuid
+import copy
 
 
 @pytest.fixture(scope='function')
@@ -29,6 +30,7 @@ def db():
     from xpdsim import build_sim_db
     _, db = build_sim_db()
     db.reg.register_handler('NPY_SEQ', NumpySeqHandler)
+    db.prepare_hook = lambda name, doc: copy.deepcopy(doc)
     yield db
 
 
