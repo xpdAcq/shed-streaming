@@ -6,6 +6,7 @@ class AssetInsert(Stream):
     def __init__(self, upstream, fs, root,
                  stream_name=None, external_writers=None):
         super().__init__(upstream=upstream, stream_name=stream_name)
+        self.root = root
         self.fs = fs
         if external_writers is None:
             external_writers = {}
@@ -21,7 +22,7 @@ class AssetInsert(Stream):
 
     def start(self, doc):
         # Make a fresh instance of any WriterClass classes.
-        self.writers = {data_key: cl(self.fs)
+        self.writers = {data_key: cl(self.fs, self.root)
                         for data_key, cl in self.external_writers.items()}
         return 'start', doc, doc
 
