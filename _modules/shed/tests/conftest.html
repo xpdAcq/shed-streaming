@@ -175,8 +175,36 @@
 
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">insert_imgs</span>
 <span class="kn">import</span> <span class="nn">tempfile</span>
-<span class="kn">from</span> <span class="nn">bluesky.tests.conftest</span> <span class="k">import</span> <span class="n">fresh_RE</span><span class="p">,</span> <span class="n">db</span>
-<span class="kn">from</span> <span class="nn">bluesky.examples</span> <span class="k">import</span> <span class="n">ReaderWithRegistryHandler</span>
+<span class="kn">from</span> <span class="nn">bluesky.tests.conftest</span> <span class="k">import</span> <span class="n">NumpySeqHandler</span><span class="p">,</span> <span class="n">RunEngine</span><span class="p">,</span> <span class="n">asyncio</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+
+<div class="viewcode-block" id="db"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.db">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;function&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">db</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">xpdsim</span> <span class="k">import</span> <span class="n">build_sim_db</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">db</span> <span class="o">=</span> <span class="n">build_sim_db</span><span class="p">()</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">register_handler</span><span class="p">(</span><span class="s1">&#39;NPY_SEQ&#39;</span><span class="p">,</span> <span class="n">NumpySeqHandler</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">prepare_hook</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">name</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+    <span class="k">yield</span> <span class="n">db</span></div>
+
+
+<div class="viewcode-block" id="fresh_RE"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.fresh_RE">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;function&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">fresh_RE</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">new_event_loop</span><span class="p">()</span>
+    <span class="n">loop</span><span class="o">.</span><span class="n">set_debug</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">RE</span> <span class="o">=</span> <span class="n">RunEngine</span><span class="p">({},</span> <span class="n">loop</span><span class="o">=</span><span class="n">loop</span><span class="p">)</span>
+    <span class="n">RE</span><span class="o">.</span><span class="n">ignore_callback_exceptions</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">clean_event_loop</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">RE</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="s1">&#39;idle&#39;</span><span class="p">:</span>
+            <span class="n">RE</span><span class="o">.</span><span class="n">halt</span><span class="p">()</span>
+        <span class="n">ev</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Event</span><span class="p">(</span><span class="n">loop</span><span class="o">=</span><span class="n">loop</span><span class="p">)</span>
+        <span class="n">ev</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+        <span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">ev</span><span class="o">.</span><span class="n">wait</span><span class="p">())</span>
+
+    <span class="n">request</span><span class="o">.</span><span class="n">addfinalizer</span><span class="p">(</span><span class="n">clean_event_loop</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">RE</span></div>
 
 
 <div class="viewcode-block" id="start_uid1"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.start_uid1">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;function&#39;</span><span class="p">)</span>
@@ -186,39 +214,31 @@
     <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">exp_db</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">][</span><span class="s1">&#39;uid&#39;</span><span class="p">])</span></div>
 
 
-
 <div class="viewcode-block" id="img_size"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.img_size">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;module&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">img_size</span><span class="p">():</span>
     <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
     <span class="k">yield</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span></div>
 
 
-<span class="c1"># @pytest.fixture(params=[</span>
-<span class="c1">#     # &#39;sqlite&#39;,</span>
-<span class="c1">#     &#39;mongo&#39;], scope=&#39;module&#39;)</span>
-<span class="c1"># def db(request):</span>
-<span class="c1">#     param_map = {</span>
-<span class="c1">#         # &#39;sqlite&#39;: build_sqlite_backed_broker,</span>
-<span class="c1">#         &#39;mongo&#39;: build_pymongo_backed_broker}</span>
-<span class="c1">#</span>
-<span class="c1">#     return param_map[request.param](request)</span>
-
-
 <div class="viewcode-block" id="exp_db"><a class="viewcode-back" href="../../../shed.tests.html#shed.tests.conftest.exp_db">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;function&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">exp_db</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">fresh_RE</span><span class="p">):</span>
     <span class="n">db2</span> <span class="o">=</span> <span class="n">db</span>
     <span class="n">reg</span> <span class="o">=</span> <span class="n">db2</span><span class="o">.</span><span class="n">reg</span>
-    <span class="c1"># reg.register_handler(&#39;npy&#39;, NpyHandler)</span>
-    <span class="n">reg</span><span class="o">.</span><span class="n">register_handler</span><span class="p">(</span><span class="s1">&#39;RWFS_NPY&#39;</span><span class="p">,</span> <span class="n">ReaderWithRegistryHandler</span><span class="p">)</span>
     <span class="n">RE</span> <span class="o">=</span> <span class="n">fresh_RE</span>
-    <span class="n">RE</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">insert</span><span class="p">)</span>
+    <span class="n">RE</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">db2</span><span class="o">.</span><span class="n">insert</span><span class="p">)</span>
+    <span class="n">bt_uid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">)</span>
 
-    <span class="n">uid1</span> <span class="o">=</span> <span class="n">insert_imgs</span><span class="p">(</span><span class="n">RE</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span>
-                       <span class="n">bt_safN</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">pi_name</span><span class="o">=</span><span class="s1">&#39;chris&#39;</span><span class="p">,</span> <span class="n">start_uid1</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">uid2</span> <span class="o">=</span> <span class="n">insert_imgs</span><span class="p">(</span><span class="n">RE</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span>
-                       <span class="n">pi_name</span><span class="o">=</span><span class="s1">&#39;tim&#39;</span><span class="p">,</span> <span class="n">bt_safN</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">start_uid2</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">uid3</span> <span class="o">=</span> <span class="n">insert_imgs</span><span class="p">(</span><span class="n">RE</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span>
-                       <span class="n">pi_name</span><span class="o">=</span><span class="s1">&#39;chris&#39;</span><span class="p">,</span> <span class="n">bt_safN</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">start_uid3</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">insert_imgs</span><span class="p">(</span><span class="n">RE</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">bt_safN</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">pi_name</span><span class="o">=</span><span class="s1">&#39;chris&#39;</span><span class="p">,</span>
+                <span class="n">sample_name</span><span class="o">=</span><span class="s1">&#39;kapton&#39;</span><span class="p">,</span> <span class="n">sample_composition</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="n">start_uid1</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">bt_uid</span><span class="o">=</span><span class="n">bt_uid</span><span class="p">,</span> <span class="n">composition_string</span><span class="o">=</span><span class="s1">&#39;Au&#39;</span><span class="p">)</span>
+    <span class="n">insert_imgs</span><span class="p">(</span><span class="n">RE</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">pi_name</span><span class="o">=</span><span class="s1">&#39;tim&#39;</span><span class="p">,</span> <span class="n">bt_safN</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">sample_name</span><span class="o">=</span><span class="s1">&#39;Au&#39;</span><span class="p">,</span> <span class="n">bkgd_sample_name</span><span class="o">=</span><span class="s1">&#39;kapton&#39;</span><span class="p">,</span>
+                <span class="n">sample_composition</span><span class="o">=</span><span class="s1">&#39;Au&#39;</span><span class="p">,</span> <span class="n">start_uid2</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">bt_uid</span><span class="o">=</span><span class="n">bt_uid</span><span class="p">,</span>
+                <span class="n">composition_string</span><span class="o">=</span><span class="s1">&#39;Au&#39;</span><span class="p">)</span>
+    <span class="n">insert_imgs</span><span class="p">(</span><span class="n">RE</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="p">,</span> <span class="n">pi_name</span><span class="o">=</span><span class="s1">&#39;chris&#39;</span><span class="p">,</span> <span class="n">bt_safN</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                <span class="n">sample_name</span><span class="o">=</span><span class="s1">&#39;Au&#39;</span><span class="p">,</span> <span class="n">bkgd_sample_name</span><span class="o">=</span><span class="s1">&#39;kapton&#39;</span><span class="p">,</span>
+                <span class="n">sample_composition</span><span class="o">=</span><span class="s1">&#39;Au&#39;</span><span class="p">,</span> <span class="n">start_uid3</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">bt_uid</span><span class="o">=</span><span class="n">bt_uid</span><span class="p">,</span>
+                <span class="n">composition_string</span><span class="o">=</span><span class="s1">&#39;Au&#39;</span><span class="p">)</span>
     <span class="k">yield</span> <span class="n">db2</span></div>
 
 
