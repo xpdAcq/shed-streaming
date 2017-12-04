@@ -3,7 +3,7 @@ from streamz import Stream
 
 
 class AssetInsert(Stream):
-    def __init__(self, upstream, fs, root,
+    def __init__(self, upstream, fs, root, *,
                  stream_name=None, external_writers=None):
         super().__init__(upstream=upstream, stream_name=stream_name)
         self.root = root
@@ -55,8 +55,8 @@ class AssetInsert(Stream):
                 fs_doc['data'][data_key] = fs_uid
 
         fs_doc.update(
-            filled={k: False for k in self.external_writers.keys()})
-        doc.update(filled={k: True for k in self.external_writers.keys()})
+            filled={k: fs_doc['data'][k] for k in
+                    self.external_writers.keys()})
         return fs_doc
 
     def stop(self, doc):
