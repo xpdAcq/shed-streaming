@@ -142,10 +142,10 @@ def test_filter_full_header(exp_db, start_uid1):
     source = Stream()
 
     def f(d):
-        return d['sample_name'] != 'hi'
+        return d['sample_name'] != 'kapton'
 
     def g(d):
-        return d['sample_name'] == 'hi'
+        return d['sample_name'] == 'kapton'
 
     dp = es.filter(f, source, input_info={0: ()}, document_name='start',
                    full_event=True)

@@ -60,6 +60,8 @@ install:
       python -c "from filestore import utils, conf; utils.install_sentinels(conf.connection_config, 1)" ;
     fi
   - 'pip install https://github.com/mrocklin/streamz/zipball/master#egg=streamz'
+  - 'pip install https://github.com/xpdAcq/xpdsim/zipball/master#egg=xpdsim'
+  - 'pip install https://github.com/xpdAcq/xpdacq/zipball/master#egg=xpdacq'
   - python setup.py install
   # Need to clean the python build directory (and other cruft) or pytest is
   # going to find the build directory and get confused why there are two sets

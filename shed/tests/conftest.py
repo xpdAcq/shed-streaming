@@ -20,8 +20,36 @@ import pytest
 
 from .utils import insert_imgs
 import tempfile
-from bluesky.tests.conftest import fresh_RE, db
-from bluesky.examples import ReaderWithRegistryHandler
+from bluesky.tests.conftest import NumpySeqHandler, RunEngine, asyncio
+import uuid
+import copy
+
+
+@pytest.fixture(scope='function')
+def db():
+    from xpdsim import build_sim_db
+    _, db = build_sim_db()
+    db.reg.register_handler('NPY_SEQ', NumpySeqHandler)
+    db.prepare_hook = lambda name, doc: copy.deepcopy(doc)
+    yield db
+
+
+@pytest.fixture(scope='function')
+def fresh_RE(request):
+    loop = asyncio.new_event_loop()
+    loop.set_debug(True)
+    RE = RunEngine({}, loop=loop)
+    RE.ignore_callback_exceptions = False
+
+    def clean_event_loop():
+        if RE.state != 'idle':
+            RE.halt()
+        ev = asyncio.Event(loop=loop)
+        ev.set()
+        loop.run_until_complete(ev.wait())
+
+    request.addfinalizer(clean_event_loop)
+    return RE
 
 
 @pytest.fixture(scope='function')
@@ -31,39 +59,31 @@ def start_uid1(exp_db):
     return str(exp_db[2]['start']['uid'])
 
 
-
 @pytest.fixture(scope='module')
 def img_size():
     a = np.random.random_integers(100, 200)
     yield (a, a)
 
 
-# @pytest.fixture(params=[
-#     # 'sqlite',
-#     'mongo'], scope='module')
-# def db(request):
-#     param_map = {
-#         # 'sqlite': build_sqlite_backed_broker,
-#         'mongo': build_pymongo_backed_broker}
-#
-#     return param_map[request.param](request)
-
-
 @pytest.fixture(scope='function')
 def exp_db(db, tmp_dir, img_size, fresh_RE):
     db2 = db
     reg = db2.reg
-    # reg.register_handler('npy', NpyHandler)
-    reg.register_handler('RWFS_NPY', ReaderWithRegistryHandler)
     RE = fresh_RE
-    RE.subscribe(db.insert)
+    RE.subscribe(db2.insert)
+    bt_uid = str(uuid.uuid4)
 
-    uid1 = insert_imgs(RE, reg, 5, img_size, tmp_dir,
-                       bt_safN=0, pi_name='chris', start_uid1=True)
-    uid2 = insert_imgs(RE, reg, 5, img_size, tmp_dir,
-                       pi_name='tim', bt_safN=1, start_uid2=True)
-    uid3 = insert_imgs(RE, reg, 2, img_size, tmp_dir,
-                       pi_name='chris', bt_safN=2, start_uid3=True)
+    insert_imgs(RE, reg, 2, img_size, tmp_dir, bt_safN=0, pi_name='chris',
+                sample_name='kapton', sample_composition='C', start_uid1=True,
+                bt_uid=bt_uid, composition_string='Au')
+    insert_imgs(RE, reg, 2, img_size, tmp_dir, pi_name='tim', bt_safN=1,
+                sample_name='Au', bkgd_sample_name='kapton',
+                sample_composition='Au', start_uid2=True, bt_uid=bt_uid,
+                composition_string='Au')
+    insert_imgs(RE, reg, 2, img_size, tmp_dir, pi_name='chris', bt_safN=2,
+                sample_name='Au', bkgd_sample_name='kapton',
+                sample_composition='Au', start_uid3=True, bt_uid=bt_uid,
+                composition_string='Au')
     yield db2
 
 
