@@ -90,3 +90,5 @@ ENV/
 
 # pycharm
 .idea/
+# Rever
+rever/
