@@ -3,7 +3,7 @@ import networkx as nx
 
 from streamz import Stream
 
-from shed.translation import FromEventModel, ToEventModel, walk_up
+from shed.translation import FromEventStream, ToEventStream, walk_up
 from shed.utils import to_event_model
 
 
@@ -11,7 +11,7 @@ def test_from_event_model():
     g = to_event_model(range(10), [('ct', {'units': 'arb'})])
 
     source = Stream()
-    t = FromEventModel(source, 'event', ('data', 'ct'))
+    t = FromEventStream(source, 'event', ('data', 'ct'))
     l = t.sink_to_list()
 
     for gg in g:
@@ -23,12 +23,12 @@ def test_from_event_model():
 
 def test_walk_up():
     raw = Stream()
-    a_translation = FromEventModel(raw, 'start', ('time',))
-    b_translation = FromEventModel(raw, 'event', ('data', 'pe1_image'))
+    a_translation = FromEventStream(raw, 'start', ('time',))
+    b_translation = FromEventStream(raw, 'event', ('data', 'pe1_image'))
 
     d = b_translation.zip_latest(a_translation)
     dd = d.map(op.truediv)
-    e = ToEventModel(dd, ('data',))
+    e = ToEventStream(dd, ('data',))
 
     g = nx.DiGraph()
     walk_up(e, g)
@@ -44,9 +44,9 @@ def test_to_event_model():
     g = to_event_model(range(10), [('ct', {'units': 'arb'})])
 
     source = Stream()
-    t = FromEventModel(source, 'event', ('data', 'ct'), principle=True)
+    t = FromEventStream(source, 'event', ('data', 'ct'), principle=True)
 
-    n = ToEventModel(t, ('ct', ))
+    n = ToEventStream(t, ('ct',))
     p = n.pluck(0).sink_to_list()
 
     n.sink(print)

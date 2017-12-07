@@ -7,11 +7,13 @@ import networkx as nx
 
 
 def walk_up(node, graph, prior_node=None):
-    """Create graph from a single node, searching up and down the chain
+    """Creates a graph) instance that is a subset of the graph from the stream.
+    The walk starts at a translation to Event Model node and ends at any
+    instances of FromEventStream.
 
     Parameters
     ----------
-    node: Stream instance
+    node: ToEventStream instance
     graph: networkx.DiGraph instance
     """
     if node is None:
@@ -24,7 +26,7 @@ def walk_up(node, graph, prior_node=None):
             return
         else:
             graph.add_edge(t, tt)
-            if isinstance(node, FromEventModel):
+            if isinstance(node, FromEventStream):
                 return
 
     for node2 in node.upstreams:
@@ -33,7 +35,45 @@ def walk_up(node, graph, prior_node=None):
             walk_up(node2, graph, node)
 
 
-class FromEventModel(Stream):
+class FromEventStream(Stream):
+    """Converts an element from the event stream into a base type, and passes
+    it down.
+
+    Parameters
+    ---------------
+    upstream :
+        the upstream node to receive streams from
+    doc_type:
+        The type of document ('start', 'descriptor', 'event', 'stop')
+    data_address:
+        A tuple of successive keys walking through the document considered
+    event_stream_name : str, optional
+        Filter by en event stream name (see :
+        http://nsls-ii.github.io/databroker/api.html?highlight=stream_name#data)
+    stream_name : str, optional
+        Name for this stream node
+
+    Notes
+    --------
+    The result emitted from this stream no longer follows the document model.
+
+
+    Examples
+    -------------
+    import uuid
+    from shed.event_streams import EventStream
+    from shed.translation import FromEventStream
+
+    s = EventStream()
+    s2 = FromEventStream(s, 'event', ('data', 'det_image'))
+    s3 = s2.map(print)
+    s.emit(('start', {'uid' : str(uuid.uuid4())}))
+    s.emit(('descriptor', {'uid' : str(uuid.uuid4())}))
+    s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
+    s.emit(('stop', {'uid' : str(uuid.uuid4())}))
+    prints:
+    1
+    """
     def __init__(self, upstream, doc_type, data_address, event_stream_name=ALL,
                  stream_name=None, principle=False):
         Stream.__init__(self, upstream, stream_name=stream_name)
@@ -74,7 +114,44 @@ class FromEventModel(Stream):
             return self._emit(inner)
 
 
-class ToEventModel(Stream):
+class ToEventStream(Stream):
+    """Converts an element from the base type into a event stream,
+    and passes it down.
+
+    Parameters
+    ---------------
+    upstream :
+        the upstream node to receive streams from
+    data_keys: tuple
+        Names of the data keys
+    stream_name : str, optional
+        Name for this stream node
+
+    Notes
+    --------
+    The result emitted from this stream follows the document model.
+
+
+    Examples
+    -------------
+    import uuid
+    from shed.event_streams import EventStream
+    from shed.translation import FromEventStream, ToEventStream
+
+    s = EventStream()
+    s2 = FromEventStream(s, 'event', ('data', 'det_image'), principle=True)
+    s3 = ToEventStream(s2, ('det_image',))
+    s3.sink(print)
+    s.emit(('start', {'uid' : str(uuid.uuid4())}))
+    s.emit(('descriptor', {'uid' : str(uuid.uuid4()), 'data_keys': {'det_image': {'units': 'arb'}}))
+    s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
+    s.emit(('stop', {'uid' : str(uuid.uuid4())}))
+    prints:
+    ('start',...)
+    ('descriptor',...)
+    ('event',...)
+    ('stop',...)
+    """
     def __init__(self, upstream, data_keys, stream_name=None, **kwargs):
         Stream.__init__(self, upstream, stream_name=stream_name)
         self.index_dict = dict()
@@ -92,7 +169,7 @@ class ToEventModel(Stream):
 
         self.translation_nodes = {k: n['stream'] for k, n in
                                   self.graph.node.items()
-                                  if isinstance(n['stream'], FromEventModel)}
+                                  if isinstance(n['stream'], FromEventStream)}
         self.principle_nodes = [n for n in self.translation_nodes.values()
                                 if n.principle is True]
         for p in self.principle_nodes:
