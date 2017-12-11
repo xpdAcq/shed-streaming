@@ -1,0 +1,13 @@
+**Added:** None
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:**
+
+* Fixed the tests after the move to `ophyd.sim` from `bluesky.examples`
+
+**Security:** None

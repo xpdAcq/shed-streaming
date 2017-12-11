@@ -472,7 +472,7 @@ class EventStream(Stream):
         if not self.bypass:
             if self.run_start_uid is None:
                 raise RuntimeError("Received RunStop before RunStart.")
-            new_stop = self.md
+            new_stop = dict(self.md)
 
             new_stop.update(dict(uid=str(uuid.uuid4()),
                             time=time.time(),
@@ -600,7 +600,8 @@ class EventStream(Stream):
 
             new_event = dict(uid=str(uuid.uuid4()),
                              time=time.time(),
-                             timestamps={},
+                             timestamps={k[0]: time.time() for k in
+                                         self.output_info},
                              descriptor=self.outbound_descriptor_uid,
                              filled={k[0]: True for k in self.output_info},
                              seq_num=self.i)
