@@ -1,8 +1,8 @@
-import uuid
 import time
+import uuid
 
-from streamz.core import Stream
 from databroker._core import ALL
+from streamz.core import Stream
 import networkx as nx
 
 
@@ -143,7 +143,8 @@ class ToEventStream(Stream):
     s3 = ToEventStream(s2, ('det_image',))
     s3.sink(print)
     s.emit(('start', {'uid' : str(uuid.uuid4())}))
-    s.emit(('descriptor', {'uid' : str(uuid.uuid4()), 'data_keys': {'det_image': {'units': 'arb'}}))
+    s.emit(('descriptor', {'uid' : str(uuid.uuid4()),
+                           'data_keys': {'det_image': {'units': 'arb'}}))
     s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
     s.emit(('stop', {'uid' : str(uuid.uuid4())}))
     prints:
