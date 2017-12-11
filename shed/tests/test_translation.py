@@ -12,12 +12,12 @@ def test_from_event_model():
 
     source = Stream()
     t = FromEventStream(source, 'event', ('data', 'ct'))
-    l = t.sink_to_list()
+    L = t.sink_to_list()
 
     for gg in g:
         source.emit(gg)
 
-    for i, ll in enumerate(l):
+    for i, ll in enumerate(L):
         assert i == ll
 
 
@@ -54,5 +54,3 @@ def test_to_event_model():
         source.emit(gg)
 
     assert set(p) == {'start', 'stop', 'event', 'descriptor'}
-
-
