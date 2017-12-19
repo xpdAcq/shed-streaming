@@ -30,9 +30,9 @@ def walk_up(node, graph, prior_node=None):
                 return
             else:
                 for downstream in node.downstreams:
-                    if isinstance(downstream, ToEventStream):
-                        ttt = hash(downstream)
-                        graph.add_node(t, stream=downstream)
+                    ttt = hash(downstream)
+                    if isinstance(downstream, ToEventStream) and ttt not in graph:
+                        graph.add_node(ttt, stream=downstream)
                         graph.add_edge(t, ttt)
                         return
 
@@ -106,7 +106,9 @@ class FromEventStream(Stream):
         if name == 'descriptor':
             self.descriptor_uids[doc['uid']] = doc.get('name', 'primary')
         if name == 'stop':
-            [s._emit(s.create_stop(x)) for s in self.subs]
+            self.start_uid = None
+            # FIXME: append to list and return
+            [s.emit(s.create_stop(x)) for s in self.subs]
         inner = doc.copy()
         if (name == self.doc_type and
                 ((name == 'descriptor' and
@@ -180,6 +182,7 @@ class ToEventStream(Stream):
         self.start_uid = None
         self.parent_uids = None
         self.descriptor_uid = None
+        self.stopped = False
 
         # walk upstream to get all upstream nodes to the translation node
         # get start_uids from the translation node
@@ -190,7 +193,8 @@ class ToEventStream(Stream):
                                   self.graph.node.items()
                                   if isinstance(n['stream'],
                                                 (FromEventStream,
-                                                 ToEventStream)) and n['stream'] != self}
+                                                 ToEventStream)
+                                                ) and n['stream'] != self}
         self.principle_nodes = [n for n in self.translation_nodes.values()
                                 if n.principle is True]
         for p in self.principle_nodes:
@@ -210,7 +214,7 @@ class ToEventStream(Stream):
 
         # If the start uids are different then we have new data
         # Issue a stop then the start/descriptor
-        elif self.parent_uids != current_start_uids:
+        elif self.parent_uids != current_start_uids and not self.stopped:
             rl.extend([self.emit(self.create_stop(x)),
                        self.emit(self.create_start(x)),
                        self.emit(self.create_descriptor(x))])
@@ -219,6 +223,7 @@ class ToEventStream(Stream):
         return rl
 
     def create_start(self, x):
+        self.stopped = False
         self.start_uid = str(uuid.uuid4())
         new_start_doc = self.md
         new_start_doc.update(
@@ -227,7 +232,8 @@ class ToEventStream(Stream):
                 time=time.time(),
                 graph=list(nx.generate_edgelist(self.graph, data=True)),
                 parent_uids={k: v.start_uid for k, v in
-                             self.translation_nodes.items()}))
+                             self.translation_nodes.items()
+                             if v.start_uid is not None}))
         self.index_dict = dict()
         return 'start', new_start_doc
 
@@ -269,4 +275,7 @@ class ToEventStream(Stream):
         new_stop = dict(uid=str(uuid.uuid4()),
                         time=time.time(),
                         run_start=self.start_uid)
+        self.start_uid = None
+        self.stopped = True
+        self.parent_uids = None
         return 'stop', new_stop
