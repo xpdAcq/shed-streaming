@@ -6,15 +6,21 @@ from streamz.core import Stream
 import networkx as nx
 
 
-def walk_up(node, graph, prior_node=None):
-    """Creates a graph) instance that is a subset of the graph from the stream.
-    The walk starts at a translation to Event Model node and ends at any
-    instances of FromEventStream or ToEventStream.
+def walk_to_translation(node, graph, prior_node=None):
+    """Creates a graph instance that is a subset of the graph from the stream.
+
+    The walk starts at a translation ``ToEventStream`` node and ends at any
+    instances of FromEventStream or ToEventStream.  Each iteration of the walk
+    goes up one node, determines if that node is a ``FromEventStream`` node, if
+    not walks one down to see if there are any ``ToEventStream`` nodes, if not
+    it keeps walking up. The walk down allows us to replace live data with
+    stored data/stubs when it comes time to get the parent uids. Graph nodes
+    are hashes of the node objects with ``stream=node`` in the nodes.
 
     Parameters
     ----------
-    node: shed.translation.ToEventStream instance
-    graph: networkx.DiGraph instance
+    node : ToEventStream instance
+    graph : networkx.DiGraph instance
     """
     if node is None:
         return
@@ -31,7 +37,8 @@ def walk_up(node, graph, prior_node=None):
             else:
                 for downstream in node.downstreams:
                     ttt = hash(downstream)
-                    if isinstance(downstream, ToEventStream) and ttt not in graph:
+                    if isinstance(downstream,
+                                  ToEventStream) and ttt not in graph:
                         graph.add_node(ttt, stream=downstream)
                         graph.add_edge(t, ttt)
                         return
@@ -39,9 +46,10 @@ def walk_up(node, graph, prior_node=None):
     for node2 in node.upstreams:
         # Stop at translation node
         if node2 is not None:
-            walk_up(node2, graph, node)
+            walk_to_translation(node2, graph, node)
 
 
+@Stream.register_api()
 class FromEventStream(Stream):
     """Converts an element from the event stream into a base type, and passes
     it down.
@@ -107,7 +115,7 @@ class FromEventStream(Stream):
             self.descriptor_uids[doc['uid']] = doc.get('name', 'primary')
         if name == 'stop':
             self.start_uid = None
-            # FIXME: append to list and return
+            # FIXME: I don't know what this does to backpressure
             [s.emit(s.create_stop(x)) for s in self.subs]
         inner = doc.copy()
         if (name == self.doc_type and
@@ -127,10 +135,14 @@ class FromEventStream(Stream):
                     if isinstance(da, tuple):
                         inner = tuple(inner[daa] for daa in da)
                     else:
-                        inner = inner[da]
+                        if da in inner:
+                            inner = inner[da]
+                        else:
+                            return
             return self._emit(inner)
 
 
+@Stream.register_api()
 class ToEventStream(Stream):
     """Converts an element from the base type into a event stream,
     and passes it down.
@@ -187,7 +199,7 @@ class ToEventStream(Stream):
         # walk upstream to get all upstream nodes to the translation node
         # get start_uids from the translation node
         self.graph = nx.DiGraph()
-        walk_up(self, graph=self.graph)
+        walk_to_translation(self, graph=self.graph)
 
         self.translation_nodes = {k: n['stream'] for k, n in
                                   self.graph.node.items()
