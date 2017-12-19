@@ -188,8 +188,9 @@ class ToEventStream(Stream):
 
         self.translation_nodes = {k: n['stream'] for k, n in
                                   self.graph.node.items()
-                                  if isinstance(n['stream'], (FromEventStream,
-                                                              ToEventStream))}
+                                  if isinstance(n['stream'],
+                                                (FromEventStream,
+                                                 ToEventStream)) and n['stream'] != self}
         self.principle_nodes = [n for n in self.translation_nodes.values()
                                 if n.principle is True]
         for p in self.principle_nodes:
