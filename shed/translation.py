@@ -9,11 +9,11 @@ import networkx as nx
 def walk_up(node, graph, prior_node=None):
     """Creates a graph) instance that is a subset of the graph from the stream.
     The walk starts at a translation to Event Model node and ends at any
-    instances of FromEventStream.
+    instances of FromEventStream or ToEventStream.
 
     Parameters
     ----------
-    node: ToEventStream instance
+    node: shed.translation.ToEventStream instance
     graph: networkx.DiGraph instance
     """
     if node is None:
@@ -28,6 +28,13 @@ def walk_up(node, graph, prior_node=None):
             graph.add_edge(t, tt)
             if isinstance(node, FromEventStream):
                 return
+            else:
+                for downstream in node.downstreams:
+                    if isinstance(downstream, ToEventStream):
+                        ttt = hash(downstream)
+                        graph.add_node(t, stream=downstream)
+                        graph.add_edge(t, ttt)
+                        return
 
     for node2 in node.upstreams:
         # Stop at translation node
@@ -74,6 +81,7 @@ class FromEventStream(Stream):
     prints:
     1
     """
+
     def __init__(self, upstream, doc_type, data_address, event_stream_name=ALL,
                  stream_name=None, principle=False):
         Stream.__init__(self, upstream, stream_name=stream_name)
@@ -109,8 +117,15 @@ class FromEventStream(Stream):
                    self.descriptor_uids[doc['descriptor']] ==
                    self.event_stream_name)) or
                  name in ['start', 'stop'])):
-            for da in self.data_address:
-                inner = inner[da]
+
+            # If we have an empty address get everything
+            if self.data_address != ():
+                for da in self.data_address:
+                    # If it's a tuple we want multiple things at once
+                    if isinstance(da, tuple):
+                        inner = tuple(inner[daa] for daa in da)
+                    else:
+                        inner = inner[da]
             return self._emit(inner)
 
 
@@ -153,13 +168,16 @@ class ToEventStream(Stream):
     ('event',...)
     ('stop',...)
     """
-    def __init__(self, upstream, data_keys, stream_name=None, **kwargs):
+
+    def __init__(self, upstream, data_keys, stream_name=None, principle=False,
+                 **kwargs):
         Stream.__init__(self, upstream, stream_name=stream_name)
         self.index_dict = dict()
         self.data_keys = data_keys
         self.md = kwargs
+        self.principle = principle
 
-        self.run_start_uid = None
+        self.start_uid = None
         self.parent_uids = None
         self.descriptor_uid = None
 
@@ -170,13 +188,15 @@ class ToEventStream(Stream):
 
         self.translation_nodes = {k: n['stream'] for k, n in
                                   self.graph.node.items()
-                                  if isinstance(n['stream'], FromEventStream)}
+                                  if isinstance(n['stream'], (FromEventStream,
+                                                              ToEventStream))}
         self.principle_nodes = [n for n in self.translation_nodes.values()
                                 if n.principle is True]
         for p in self.principle_nodes:
             p.subs.append(self)
 
     def update(self, x, who=None):
+        rl = []
         # Need a way to address translation nodes and start_uids, maybe hash
         current_start_uids = {k: v.start_uid for k, v in
                               self.translation_nodes.items()}
@@ -184,24 +204,25 @@ class ToEventStream(Stream):
         # Bootstrap
         if self.parent_uids is None:
             self.parent_uids = current_start_uids
-            self._emit(self.create_start(x))
-            self._emit(self.create_descriptor(x))
+            rl.extend([self.emit(self.create_start(x)),
+                       self.emit(self.create_descriptor(x))])
 
         # If the start uids are different then we have new data
         # Issue a stop then the start/descriptor
         elif self.parent_uids != current_start_uids:
-            self._emit(self.create_stop(x))
-            self._emit(self.create_start(x))
-            self._emit(self.create_descriptor(x))
+            rl.extend([self.emit(self.create_stop(x)),
+                       self.emit(self.create_start(x)),
+                       self.emit(self.create_descriptor(x))])
 
-        self._emit(self.create_event(x))
+        rl.append(self.emit(self.create_event(x)))
+        return rl
 
     def create_start(self, x):
-        self.run_start_uid = str(uuid.uuid4())
+        self.start_uid = str(uuid.uuid4())
         new_start_doc = self.md
         new_start_doc.update(
             dict(
-                uid=self.run_start_uid,
+                uid=self.start_uid,
                 time=time.time(),
                 graph=list(nx.generate_edgelist(self.graph, data=True)),
                 parent_uids={k: v.start_uid for k, v in
@@ -220,7 +241,7 @@ class ToEventStream(Stream):
         new_descriptor = dict(
             uid=self.descriptor_uid,
             time=time.time(),
-            run_start=self.run_start_uid,
+            run_start=self.start_uid,
             name='primary',
             data_keys={k: {'source': 'analysis',
                            'dtype': str(type(xx)),
@@ -246,5 +267,5 @@ class ToEventStream(Stream):
     def create_stop(self, x):
         new_stop = dict(uid=str(uuid.uuid4()),
                         time=time.time(),
-                        run_start=self.run_start_uid)
+                        run_start=self.start_uid)
         return 'stop', new_stop
