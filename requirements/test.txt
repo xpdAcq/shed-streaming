@@ -4,3 +4,4 @@ codecov
 coverage
 xpdsim
 ophyd
+nose
