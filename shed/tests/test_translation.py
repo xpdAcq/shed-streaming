@@ -3,7 +3,8 @@ import networkx as nx
 
 from streamz_ext import Stream
 
-from shed.translation import FromEventStream, ToEventStream, walk_to_translation
+from shed.translation import (FromEventStream, ToEventStream,
+                              walk_to_translation)
 from shed.utils import to_event_model
 
 
