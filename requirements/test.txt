@@ -1,0 +1,6 @@
+pytest
+flake8
+codecov
+coverage
+xpdsim
+ophyd
