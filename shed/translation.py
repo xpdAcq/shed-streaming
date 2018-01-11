@@ -2,7 +2,7 @@ import time
 import uuid
 
 from databroker._core import ALL
-from streamz.core import Stream
+from streamz_ext.core import Stream
 import networkx as nx
 
 

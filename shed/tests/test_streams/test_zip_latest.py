@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_raises, assert_equal
 from shed import event_streams as es
 from shed.utils import to_event_model
-from streamz.core import Stream
+from streamz_ext.core import Stream
 
 
 @pytest.mark.parametrize(('n', 'n2', 'order', 'kwargs'), [

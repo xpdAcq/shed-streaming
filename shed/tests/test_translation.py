@@ -1,7 +1,7 @@
 import operator as op
 import networkx as nx
 
-from streamz import Stream
+from streamz_ext import Stream
 
 from shed.translation import FromEventStream, ToEventStream, walk_to_translation
 from shed.utils import to_event_model

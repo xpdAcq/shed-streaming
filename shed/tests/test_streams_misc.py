@@ -19,7 +19,7 @@ import pytest
 import shed.event_streams as es
 from shed.tests.utils import SinkAssertion
 from shed.utils import to_event_model
-from streamz.core import Stream
+from streamz_ext.core import Stream
 
 from ..event_streams import star
 
@@ -273,7 +273,7 @@ def test_string_workflow(exp_db, start_uid1):
     for n, d in L:
         assert_docs.add(n)
         if n == 'event':
-            assert '2017' in d['data']['filename']
+            assert '2018' in d['data']['filename']
             assert 'uid' in d['data']['filename']
             assert '.tiff' in d['data']['filename']
     for n in ['start', 'descriptor', 'event', 'stop']:

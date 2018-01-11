@@ -1,7 +1,7 @@
 import pytest
 from numpy.testing import assert_equal
 from shed import event_streams as es
-from streamz import Stream
+from streamz_ext import Stream
 
 
 def test_query(exp_db, start_uid1):
