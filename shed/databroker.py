@@ -1,5 +1,5 @@
 """Nodes for adding data to the databroker"""
-from streamz import Stream
+from streamz_ext import Stream
 
 
 class AssetInsert(Stream):

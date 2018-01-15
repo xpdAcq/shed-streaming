@@ -1,4 +1,4 @@
-from streamz.core import Stream
+from streamz_ext.core import Stream
 import numpy as np
 import pytest
 

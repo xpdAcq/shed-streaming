@@ -22,16 +22,17 @@ addons:
 
 python:
   - 3.5
+  - 3.6
 before_install:
-  - git clone https://github.com/NSLS-II/nsls2-ci --branch master --single-branch ~/ci_scripts
-  - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"
-  - "export DISPLAY=:99.0"
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b -p ~/mc
   - export PATH=~/mc/bin:$PATH
+  - conda config --set always_yes yes --set changeps1 no
   - conda update conda --yes
-  - export CONDARC=ci/condarc
+  - conda config --add channels conda-forge
+  - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"
+  - "export DISPLAY=:99.0"
   - export MDS_HOST=localhost
   - export MDS_DATABASE=test
   - export MDS_TIMEZONE=US/Eastern
@@ -45,38 +46,27 @@ before_install:
 
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
-  - conda create --yes -n testenv numpy scipy flake8 matplotlib python=$TRAVIS_PYTHON_VERSION pytest coverage codecov pip databroker bluesky nose dask hypothesis=3.23 -c conda-forge -c lightsource2-dev -c lightsource-tag -c lightsource2 -c soft-matter
-  - source activate testenv
-  - pip install https://github.com/NSLS-II/ophyd/zipball/master#egg=ophyd
-  - if [[ "${CUTTING_EDGE}" == true ]]; then
-      conda remove metadatastore databroker filestore bluesky event-model --yes;
-      pip install https://github.com/NSLS-II/event-model/zipball/master#egg=event_model;
-      pip install https://github.com/NSLS-II/databroker/zipball/master#egg=databroker;
-      pip install https://github.com/NSLS-II/bluesky/zipball/master#egg=bluesky;
-    else
-      conda install filestore metadatastore -c conda-forge -c lightsource2-dev -c lightsource-tag -c lightsource2 -c soft-matter
-      pip install https://github.com/NSLS-II/portable-mds/zipball/master#egg=portable_mds;
-      pip install https://github.com/NSLS-II/portable-fs/zipball/master#egg=portable_fs;
-      python -c "from filestore import utils, conf; utils.install_sentinels(conf.connection_config, 1)" ;
-    fi
-  - 'pip install https://github.com/mrocklin/streamz/zipball/master#egg=streamz'
-  - 'pip install https://github.com/xpdAcq/xpdsim/zipball/master#egg=xpdsim'
-  - 'pip install https://github.com/xpdAcq/xpdacq/zipball/master#egg=xpdacq'
-  - python setup.py install
+  - conda install python=$TRAVIS_PYTHON_VERSION
+  - conda install --file requirements/build.txt
+  - conda install pip
+  - pip install -r requirements/pip.txt
+  - pip install .
   # Need to clean the python build directory (and other cruft) or pytest is
   # going to find the build directory and get confused why there are two sets
   # of every test file
   # make sure the sqlite file exists to avoid race conditions
-  - python -c "from bluesky.utils import get_history; get_history()"
   - git clean -xfd
 
 script:
   - set -e
+  - conda install --yes --file requirements/run.txt
+  - python -c "from bluesky.utils import get_history; get_history()"
+  - conda install --yes --file requirements/test.txt
   - coverage run run_tests.py
   - coverage report -m
   - codecov
   - flake8 .
-  - conda install --yes sphinx sphinx_rtd_theme
+  - conda install --file requirements/doc.txt
   - pip install git+git://github.com/drdoctr/doctr.git
   - cd docs
   - make html

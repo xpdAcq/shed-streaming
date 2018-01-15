@@ -1,9 +1,10 @@
 import operator as op
 import networkx as nx
 
-from streamz import Stream
+from streamz_ext import Stream
 
-from shed.translation import FromEventStream, ToEventStream, walk_up
+from shed.translation import (FromEventStream, ToEventStream,
+                              walk_to_translation)
 from shed.utils import to_event_model
 
 
@@ -31,7 +32,7 @@ def test_walk_up():
     e = ToEventStream(dd, ('data',))
 
     g = nx.DiGraph()
-    walk_up(e, g)
+    walk_to_translation(e, g)
     att = []
     for node, attrs in g.node.items():
         att.append(attrs['stream'])

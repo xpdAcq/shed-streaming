@@ -1,7 +1,7 @@
 import numpy as np
 
 from numpy.testing import assert_equal
-from streamz import Stream
+from streamz_ext import Stream
 
 from shed.databroker import AssetInsert
 from shed.savers import NpyWriter

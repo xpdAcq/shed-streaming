@@ -2,19 +2,25 @@ import time
 import uuid
 
 from databroker._core import ALL
-from streamz.core import Stream
+from streamz_ext.core import Stream
 import networkx as nx
 
 
-def walk_up(node, graph, prior_node=None):
-    """Creates a graph) instance that is a subset of the graph from the stream.
-    The walk starts at a translation to Event Model node and ends at any
-    instances of FromEventStream.
+def walk_to_translation(node, graph, prior_node=None):
+    """Creates a graph instance that is a subset of the graph from the stream.
+
+    The walk starts at a translation ``ToEventStream`` node and ends at any
+    instances of FromEventStream or ToEventStream.  Each iteration of the walk
+    goes up one node, determines if that node is a ``FromEventStream`` node, if
+    not walks one down to see if there are any ``ToEventStream`` nodes, if not
+    it keeps walking up. The walk down allows us to replace live data with
+    stored data/stubs when it comes time to get the parent uids. Graph nodes
+    are hashes of the node objects with ``stream=node`` in the nodes.
 
     Parameters
     ----------
-    node: ToEventStream instance
-    graph: networkx.DiGraph instance
+    node : ToEventStream instance
+    graph : networkx.DiGraph instance
     """
     if node is None:
         return
@@ -28,13 +34,22 @@ def walk_up(node, graph, prior_node=None):
             graph.add_edge(t, tt)
             if isinstance(node, FromEventStream):
                 return
+            else:
+                for downstream in node.downstreams:
+                    ttt = hash(downstream)
+                    if isinstance(downstream,
+                                  ToEventStream) and ttt not in graph:
+                        graph.add_node(ttt, stream=downstream)
+                        graph.add_edge(t, ttt)
+                        return
 
     for node2 in node.upstreams:
         # Stop at translation node
         if node2 is not None:
-            walk_up(node2, graph, node)
+            walk_to_translation(node2, graph, node)
 
 
+@Stream.register_api()
 class FromEventStream(Stream):
     """Converts an element from the event stream into a base type, and passes
     it down.
@@ -74,6 +89,7 @@ class FromEventStream(Stream):
     prints:
     1
     """
+
     def __init__(self, upstream, doc_type, data_address, event_stream_name=ALL,
                  stream_name=None, principle=False):
         Stream.__init__(self, upstream, stream_name=stream_name)
@@ -98,7 +114,9 @@ class FromEventStream(Stream):
         if name == 'descriptor':
             self.descriptor_uids[doc['uid']] = doc.get('name', 'primary')
         if name == 'stop':
-            [s._emit(s.create_stop(x)) for s in self.subs]
+            self.start_uid = None
+            # FIXME: I don't know what this does to backpressure
+            [s.emit(s.create_stop(x)) for s in self.subs]
         inner = doc.copy()
         if (name == self.doc_type and
                 ((name == 'descriptor' and
@@ -109,11 +127,22 @@ class FromEventStream(Stream):
                    self.descriptor_uids[doc['descriptor']] ==
                    self.event_stream_name)) or
                  name in ['start', 'stop'])):
-            for da in self.data_address:
-                inner = inner[da]
+
+            # If we have an empty address get everything
+            if self.data_address != ():
+                for da in self.data_address:
+                    # If it's a tuple we want multiple things at once
+                    if isinstance(da, tuple):
+                        inner = tuple(inner[daa] for daa in da)
+                    else:
+                        if da in inner:
+                            inner = inner[da]
+                        else:
+                            return
             return self._emit(inner)
 
 
+@Stream.register_api()
 class ToEventStream(Stream):
     """Converts an element from the base type into a event stream,
     and passes it down.
@@ -153,30 +182,38 @@ class ToEventStream(Stream):
     ('event',...)
     ('stop',...)
     """
-    def __init__(self, upstream, data_keys, stream_name=None, **kwargs):
+
+    def __init__(self, upstream, data_keys, stream_name=None, principle=False,
+                 **kwargs):
         Stream.__init__(self, upstream, stream_name=stream_name)
         self.index_dict = dict()
         self.data_keys = data_keys
         self.md = kwargs
+        self.principle = principle
 
-        self.run_start_uid = None
+        self.start_uid = None
         self.parent_uids = None
         self.descriptor_uid = None
+        self.stopped = False
 
         # walk upstream to get all upstream nodes to the translation node
         # get start_uids from the translation node
         self.graph = nx.DiGraph()
-        walk_up(self, graph=self.graph)
+        walk_to_translation(self, graph=self.graph)
 
         self.translation_nodes = {k: n['stream'] for k, n in
                                   self.graph.node.items()
-                                  if isinstance(n['stream'], FromEventStream)}
+                                  if isinstance(n['stream'],
+                                                (FromEventStream,
+                                                 ToEventStream)
+                                                ) and n['stream'] != self}
         self.principle_nodes = [n for n in self.translation_nodes.values()
                                 if n.principle is True]
         for p in self.principle_nodes:
             p.subs.append(self)
 
     def update(self, x, who=None):
+        rl = []
         # Need a way to address translation nodes and start_uids, maybe hash
         current_start_uids = {k: v.start_uid for k, v in
                               self.translation_nodes.items()}
@@ -184,28 +221,31 @@ class ToEventStream(Stream):
         # Bootstrap
         if self.parent_uids is None:
             self.parent_uids = current_start_uids
-            self._emit(self.create_start(x))
-            self._emit(self.create_descriptor(x))
+            rl.extend([self.emit(self.create_start(x)),
+                       self.emit(self.create_descriptor(x))])
 
         # If the start uids are different then we have new data
         # Issue a stop then the start/descriptor
-        elif self.parent_uids != current_start_uids:
-            self._emit(self.create_stop(x))
-            self._emit(self.create_start(x))
-            self._emit(self.create_descriptor(x))
+        elif self.parent_uids != current_start_uids and not self.stopped:
+            rl.extend([self.emit(self.create_stop(x)),
+                       self.emit(self.create_start(x)),
+                       self.emit(self.create_descriptor(x))])
 
-        self._emit(self.create_event(x))
+        rl.append(self.emit(self.create_event(x)))
+        return rl
 
     def create_start(self, x):
-        self.run_start_uid = str(uuid.uuid4())
+        self.stopped = False
+        self.start_uid = str(uuid.uuid4())
         new_start_doc = self.md
         new_start_doc.update(
             dict(
-                uid=self.run_start_uid,
+                uid=self.start_uid,
                 time=time.time(),
                 graph=list(nx.generate_edgelist(self.graph, data=True)),
                 parent_uids={k: v.start_uid for k, v in
-                             self.translation_nodes.items()}))
+                             self.translation_nodes.items()
+                             if v.start_uid is not None}))
         self.index_dict = dict()
         return 'start', new_start_doc
 
@@ -220,7 +260,7 @@ class ToEventStream(Stream):
         new_descriptor = dict(
             uid=self.descriptor_uid,
             time=time.time(),
-            run_start=self.run_start_uid,
+            run_start=self.start_uid,
             name='primary',
             data_keys={k: {'source': 'analysis',
                            'dtype': str(type(xx)),
@@ -246,5 +286,8 @@ class ToEventStream(Stream):
     def create_stop(self, x):
         new_stop = dict(uid=str(uuid.uuid4()),
                         time=time.time(),
-                        run_start=self.run_start_uid)
+                        run_start=self.start_uid)
+        self.start_uid = None
+        self.stopped = True
+        self.parent_uids = None
         return 'stop', new_stop

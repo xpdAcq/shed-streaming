@@ -4,7 +4,7 @@ from numpy.testing import assert_allclose
 from shed import event_streams as es
 from shed.event_streams import dstar, star
 from shed.tests.utils import SinkAssertion
-from streamz import Stream
+from streamz_ext import Stream
 import numpy as np
 from shed.utils import to_event_model
 

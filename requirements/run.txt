@@ -1,0 +1,7 @@
+streamz_ext
+numpy
+scipy
+matplotlib
+databroker
+bluesky
+event-model
