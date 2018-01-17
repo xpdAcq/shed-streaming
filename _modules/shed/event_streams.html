@@ -176,7 +176,7 @@
 <span class="kn">from</span> <span class="nn">builtins</span> <span class="k">import</span> <span class="nb">zip</span> <span class="k">as</span> <span class="n">zzip</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span>
 
-<span class="kn">from</span> <span class="nn">streamz.core</span> <span class="k">import</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">no_default</span>
+<span class="kn">from</span> <span class="nn">streamz_ext.core</span> <span class="k">import</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">no_default</span>
 <span class="kn">from</span> <span class="nn">tornado.locks</span> <span class="k">import</span> <span class="n">Condition</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pprint</span>
@@ -851,7 +851,7 @@
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from shed.utils import to_event_model</span>
-<span class="sd">    &gt;&gt;&gt; from streamz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from streamz_ext import Stream</span>
 <span class="sd">    &gt;&gt;&gt; import shed.event_streams as es</span>
 <span class="sd">    &gt;&gt;&gt; a = [1, 2, 3]  # base data</span>
 <span class="sd">    &gt;&gt;&gt; g = to_event_model(a, [(&#39;det&#39;, {&#39;dtype&#39;: &#39;float&#39;})])</span>
@@ -925,7 +925,7 @@
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from shed.utils import to_event_model</span>
-<span class="sd">    &gt;&gt;&gt; from streamz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from streamz_ext import Stream</span>
 <span class="sd">    &gt;&gt;&gt; import shed.event_streams as es</span>
 <span class="sd">    &gt;&gt;&gt; a = [1, 2, 3]  # base data</span>
 <span class="sd">    &gt;&gt;&gt; g = to_event_model(a, [(&#39;det&#39;, {&#39;dtype&#39;: &#39;float&#39;})])</span>
@@ -939,7 +939,7 @@
 <span class="sd">    Filtering full headers</span>
 
 <span class="sd">    &gt;&gt;&gt; from shed.utils import to_event_model</span>
-<span class="sd">    &gt;&gt;&gt; from streamz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from streamz_ext import Stream</span>
 <span class="sd">    &gt;&gt;&gt; import shed.event_streams as es</span>
 <span class="sd">    &gt;&gt;&gt; a = [1, 2, 3]  # base data</span>
 <span class="sd">    &gt;&gt;&gt; g = to_event_model(a, [(&#39;det&#39;, {&#39;dtype&#39;: &#39;float&#39;})])</span>
@@ -954,7 +954,7 @@
 <span class="sd">    Filtering on descriptors</span>
 
 <span class="sd">    &gt;&gt;&gt; from shed.utils import to_event_model</span>
-<span class="sd">    &gt;&gt;&gt; from streamz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from streamz_ext import Stream</span>
 <span class="sd">    &gt;&gt;&gt; import shed.event_streams as es</span>
 <span class="sd">    &gt;&gt;&gt; a = [1, 2, 3]  # base data</span>
 <span class="sd">    &gt;&gt;&gt; g = to_event_model(a, [(&#39;det&#39;, {&#39;dtype&#39;: &#39;float&#39;})])</span>
@@ -1077,7 +1077,7 @@
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from shed.utils import to_event_model</span>
-<span class="sd">    &gt;&gt;&gt; from streamz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from streamz_ext import Stream</span>
 <span class="sd">    &gt;&gt;&gt; import shed.event_streams as es</span>
 <span class="sd">    &gt;&gt;&gt; a = [1, 2, 3]  # base data</span>
 <span class="sd">    &gt;&gt;&gt; g = to_event_model(a, [(&#39;det&#39;, {&#39;dtype&#39;: &#39;float&#39;})])</span>
@@ -1162,7 +1162,7 @@
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from shed.utils import to_event_model</span>
-<span class="sd">    &gt;&gt;&gt; from streamz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from streamz_ext import Stream</span>
 <span class="sd">    &gt;&gt;&gt; import shed.event_streams as es</span>
 <span class="sd">    &gt;&gt;&gt; from builtins import zip as zzip</span>
 <span class="sd">    &gt;&gt;&gt; a = [1, 2, 3]  # base data</span>
@@ -1252,7 +1252,7 @@
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from shed.utils import to_event_model</span>
-<span class="sd">    &gt;&gt;&gt; from streamz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from streamz_ext import Stream</span>
 <span class="sd">    &gt;&gt;&gt; import shed.event_streams as es</span>
 <span class="sd">    &gt;&gt;&gt; from builtins import zip as zzip</span>
 <span class="sd">    &gt;&gt;&gt; a = [1, 2, 3]  # base data</span>
@@ -1331,7 +1331,7 @@
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from shed.utils import to_event_model</span>
-<span class="sd">    &gt;&gt;&gt; from streamz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from streamz_ext import Stream</span>
 <span class="sd">    &gt;&gt;&gt; import shed.event_streams as es</span>
 <span class="sd">    &gt;&gt;&gt; a = [1, 2, 3]  # base data</span>
 <span class="sd">    &gt;&gt;&gt; b = [4, 5, 6]</span>
@@ -1420,7 +1420,7 @@
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from shed.utils import to_event_model</span>
-<span class="sd">    &gt;&gt;&gt; from streamz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from streamz_ext import Stream</span>
 <span class="sd">    &gt;&gt;&gt; import shed.event_streams as es</span>
 <span class="sd">    &gt;&gt;&gt; a = [1, 2, 3]  # base data</span>
 <span class="sd">    &gt;&gt;&gt; b = [4, 5, 6]</span>
@@ -1490,7 +1490,7 @@
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from shed.utils import to_event_model</span>
-<span class="sd">    &gt;&gt;&gt; from streamz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from streamz_ext import Stream</span>
 <span class="sd">    &gt;&gt;&gt; import shed.event_streams as es</span>
 <span class="sd">    &gt;&gt;&gt; a = [1, 2, 3]  # base data</span>
 <span class="sd">    &gt;&gt;&gt; b = [4, 5, 6]</span>
@@ -1591,7 +1591,7 @@
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from shed.utils import to_event_model</span>
-<span class="sd">    &gt;&gt;&gt; from streamz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from streamz_ext import Stream</span>
 <span class="sd">    &gt;&gt;&gt; import shed.event_streams as es</span>
 <span class="sd">    &gt;&gt;&gt; a = [1, 2, 3]  # base data</span>
 <span class="sd">    &gt;&gt;&gt; g = to_event_model(a, [(&#39;det&#39;, {&#39;dtype&#39;: &#39;float&#39;})])</span>

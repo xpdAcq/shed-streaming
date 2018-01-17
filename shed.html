@@ -203,7 +203,7 @@ Model</p>
 </table>
 <p class="rubric">Examples</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz_ext</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">builtins</span> <span class="k">import</span> <span class="nb">zip</span> <span class="k">as</span> <span class="n">zzip</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
@@ -249,7 +249,7 @@ header together. If an EventStream, pull from the start document
 </table>
 <p class="rubric">Examples</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz_ext</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
@@ -274,7 +274,7 @@ header together. If an EventStream, pull from the start document
 <dl class="class">
 <dt id="shed.event_streams.EventStream">
 <em class="property">class </em><code class="descclassname">shed.event_streams.</code><code class="descname">EventStream</code><span class="sig-paren">(</span><em>upstream=None</em>, <em>upstreams=None</em>, <em>*</em>, <em>output_info=None</em>, <em>input_info=None</em>, <em>md=None</em>, <em>stream_name=None</em>, <em>raise_upon_error=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/event_streams.html#EventStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.event_streams.EventStream" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">streamz.core.Stream</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">streamz_ext.core.Stream</span></code></p>
 <p>The EventStream class handles data of the form of an infinite
 sequence of events in the Event Model.</p>
 <p>In the Event model, the data-stream is a series of fortunate events.
@@ -599,7 +599,7 @@ If none supplied, then load all start keys into event</li>
 </table>
 <p class="rubric">Examples</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz_ext</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
@@ -725,7 +725,7 @@ to False</li>
 </table>
 <p class="rubric">Examples</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz_ext</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
@@ -769,7 +769,7 @@ If None, emit on update from any stream</li>
 </table>
 <p class="rubric">Examples</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz_ext</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
@@ -860,7 +860,7 @@ where the criteria is True in the descriptor. Defaults to ‘event’.</li>
 </table>
 <p class="rubric">Examples</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz_ext</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
@@ -874,7 +874,7 @@ where the criteria is True in the descriptor. Defaults to ‘event’.</li>
 </div>
 <p>Filtering full headers</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz_ext</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
@@ -889,7 +889,7 @@ where the criteria is True in the descriptor. Defaults to ‘event’.</li>
 </div>
 <p>Filtering on descriptors</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz_ext</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
@@ -941,7 +941,7 @@ only expose the data from the event</li>
 </table>
 <p class="rubric">Examples</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz_ext</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">to_event_model</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;det&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">})])</span>
@@ -1003,7 +1003,7 @@ of the first stream by shortenin the secondary streams.</li>
 </table>
 <p class="rubric">Examples</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz_ext</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">builtins</span> <span class="k">import</span> <span class="nb">zip</span> <span class="k">as</span> <span class="n">zzip</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
@@ -1044,7 +1044,7 @@ with the latest elements from the other streams.</p>
 </table>
 <p class="rubric">Examples</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shed.utils</span> <span class="k">import</span> <span class="n">to_event_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">streamz_ext</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># base data</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
