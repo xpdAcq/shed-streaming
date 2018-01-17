@@ -28,7 +28,7 @@ before_install:
   - chmod +x miniconda.sh
   - ./miniconda.sh -b -p ~/mc
   - export PATH=~/mc/bin:$PATH
-  - conda config --set always_yes yes --set changeps1 no
+  - conda config --set always_yes yes --set changeps1 no --set quiet true
   - conda update conda --yes
   - conda config --add channels conda-forge
   - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"
