@@ -39,8 +39,8 @@ class NpyWriter:
         """
         if self._closed:
             raise RuntimeError('This writer has been closed.')
-        fp = os.path.join(self._root, '{}.npy'.format(str(uuid.uuid4())))
-        np.save(fp, data)
+        fp = '{}.npy'.format(str(uuid.uuid4()))
+        np.save(os.path.join(self._root, fp), data)
         resource = self._fs.insert_resource(self.SPEC, fp, resource_kwargs={},
                                             root=self._root)
         datum_id = str(uuid.uuid4())
