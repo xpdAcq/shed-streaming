@@ -1,5 +1,6 @@
 import operator as op
 import networkx as nx
+import uuid
 
 from streamz_ext import Stream
 
@@ -20,6 +21,68 @@ def test_from_event_model():
 
     for i, ll in enumerate(L):
         assert i == ll
+
+
+def test_from_event_model_stream_name():
+    def data():
+        suid = str(uuid.uuid4())
+        duid = str(uuid.uuid4())
+        yield 'start', {'hi': 'world', 'uid': suid}
+        yield 'descriptor', {'name': 'hi', 'data_keys': {'ct'},
+                             'uid': duid, 'run_start': suid}
+        for i in range(10):
+            yield 'event', {'uid': str(uuid.uuid4()),
+                            'ct': {'data': i}, 'descriptor': duid}
+        duid = str(uuid.uuid4())
+        yield 'descriptor', {'name': 'not hi', 'data_keys': {'ct'},
+                             'uid': duid, 'run_start': suid}
+        for i in range(100, 110):
+            yield 'event', {'uid': str(uuid.uuid4()),
+                            'data': {'ct': i}, 'descriptor': duid}
+        yield 'stop', {'uid': str(uuid.uuid4()), 'run_start': suid}
+
+    g = data()
+    source = Stream()
+    t = FromEventStream(source, 'event', ('data', 'ct'),
+                        event_stream_name='hi')
+    L = t.sink_to_list()
+
+    for gg in g:
+        source.emit(gg)
+
+    for i, ll in enumerate(L):
+        assert i == ll
+
+
+def test_from_event_model_stream_name2():
+    def data():
+        suid = str(uuid.uuid4())
+        duid = str(uuid.uuid4())
+        yield 'start', {'hi': 'world', 'uid': suid}
+        yield 'descriptor', {'name': 'hi', 'data_keys': {'ct'},
+                             'uid': duid, 'run_start': suid}
+        for i in range(10):
+            yield 'event', {'uid': str(uuid.uuid4()),
+                            'ct': {'data': i}, 'descriptor': duid}
+        duid = str(uuid.uuid4())
+        yield 'descriptor', {'name': 'not hi', 'data_keys': {'ct'},
+                             'uid': duid, 'run_start': suid}
+        for i in range(100, 110):
+            yield 'event', {'uid': str(uuid.uuid4()),
+                            'data': {'ct': i}, 'descriptor': duid}
+        yield 'stop', {'uid': str(uuid.uuid4()), 'run_start': suid}
+
+    g = data()
+    source = Stream()
+    t = FromEventStream(source, 'event', ('data', 'ct'),
+                        event_stream_name='not hi')
+    L = t.sink_to_list()
+
+    for gg in g:
+        source.emit(gg)
+
+    for i, ll in enumerate(L):
+        assert i + 100 == ll
 
 
 def test_walk_up():
