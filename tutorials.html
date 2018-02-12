@@ -163,14 +163,14 @@
 <h1>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this headline">¶</a></h1>
 <p>These area tutorials designed to better understand what pySHED is, and what it
 attempts to resolve.
-Before beginning, we’ll assume that you have the <code class="docutils literal"><span class="pre">shed</span></code> and
+Before beginning, we’ll assume that you have the <code class="docutils literal notranslate"><span class="pre">shed</span></code> and
 <a class="reference external" href="http://www.github.com/mrocklin/streams">streams</a> libraries installed.</p>
 <div class="section" id="tutorial-1-simple-streams">
 <h2>Tutorial 1 : Simple Streams<a class="headerlink" href="#tutorial-1-simple-streams" title="Permalink to this headline">¶</a></h2>
 <p>First, we begin with a quick review of simple streams. Let’s say we
 had a stream of incoming data, and needed to increment by one, and print
 the result. The definition is as simple as the following:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">streams.core</span> <span class="k">as</span> <span class="nn">sc</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">streams.core</span> <span class="k">as</span> <span class="nn">sc</span>
 <span class="k">def</span> <span class="nf">myadder</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
 
@@ -183,9 +183,9 @@ the result. The definition is as simple as the following:</p>
 <span class="n">s</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Here, the stream definition is done via <code class="docutils literal"><span class="pre">s</span> <span class="pre">=</span> <span class="pre">Stream()</span></code>.
-The data is not input into the stream until <code class="docutils literal"><span class="pre">s.emit(var)</span></code> is called.
-The incrementing by one is done via the <code class="docutils literal"><span class="pre">map</span></code> method. This method
+<p>Here, the stream definition is done via <code class="docutils literal notranslate"><span class="pre">s</span> <span class="pre">=</span> <span class="pre">Stream()</span></code>.
+The data is not input into the stream until <code class="docutils literal notranslate"><span class="pre">s.emit(var)</span></code> is called.
+The incrementing by one is done via the <code class="docutils literal notranslate"><span class="pre">map</span></code> method. This method
 takes a function as its first argument, and the input stream as the
 second argument.</p>
 <p>If this makes sense, then we’re ready to understand event streams. If it
@@ -203,18 +203,18 @@ more details.</p>
 idea, let’s begin with a simple event stream. Before we begin, let’s focus on
 the data itself. Let’s say you had a detector called <em>detector1</em> which returned
 a 100 by 100 array of integer values. Let’s simulate this detector with random
-values for two instances, <code class="docutils literal"><span class="pre">data1</span></code> and <code class="docutils literal"><span class="pre">data2</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+values for two instances, <code class="docutils literal notranslate"><span class="pre">data1</span></code> and <code class="docutils literal notranslate"><span class="pre">data2</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="n">data1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 <span class="n">data2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Let’s say this was captured at a beamline where some extra metadata was stored
-during the capture of this data, with fields <code class="docutils literal"><span class="pre">name</span></code> being <em>Alex</em> and
-<code class="docutils literal"><span class="pre">sample</span></code> being <em>FeO</em>. In general, this metadata can be defined arbitrarily
+during the capture of this data, with fields <code class="docutils literal notranslate"><span class="pre">name</span></code> being <em>Alex</em> and
+<code class="docutils literal notranslate"><span class="pre">sample</span></code> being <em>FeO</em>. In general, this metadata can be defined arbitrarily
 and is not essential to the data capture, but helps describe it in many cases.
 We can define a quick generator to generate some of this data as follows:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">uuid</span> <span class="k">import</span> <span class="n">uuid4</span>
 <span class="k">def</span> <span class="nf">gen_imgs</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">md</span><span class="p">):</span>
     <span class="n">run_start</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
@@ -240,16 +240,16 @@ We can define a quick generator to generate some of this data as follows:</p>
 </div>
 <p>The details are tedious. What is important to keep in mind is that this is
 generating a list of documents as such:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">some_start_doc</span><span class="p">),</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">some_start_doc</span><span class="p">),</span>
 <span class="p">(</span><span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="n">some_descriptor_doc</span><span class="p">),</span>
 <span class="p">(</span><span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="n">some_event_doc</span><span class="p">),</span>
 <span class="p">(</span><span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="n">another_event_doc</span><span class="p">),</span>
 <span class="p">(</span><span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="n">some_stop_doc</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>where <code class="docutils literal"><span class="pre">some_start_doc</span></code>, etc are placeholders for the contents of each
+<p>where <code class="docutils literal notranslate"><span class="pre">some_start_doc</span></code>, etc are placeholders for the contents of each
 document. To verify this, you can print the stream with:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">namedocpair</span> <span class="ow">in</span> <span class="n">event_stream</span><span class="p">:</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">namedocpair</span> <span class="ow">in</span> <span class="n">event_stream</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">namedocpair</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -259,9 +259,9 @@ rather be lengthy, but if you think about it, this would be the simplest way to
 define a series of documents. (Again, please see the <a class="reference external" href="http://nsls-ii.github.io/architecture-overview.html">NSLS-II</a> documentation)</p>
 <p>Now we’re ready for the stream. How do we treat this? We basically need a
 stream that is document conscious. Let’s look at the previous example with
-<code class="docutils literal"><span class="pre">myadder</span></code>. Let’s say for some odd reason we needed to add 1 to the detector.
+<code class="docutils literal notranslate"><span class="pre">myadder</span></code>. Let’s say for some odd reason we needed to add 1 to the detector.
 We would need to create some function as follows:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">myadder_eventstream</span><span class="p">(</span><span class="n">namedocpair</span><span class="p">):</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">myadder_eventstream</span><span class="p">(</span><span class="n">namedocpair</span><span class="p">):</span>
     <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">namedocpair</span>
     <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;detector1&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
@@ -272,11 +272,11 @@ problems with this:</p>
 <p>1. This assumes the detector field name is known <em>detector1</em>. This could be
 externally saved in a data base, but this is still awkward and not scalable</p>
 <p>2. This returns data that does not resemble the incoming document. Ideally, we
-would like to return a new set of <code class="docutils literal"><span class="pre">(name,</span> <span class="pre">doc)</span></code> pairs that resemble the event
+would like to return a new set of <code class="docutils literal notranslate"><span class="pre">(name,</span> <span class="pre">doc)</span></code> pairs that resemble the event
 architecture.</p>
-<p>To resolve this, we should also read the <code class="docutils literal"><span class="pre">descriptor_doc</span></code> and return an
-<code class="docutils literal"><span class="pre">event_doc</span></code> by running something complicated, for example:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">uuid</span> <span class="k">import</span> <span class="n">uuid4</span>
+<p>To resolve this, we should also read the <code class="docutils literal notranslate"><span class="pre">descriptor_doc</span></code> and return an
+<code class="docutils literal notranslate"><span class="pre">event_doc</span></code> by running something complicated, for example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">uuid</span> <span class="k">import</span> <span class="n">uuid4</span>
 <span class="n">descriptor_buffer</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 <span class="n">new_start_buffer</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
@@ -324,8 +324,8 @@ architecture.</p>
 <p>You can see this is quite lengthy. Most of the boiler plate involves treating
 different documents separately, and issuing new documents. This is where SHED
 is useful. Rather than define this monolithic function, we let the
-<code class="docutils literal"><span class="pre">event_stream</span></code> do the work. We use it by simply running:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
+<code class="docutils literal notranslate"><span class="pre">event_stream</span></code> do the work. We use it by simply running:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="kn">import</span> <span class="nn">shed.event_stream</span> <span class="k">as</span> <span class="nn">es</span>
 
 <span class="k">def</span> <span class="nf">addmydata</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
@@ -347,7 +347,7 @@ is useful. Rather than define this monolithic function, we let the
     <span class="n">s</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">namedocpair</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>There are some extra details involving <code class="docutils literal"><span class="pre">input_info</span></code> and <code class="docutils literal"><span class="pre">output_info</span></code> that
+<p>There are some extra details involving <code class="docutils literal notranslate"><span class="pre">input_info</span></code> and <code class="docutils literal notranslate"><span class="pre">output_info</span></code> that
 we can ignore for now. The take home message here is that SHED allows one to
 treat streams that follow the event model, without much boilerplate code.</p>
 <div class="section" id="what-s-happening-to-the-stream">
@@ -356,13 +356,13 @@ treat streams that follow the event model, without much boilerplate code.</p>
 <p>At any point in time during these tutorials, you may be wondering what’s
 going on with the elements in the stream. During debugging, this
 connection to the raw data is especially useful. At any point, it’s possible to
-probe the raw output of the stream by simply using the parent <code class="docutils literal"><span class="pre">Stream</span></code>
+probe the raw output of the stream by simply using the parent <code class="docutils literal notranslate"><span class="pre">Stream</span></code>
 class.</p>
-<p>SHED and <code class="docutils literal"><span class="pre">Stream</span></code> are fully interchangeable and compatible
+<p>SHED and <code class="docutils literal notranslate"><span class="pre">Stream</span></code> are fully interchangeable and compatible
 (so long as you know what you’re doing and you adhere to SHED’s name
 document pair format).</p>
 <p>Here is a typical way to intercept your output:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">streams</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="kn">import</span> <span class="nn">shed.event_streams</span> <span class="k">as</span> <span class="nn">es</span>
 <span class="kn">import</span> <span class="nn">streams.core</span> <span class="k">as</span> <span class="nn">sc</span>
 
@@ -387,15 +387,15 @@ document pair format).</p>
     <span class="n">s</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">namedocpair</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Where all we’ve added is a <code class="docutils literal"><span class="pre">streams.core</span></code> import and the creation of a
-list <code class="docutils literal"><span class="pre">L</span></code> and the map from a <code class="docutils literal"><span class="pre">streams.core.map</span></code> onto the stream.
+<p>Where all we’ve added is a <code class="docutils literal notranslate"><span class="pre">streams.core</span></code> import and the creation of a
+list <code class="docutils literal notranslate"><span class="pre">L</span></code> and the map from a <code class="docutils literal notranslate"><span class="pre">streams.core.map</span></code> onto the stream.
 You may print the outputs of this list by typing:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Which in this case would give something like:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;uid&#39;</span><span class="p">:</span> <span class="s1">&#39;be352ef0-fc20-4175-b137-c7ce4111160d&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;uid&#39;</span><span class="p">:</span> <span class="s1">&#39;be352ef0-fc20-4175-b137-c7ce4111160d&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span>
 <span class="mf">1502716320.1736734</span><span class="p">,</span> <span class="s1">&#39;provenance&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;stream_class&#39;</span><span class="p">:</span> <span class="s1">&#39;map&#39;</span><span class="p">,</span>
 <span class="s1">&#39;stream_class_module&#39;</span><span class="p">:</span> <span class="s1">&#39;shed.event_streams&#39;</span><span class="p">,</span> <span class="s1">&#39;input_info&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span>
 <span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)},</span> <span class="s1">&#39;output_info&#39;</span><span class="p">:</span> <span class="p">((</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="p">{}),),</span> <span class="s1">&#39;function&#39;</span><span class="p">:</span>
@@ -433,9 +433,9 @@ You may print the outputs of this list by typing:</p>
 <span class="s1">&#39;exit_status&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span><span class="p">})</span>
 </pre></div>
 </div>
-<p>Note that the output is as we expect, a series of <code class="docutils literal"><span class="pre">(name,</span> <span class="pre">doc)</span></code> pairs
-where <code class="docutils literal"><span class="pre">name</span></code> is one of the strings <code class="docutils literal"><span class="pre">'start'</span></code>, <code class="docutils literal"><span class="pre">'decriptor'</span></code>,
-<code class="docutils literal"><span class="pre">'event'</span></code> or <code class="docutils literal"><span class="pre">'stop'</span></code>. From here on, we won’t dig further into the
+<p>Note that the output is as we expect, a series of <code class="docutils literal notranslate"><span class="pre">(name,</span> <span class="pre">doc)</span></code> pairs
+where <code class="docutils literal notranslate"><span class="pre">name</span></code> is one of the strings <code class="docutils literal notranslate"><span class="pre">'start'</span></code>, <code class="docutils literal notranslate"><span class="pre">'decriptor'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'event'</span></code> or <code class="docutils literal notranslate"><span class="pre">'stop'</span></code>. From here on, we won’t dig further into the
 structure of the events. But we encourage you to output intermediate
 steps like this as much as you can.</p>
 </div>
