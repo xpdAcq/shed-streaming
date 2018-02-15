@@ -1,7 +1,9 @@
 """Nodes for adding data to the databroker"""
 from streamz_ext import Stream
+from shed.savers import GraphWriter
 
 
+@Stream.register_api()
 class AssetInsert(Stream):
     def __init__(self, upstream, fs, root, *,
                  stream_name=None, external_writers=None):
@@ -18,7 +20,7 @@ class AssetInsert(Stream):
         fs_doc = getattr(self, name)(doc)
         fs_doc.pop('filled', None)
         fs_doc.pop('_name', None)
-        self._emit((name, fs_doc))
+        self.emit((name, fs_doc))
 
     def start(self, doc):
         # Make a fresh instance of any WriterClass classes.
@@ -63,4 +65,24 @@ class AssetInsert(Stream):
         for data_key, writer in list(self.writers.items()):
             writer.close()
             self.writers.pop(data_key)
+        return doc
+
+
+@Stream.register_api()
+class GraphInsert(Stream):
+    def __init__(self, upstream, fs, root, *,
+                 stream_name=None):
+        super().__init__(upstream=upstream, stream_name=stream_name)
+        self.root = root
+        self.fs = fs
+
+    def update(self, x, who=None):
+        name, doc = x
+        fs_doc = getattr(self, name, lambda x: x)(doc)
+        self.emit((name, fs_doc))
+
+    def start(self, doc):
+        gw = GraphWriter(self.fs, self.root)
+        guid = gw.write(doc['graph'])
+
         return doc

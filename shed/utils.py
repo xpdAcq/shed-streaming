@@ -1,4 +1,4 @@
-from .event_streams import EventStream
+from shed.event_streams import EventStream
 
 
 def to_event_model(data, output_info, md=None):

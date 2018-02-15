@@ -6,6 +6,10 @@ from streamz_ext.core import Stream
 import networkx as nx
 
 
+def hash_or_uid(node):
+    return getattr(node, 'uid', hash(node))
+
+
 def walk_to_translation(node, graph, prior_node=None):
     """Creates a graph instance that is a subset of the graph from the stream.
 
@@ -24,10 +28,10 @@ def walk_to_translation(node, graph, prior_node=None):
     """
     if node is None:
         return
-    t = hash(node)
+    t = hash_or_uid(node)
     graph.add_node(t, stream=node)
     if prior_node:
-        tt = hash(prior_node)
+        tt = hash_or_uid(prior_node)
         if graph.has_edge(t, tt):
             return
         else:
@@ -36,7 +40,7 @@ def walk_to_translation(node, graph, prior_node=None):
                 return
             else:
                 for downstream in node.downstreams:
-                    ttt = hash(downstream)
+                    ttt = hash_or_uid(downstream)
                     if isinstance(downstream,
                                   ToEventStream) and ttt not in graph:
                         graph.add_node(ttt, stream=downstream)
@@ -72,6 +76,8 @@ class FromEventStream(Stream):
     --------
     The result emitted from this stream no longer follows the document model.
 
+    This node also keeps track of when data came through the node.
+
 
     Examples
     -------------
@@ -104,9 +110,12 @@ class FromEventStream(Stream):
         self.descriptor_uids = None
         self.run_start_uid = None
         self.subs = []
+        self.times = {}
+        self.uid = str(uuid.uuid4())
 
     def update(self, x, who=None):
         name, doc = x
+        self.times[time.time()] = doc['uid']
         if name == 'start':
             self.stopped = False
             self.start_uid = doc['uid']
@@ -117,6 +126,7 @@ class FromEventStream(Stream):
             self.start_uid = None
             # FIXME: I don't know what this does to backpressure
             [s.emit(s.create_stop(x)) for s in self.subs]
+            self.times = {}
         inner = doc.copy()
         if (name == self.doc_type and
                 ((name == 'descriptor' and
@@ -195,6 +205,7 @@ class ToEventStream(Stream):
         self.parent_uids = None
         self.descriptor_uid = None
         self.stopped = False
+        self.uid = str(uuid.uuid4())
 
         # walk upstream to get all upstream nodes to the translation node
         # get start_uids from the translation node
@@ -202,12 +213,11 @@ class ToEventStream(Stream):
         walk_to_translation(self, graph=self.graph)
 
         self.translation_nodes = {k: n['stream'] for k, n in
-                                  self.graph.node.items()
-                                  if isinstance(n['stream'],
-                                                (FromEventStream,
-                                                 ToEventStream)
-                                                ) and n['stream'] != self}
-        self.principle_nodes = [n for n in self.translation_nodes.values()
+                                  self.graph.node.items() if
+                                  isinstance(n['stream'], (
+                                      FromEventStream, ToEventStream)) and n[
+                                      'stream'] != self}
+        self.principle_nodes = [n for k, n in self.translation_nodes.items()
                                 if n.principle is True]
         for p in self.principle_nodes:
             p.subs.append(self)
@@ -215,7 +225,7 @@ class ToEventStream(Stream):
     def update(self, x, who=None):
         rl = []
         # Need a way to address translation nodes and start_uids, maybe hash
-        current_start_uids = {k: v.start_uid for k, v in
+        current_start_uids = {v.uid: v.start_uid for k, v in
                               self.translation_nodes.items()}
 
         # Bootstrap
@@ -242,8 +252,8 @@ class ToEventStream(Stream):
             dict(
                 uid=self.start_uid,
                 time=time.time(),
-                graph=list(nx.generate_edgelist(self.graph, data=True)),
-                parent_uids={k: v.start_uid for k, v in
+                graph=self.graph,
+                parent_uids={v.uid: v.start_uid for k, v in
                              self.translation_nodes.items()
                              if v.start_uid is not None}))
         self.index_dict = dict()
@@ -255,13 +265,14 @@ class ToEventStream(Stream):
         else:
             tx = x
         self.descriptor_uid = str(uuid.uuid4())
-        self.index_dict[self.descriptor_uid] = 0
+        self.index_dict[self.descriptor_uid] = 1
 
         new_descriptor = dict(
             uid=self.descriptor_uid,
             time=time.time(),
             run_start=self.start_uid,
             name='primary',
+            # TODO: source should reflect graph? (maybe with a UID)
             data_keys={k: {'source': 'analysis',
                            'dtype': str(type(xx)),
                            'shape': getattr(xx, 'shape', [])
@@ -284,9 +295,14 @@ class ToEventStream(Stream):
         return 'event', new_event
 
     def create_stop(self, x):
+        times = {}
+        for k, node in self.translation_nodes.items():
+            for t, uid in node.times.items():
+                times[t] = {'node': node.uid, 'uid': uid}
         new_stop = dict(uid=str(uuid.uuid4()),
                         time=time.time(),
-                        run_start=self.start_uid)
+                        run_start=self.start_uid,
+                        times=times)
         self.start_uid = None
         self.stopped = True
         self.parent_uids = None
