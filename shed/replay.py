@@ -8,6 +8,8 @@ from databroker import Header
 from databroker import Broker
 import time
 import operator as op
+import inspect
+import importlib
 
 
 def replumb_data(product_header, raw_headers):
@@ -44,6 +46,45 @@ def replumb_data(product_header, raw_headers):
     for v in vs:
         # TODO: fill the event from the databroker
         nodes[v['node']].update(data[v['uid']])
+
+
+def db_friendly_node(node):
+    """Extract data to make node db friendly"""
+    d = dict(node.__dict__)
+    d['name'] = g2.__class__.__name__
+    d['mod'] = g2.__module__
+    # TODO: need to fix the upstream/upstreams, downstream/downstreams
+    for f_name in ['func', 'predicate']:
+        if f_name in d:
+            d[f_name] = {'name': d[f_name].__name__,
+                         'mod': d[f_name].__module__}
+    if len(d['upstreams']) == 1:
+        d['upstream'] = d['upstreams'][0]
+    return d
+
+
+def rebuild_node(node_dict):
+    d = dict(node_dict)
+    node = getattr(importlib.import_module(d['mod']),
+                   d['name'])
+    d.pop('name')
+    d.pop('mod')
+    # TODO: deal with linkages to upstream/downstream
+    for f_name in ['func', 'predicate']:
+        if f_name in d:
+            d[f_name] = getattr(importlib.import_module(d[f_name]['mod']),
+                                d[f_name]['name'])
+    sig = inspect.signature(node.__init__)
+    params = sig.parameters
+    constructed_args = []
+    for p in params:
+        q = params[p]
+        # Exclude self
+        if str(p) != 'self':
+            if q.kind == q.POSITIONAL_OR_KEYWORD:
+                constructed_args.append(d[p])
+    constructed_args.extend(d['args'])
+    return node(*constructed_args, **d['kwargs'])
 
 
 if __name__ == '__main__':
@@ -83,18 +124,8 @@ if __name__ == '__main__':
     g = g2.ToEventStream(('img2',))
     l = g.sink_to_list()
 
-    d = dict(g2.__dict__)
-    d['name'] = g2.__class__.__name__
-    d['mod'] = g2.__module__
-    import importlib
-    imp = importlib.import_module(d['mod'])
-    c = getattr(imp, d['name'])
-    d.pop('name')
-    d.pop('mod')
-    if len(d['upstreams']) == 1:
-        d['upstream'] = d['upstreams'][0]
-    print(d)
-    print(c(**d))
+    d = db_friendly_node(g2)
+    z = rebuild_node(d)
 
     # d['upstreams'] = [hash(u) for u in d['upstreams']]
     # d['downstreams'] = [hash(u) for u in d['downstreams']]
