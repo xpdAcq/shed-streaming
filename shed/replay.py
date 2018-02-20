@@ -1,5 +1,5 @@
 from streamz_ext import Stream, map
-from shed.translation import FromEventStream, ToEventStream
+from shed.translation import FromEventStream, ToEventStream, hash_or_uid
 from shed.databroker_tools import GraphInsert
 from shed.savers import GraphWriter
 import uuid
@@ -10,6 +10,7 @@ import time
 import operator as op
 import inspect
 import importlib
+import networkx as nx
 
 
 def replumb_data(product_header, raw_headers):
@@ -51,29 +52,23 @@ def replumb_data(product_header, raw_headers):
 def db_friendly_node(node):
     """Extract data to make node db friendly"""
     d = dict(node.__dict__)
-    d['name'] = g2.__class__.__name__
-    d['mod'] = g2.__module__
-    # TODO: need to fix the upstream/upstreams, downstream/downstreams
+    d2 = {'name': g2.__class__.__name__, 'mod': g2.__module__}
     for f_name in ['func', 'predicate']:
         if f_name in d:
+            d2[f_name] = {'name': d[f_name].__name__,
+                          'mod': d[f_name].__module__}
             d[f_name] = {'name': d[f_name].__name__,
                          'mod': d[f_name].__module__}
+    # TODO: Remove these? (They are captured by the graph, maybe)
+    for k in ['upstreams', 'downstreams']:
+        ups = []
+        for up in d[k]:
+            ups.append(hash_or_uid(up))
+        d2[k] = ups
+        d[k] = ups
     if len(d['upstreams']) == 1:
+        d2['upstream'] = d2['upstreams'][0]
         d['upstream'] = d['upstreams'][0]
-    return d
-
-
-def rebuild_node(node_dict):
-    d = dict(node_dict)
-    node = getattr(importlib.import_module(d['mod']),
-                   d['name'])
-    d.pop('name')
-    d.pop('mod')
-    # TODO: deal with linkages to upstream/downstream
-    for f_name in ['func', 'predicate']:
-        if f_name in d:
-            d[f_name] = getattr(importlib.import_module(d[f_name]['mod']),
-                                d[f_name]['name'])
     sig = inspect.signature(node.__init__)
     params = sig.parameters
     constructed_args = []
@@ -82,9 +77,31 @@ def rebuild_node(node_dict):
         # Exclude self
         if str(p) != 'self':
             if q.kind == q.POSITIONAL_OR_KEYWORD:
+                if p == 'stream_name':
+                    p = 'name'
                 constructed_args.append(d[p])
-    constructed_args.extend(d['args'])
-    return node(*constructed_args, **d['kwargs'])
+    constructed_args.extend(d.get('args', ()))
+    d2['args'] = constructed_args
+    d2['kwargs'] = d.get('kwargs', {})
+    return d2
+
+
+def rebuild_node(node_dict, graph):
+    d = dict(node_dict)
+    node = getattr(importlib.import_module(d['mod']),
+                   d['name'])
+    d.pop('name')
+    d.pop('mod')
+    for f_name in ['func', 'predicate']:
+        if f_name in d:
+            d[f_name] = getattr(importlib.import_module(d[f_name]['mod']),
+                                d[f_name]['name'])
+    # TODO: replace hash/uid in args with actual node (now built)
+    for upstream in d['upstreams']:
+        if upstream in d['args']:
+            d['args'][d['args'].index(upstream)] = graph.node[upstream]['stream']
+    pprint(d)
+    return node(*d['args'], **d['kwargs'])
 
 
 if __name__ == '__main__':
@@ -116,16 +133,11 @@ if __name__ == '__main__':
                         'run_start': suid})
 
 
-    s = Stream()
-    g1 = FromEventStream(s, 'event',
-                         ('data', 'det_image',),
-                         principle=True)
+    g1 = FromEventStream('event', ('data', 'det_image',), principle=True)
     g2 = g1.map(op.mul, 2)
     g = g2.ToEventStream(('img2',))
+    # g.sink(print)
     l = g.sink_to_list()
-
-    d = db_friendly_node(g2)
-    z = rebuild_node(d)
 
     # d['upstreams'] = [hash(u) for u in d['upstreams']]
     # d['downstreams'] = [hash(u) for u in d['downstreams']]
@@ -136,9 +148,29 @@ if __name__ == '__main__':
 
     for yy in y():
         db.insert(*yy)
-        s.emit(yy)
+        g1.update(yy)
     # gw = GraphWriter(db.fs, td.name)
-    # graph = l[0][1]['graph']
+    graph = l[0][1]['graph']
+    for n, attrs in graph.node.items():
+        print(n)
+        pprint(attrs)
+    for n in nx.topological_sort(graph):
+        graph.node[n]['stream'] = db_friendly_node(graph.node[n]['stream'])
+    db_graph = nx.node_link_data(graph)
+    # pprint(db_graph)
+    loaded_graph = nx.node_link_graph(db_graph)
+
+    for n, attrs in loaded_graph.node.items():
+        print(n)
+        pprint(attrs)
+
+    for n in nx.topological_sort(loaded_graph):
+        loaded_graph.node[n]['stream'] = rebuild_node(loaded_graph.node[n]['stream'],
+                                                      loaded_graph)
+
+    # d = db_friendly_node(g2)
+    # pprint(d)
+    # z = rebuild_node(d)
     # gi = GraphInsert(g, db.fs, td.name)
     # gi.start(l[0][1])
     # print(gi.graph is graph)

@@ -13,7 +13,7 @@ def test_from_event_model():
     g = to_event_model(range(10), [('ct', {'units': 'arb'})])
 
     source = Stream()
-    t = FromEventStream(source, 'event', ('data', 'ct'))
+    t = FromEventStream('event', ('data', 'ct'), source)
     L = t.sink_to_list()
 
     for gg in g:
@@ -43,7 +43,7 @@ def test_from_event_model_stream_name():
 
     g = data()
     source = Stream()
-    t = FromEventStream(source, 'event', ('data', 'ct'),
+    t = FromEventStream('event', ('data', 'ct'), source,
                         event_stream_name='hi')
     L = t.sink_to_list()
 
@@ -74,7 +74,7 @@ def test_from_event_model_stream_name2():
 
     g = data()
     source = Stream()
-    t = FromEventStream(source, 'event', ('data', 'ct'),
+    t = FromEventStream('event', ('data', 'ct'), source,
                         event_stream_name='not hi')
     L = t.sink_to_list()
 
@@ -87,8 +87,8 @@ def test_from_event_model_stream_name2():
 
 def test_walk_up():
     raw = Stream()
-    a_translation = FromEventStream(raw, 'start', ('time',))
-    b_translation = FromEventStream(raw, 'event', ('data', 'pe1_image'))
+    a_translation = FromEventStream('start', ('time',), raw)
+    b_translation = FromEventStream('event', ('data', 'pe1_image'), raw)
 
     d = b_translation.zip_latest(a_translation)
     dd = d.map(op.truediv)
@@ -108,7 +108,7 @@ def test_to_event_model():
     g = to_event_model(range(10), [('ct', {'units': 'arb'})])
 
     source = Stream()
-    t = FromEventStream(source, 'event', ('data', 'ct'), principle=True)
+    t = FromEventStream('event', ('data', 'ct'), source, principle=True)
 
     n = ToEventStream(t, ('ct',))
     p = n.pluck(0).sink_to_list()

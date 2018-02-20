@@ -1,9 +1,11 @@
 import time
 import uuid
 
-from databroker._core import ALL
 from streamz_ext.core import Stream
 import networkx as nx
+
+
+ALL = '--ALL THE DOCS--'
 
 
 def hash_or_uid(node):
@@ -96,7 +98,8 @@ class FromEventStream(Stream):
     1
     """
 
-    def __init__(self, upstream, doc_type, data_address, event_stream_name=ALL,
+    def __init__(self, doc_type, data_address, upstream=None,
+                 event_stream_name=ALL,
                  stream_name=None, principle=False):
         Stream.__init__(self, upstream, stream_name=stream_name)
         self.stopped = False
