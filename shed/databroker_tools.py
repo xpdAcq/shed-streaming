@@ -1,6 +1,5 @@
 """Nodes for adding data to the databroker"""
 from streamz_ext import Stream
-from shed.savers import GraphWriter
 
 
 @Stream.register_api()
