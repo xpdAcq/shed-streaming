@@ -17,7 +17,6 @@
 import numpy as np
 import uuid
 import os
-import dill
 
 
 class NpyWriter:
@@ -42,46 +41,6 @@ class NpyWriter:
             raise RuntimeError('This writer has been closed.')
         fp = '{}.npy'.format(str(uuid.uuid4()))
         np.save(os.path.join(self._root, fp), data)
-        resource = self._fs.insert_resource(self.SPEC, fp, resource_kwargs={},
-                                            root=self._root)
-        datum_id = str(uuid.uuid4())
-        self._fs.insert_datum(resource=resource, datum_id=datum_id,
-                              datum_kwargs={})
-        return datum_id
-
-    def close(self):
-        self._closed = True
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-
-
-class GraphWriter:
-    """
-    Each call to the ``write`` method saves a file and creates a new filestore
-    resource and datum record.
-    """
-
-    SPEC = 'graph-pkl'
-
-    def __init__(self, fs, root):
-        self._root = root
-        self._closed = False
-        self._fs = fs
-        # Open and stash a file handle (e.g., h5py.File) if applicable.
-
-    def write(self, data):
-        """
-        Save data to file, generate and insert new resource and datum.
-        """
-        if self._closed:
-            raise RuntimeError('This writer has been closed.')
-        fp = '{}.npy'.format(str(uuid.uuid4()))
-        with open(os.path.join(self._root, fp), 'wb') as f:
-            dill.dump(data, f)
         resource = self._fs.insert_resource(self.SPEC, fp, resource_kwargs={},
                                             root=self._root)
         datum_id = str(uuid.uuid4())
