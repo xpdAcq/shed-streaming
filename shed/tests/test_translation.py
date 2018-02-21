@@ -5,7 +5,7 @@ import uuid
 from streamz_ext import Stream
 
 from shed.translation import (FromEventStream, ToEventStream,
-                              walk_to_translation)
+                              walk_to_translation, hash_or_uid)
 from shed.utils import to_event_model
 
 
@@ -101,7 +101,7 @@ def test_walk_up():
         att.append(attrs['stream'])
     s = {a_translation, b_translation, d, dd, e}
     assert s == set(att)
-    assert {hash(k) for k in s} == set(g.nodes)
+    assert {hash_or_uid(k) for k in s} == set(g.nodes)
 
 
 def test_to_event_model():
