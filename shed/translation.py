@@ -1,9 +1,9 @@
+import inspect
 import time
 import uuid
 
 from streamz_ext.core import Stream
 import networkx as nx
-
 
 ALL = '--ALL THE DOCS--'
 
@@ -120,6 +120,7 @@ class FromEventStream(Stream):
         name, doc = x
         self.times[time.time()] = doc['uid']
         if name == 'start':
+            self.times = {time.time(): doc['uid']}
             self.stopped = False
             self.start_uid = doc['uid']
             self.descriptor_uids = {}
@@ -129,7 +130,6 @@ class FromEventStream(Stream):
             self.start_uid = None
             # FIXME: I don't know what this does to backpressure
             [s.emit(s.create_stop(x)) for s in self.subs]
-            self.times = {}
         inner = doc.copy()
         if (name == self.doc_type and
                 ((name == 'descriptor' and
@@ -289,9 +289,9 @@ class ToEventStream(Stream):
             tx = x
         new_event = dict(uid=str(uuid.uuid4()),
                          time=time.time(),
-                         timestamps={},
+                         timestamps={k: time.time() for k in self.data_keys},
                          descriptor=self.descriptor_uid,
-                         filled={k[0]: True for k in self.data_keys},
+                         filled={k: True for k in self.data_keys},
                          data={k: v for k, v in zip(self.data_keys, tx)},
                          seq_num=self.index_dict[self.descriptor_uid])
         self.index_dict[self.descriptor_uid] += 1
@@ -310,3 +310,66 @@ class ToEventStream(Stream):
         self.stopped = True
         self.parent_uids = None
         return 'stop', new_stop
+
+
+@Stream.register_api()
+class DBFriendly(Stream):
+    """Make analyzed data (and graph) DB friendly"""
+
+    def __init__(self, upstream, stream_name=None):
+        Stream.__init__(self, upstream, stream_name=stream_name)
+
+    def update(self, x, who=None):
+        name, doc = x
+        if name == 'start':
+            doc = dict(doc)
+            graph = doc['graph']
+            for n in nx.topological_sort(graph):
+                graph.node[n]['stream'] = db_friendly_node(
+                    graph.node[n]['stream'])
+            doc['graph'] = nx.node_link_data(graph)
+        return self.emit((name, doc))
+
+
+def db_friendly_node(node):
+    """Extract data to make node db friendly"""
+    d = dict(node.__dict__)
+    d['stream_name'] = d['name']
+    d2 = {'name': node.__class__.__name__, 'mod': node.__module__,}
+    for f_name in ['func', 'predicate']:
+        if f_name in d:
+            d2[f_name] = {'name': d[f_name].__name__,
+                          'mod': d[f_name].__module__}
+            d[f_name] = {'name': d[f_name].__name__,
+                         'mod': d[f_name].__module__}
+
+    for k in ['upstreams', 'downstreams']:
+        ups = []
+        for up in d[k]:
+            if up is not None:
+                ups.append(hash_or_uid(up))
+        d2[k] = ups
+        d[k] = ups
+    if len(d['upstreams']) == 1:
+        d2['upstream'] = d2['upstreams'][0]
+        d['upstream'] = d['upstreams'][0]
+
+    sig = inspect.signature(node.__init__)
+    params = sig.parameters
+    constructed_args = []
+    d2['arg_keys'] = []
+    for p in params:
+        d2['arg_keys'].append(p)
+        q = params[p]
+        # Exclude self
+        if str(p) != 'self':
+            if q.kind == q.POSITIONAL_OR_KEYWORD and p in d:
+                constructed_args.append(d[p])
+            elif q.default is not q.empty:
+                constructed_args.append(q.default)
+            if q.kind == q.VAR_POSITIONAL:
+                constructed_args.extend(d[p])
+    constructed_args.extend(d.get('args', ()))
+    d2['args'] = constructed_args
+    d2['kwargs'] = d.get('kwargs', {})
+    return d2
