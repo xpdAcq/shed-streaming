@@ -1,12 +1,12 @@
-from shed.translation import FromEventStream
+import importlib
+import operator as op
+import time
 import uuid
 from pprint import pprint
-from databroker import Broker
-import time
-import operator as op
-import importlib
+
 import networkx as nx
-from shed.translation import ToEventStream
+from databroker import Broker
+from shed.translation import FromEventStream, ToEventStream
 
 
 def replay(db, hdr, export=False):
