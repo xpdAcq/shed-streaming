@@ -66,23 +66,3 @@ class AssetInsert(Stream):
             writer.close()
             self.writers.pop(data_key)
         return doc
-
-
-@Stream.register_api()
-class GraphInsert(Stream):
-    def __init__(self, upstream, fs, root, *,
-                 stream_name=None):
-        super().__init__(upstream=upstream, stream_name=stream_name)
-        self.root = root
-        self.fs = fs
-
-    def update(self, x, who=None):
-        name, doc = x
-        fs_doc = getattr(self, name, lambda x: x)(doc)
-        self.emit((name, fs_doc))
-
-    def start(self, doc):
-        gw = GraphWriter(self.fs, self.root)
-        guid = gw.write(doc['graph'])
-
-        return doc
