@@ -29,7 +29,7 @@ def replumb_data(product_header, raw_headers):
     times = {}
     nodes = {}
     # TODO: try either raw or analysis db (or stash something to know who comes
-    # from where
+    # from where)
 
     # load data from raw/partially analyzed headers
     for hdr in raw_headers:
@@ -52,23 +52,26 @@ def replumb_data(product_header, raw_headers):
 def db_friendly_node(node):
     """Extract data to make node db friendly"""
     d = dict(node.__dict__)
-    d2 = {'name': g2.__class__.__name__, 'mod': g2.__module__}
+    d2 = {'name': node.__class__.__name__, 'mod': node.__module__}
     for f_name in ['func', 'predicate']:
         if f_name in d:
             d2[f_name] = {'name': d[f_name].__name__,
                           'mod': d[f_name].__module__}
             d[f_name] = {'name': d[f_name].__name__,
                          'mod': d[f_name].__module__}
+
     # TODO: Remove these? (They are captured by the graph, maybe)
     for k in ['upstreams', 'downstreams']:
         ups = []
         for up in d[k]:
-            ups.append(hash_or_uid(up))
+            if up is not None:
+                ups.append(hash_or_uid(up))
         d2[k] = ups
         d[k] = ups
     if len(d['upstreams']) == 1:
         d2['upstream'] = d2['upstreams'][0]
         d['upstream'] = d['upstreams'][0]
+
     sig = inspect.signature(node.__init__)
     params = sig.parameters
     constructed_args = []
@@ -76,13 +79,16 @@ def db_friendly_node(node):
         q = params[p]
         # Exclude self
         if str(p) != 'self':
-            if q.kind == q.POSITIONAL_OR_KEYWORD:
+            if q.kind == q.POSITIONAL_OR_KEYWORD and p in d:
                 if p == 'stream_name':
                     p = 'name'
                 constructed_args.append(d[p])
+            elif q.default is not q.empty:
+                constructed_args.append(q.default)
     constructed_args.extend(d.get('args', ()))
     d2['args'] = constructed_args
     d2['kwargs'] = d.get('kwargs', {})
+    pprint(d2)
     return d2
 
 
@@ -100,6 +106,7 @@ def rebuild_node(node_dict, graph):
     for upstream in d['upstreams']:
         if upstream in d['args']:
             d['args'][d['args'].index(upstream)] = graph.node[upstream]['stream']
+    print(node)
     pprint(d)
     return node(*d['args'], **d['kwargs'])
 
@@ -133,65 +140,30 @@ if __name__ == '__main__':
                         'run_start': suid})
 
 
+    print('build graph')
     g1 = FromEventStream('event', ('data', 'det_image',), principle=True)
     g2 = g1.map(op.mul, 2)
     g = g2.ToEventStream(('img2',))
-    # g.sink(print)
     l = g.sink_to_list()
-
-    # d['upstreams'] = [hash(u) for u in d['upstreams']]
-    # d['downstreams'] = [hash(u) for u in d['downstreams']]
-    # print(d)
-    # xyz = g.GraphInsert(db.fs, td.name)
-    # xyz.sink(pprint)
-    # xyz.sink(db.insert)
 
     for yy in y():
         db.insert(*yy)
         g1.update(yy)
-    # gw = GraphWriter(db.fs, td.name)
     graph = l[0][1]['graph']
-    for n, attrs in graph.node.items():
-        print(n)
-        pprint(attrs)
+
+    print('db friendly node')
     for n in nx.topological_sort(graph):
         graph.node[n]['stream'] = db_friendly_node(graph.node[n]['stream'])
     db_graph = nx.node_link_data(graph)
-    # pprint(db_graph)
     loaded_graph = nx.node_link_graph(db_graph)
+
+    print('rebuild nodes')
+    for n in nx.topological_sort(loaded_graph):
+        loaded_graph.node[n]['stream'] = rebuild_node(
+            loaded_graph.node[n]['stream'], loaded_graph)
 
     for n, attrs in loaded_graph.node.items():
         print(n)
         pprint(attrs)
-
-    for n in nx.topological_sort(loaded_graph):
-        loaded_graph.node[n]['stream'] = rebuild_node(loaded_graph.node[n]['stream'],
-                                                      loaded_graph)
-
-    # d = db_friendly_node(g2)
-    # pprint(d)
-    # z = rebuild_node(d)
-    # gi = GraphInsert(g, db.fs, td.name)
-    # gi.start(l[0][1])
-    # print(gi.graph is graph)
-    # print(gw.write(graph))
-    # gw.write(gi.graph)
-
-    # print(gw.write(graph))
-    # import os
-    # import dill
-    # n = os.path.join(td.name, 'graph.pkl')
-    # with open(n, 'wb') as f:
-    #     dill.dump(graph, f)
-    # del graph
-    # with open(n, 'rb') as f:
-    #     graph = dill.load(f)
-    # for node, attrs in graph.node.items():
-    #     print(attrs)
-
-    # analyzed_header = db[-1]
-    # raw_headers = [db[uid] for uid in analyzed_header['start']['parent_uids'].values()]
-    # replumb_data(analyzed_header, raw_headers)
-    #
     # '''
     td.cleanup()
