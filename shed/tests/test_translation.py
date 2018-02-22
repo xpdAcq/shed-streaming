@@ -32,7 +32,7 @@ def test_from_event_model_stream_name():
                              'uid': duid, 'run_start': suid}
         for i in range(10):
             yield 'event', {'uid': str(uuid.uuid4()),
-                            'ct': {'data': i}, 'descriptor': duid}
+                            'data': {'ct': i}, 'descriptor': duid}
         duid = str(uuid.uuid4())
         yield 'descriptor', {'name': 'not hi', 'data_keys': {'ct'},
                              'uid': duid, 'run_start': suid}
@@ -50,6 +50,7 @@ def test_from_event_model_stream_name():
     for gg in g:
         source.emit(gg)
 
+    assert len(L) == 10
     for i, ll in enumerate(L):
         assert i == ll
 
@@ -63,7 +64,7 @@ def test_from_event_model_stream_name2():
                              'uid': duid, 'run_start': suid}
         for i in range(10):
             yield 'event', {'uid': str(uuid.uuid4()),
-                            'ct': {'data': i}, 'descriptor': duid}
+                            'data': {'ct': i}, 'descriptor': duid}
         duid = str(uuid.uuid4())
         yield 'descriptor', {'name': 'not hi', 'data_keys': {'ct'},
                              'uid': duid, 'run_start': suid}
@@ -81,6 +82,7 @@ def test_from_event_model_stream_name2():
     for gg in g:
         source.emit(gg)
 
+    assert len(L) == 10
     for i, ll in enumerate(L):
         assert i + 100 == ll
 
