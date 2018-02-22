@@ -69,7 +69,6 @@ def rebuild_node(node_dict, graph):
 if __name__ == '__main__':
     db = Broker.named('temp')
 
-
     def y():
         suid = str(uuid.uuid4())
         yield ('start', {'uid': suid,
@@ -85,13 +84,12 @@ if __name__ == '__main__':
             yield ('event', {'uid': str(uuid.uuid4()),
                              'data': {'det_image': i},
                              'timestamps': {'det_image': time.time()},
-                             'seq_num': i+1,
+                             'seq_num': i + 1,
                              'time': time.time(),
                              'descriptor': duid})
         yield ('stop', {'uid': str(uuid.uuid4()),
                         'time': time.time(),
                         'run_start': suid})
-
 
     print('build graph')
     g1 = FromEventStream('event', ('data', 'det_image',), principle=True,
@@ -102,7 +100,6 @@ if __name__ == '__main__':
     g2 = g11_1.starmap(op.mul)
     g = g2.ToEventStream(('img2',))
     dbf = g.DBFriendly()
-    l = dbf.sink_to_list()
     dbf.starsink(db.insert)
 
     print('run experiment')

@@ -39,7 +39,6 @@ def test_replay_export(db):
     g2 = g11_1.starmap(op.mul)
     g = g2.ToEventStream(('img2',))
     dbf = g.DBFriendly()
-    l = dbf.sink_to_list()
     dbf.starsink(db.insert)
 
     print('run experiment')
@@ -51,7 +50,7 @@ def test_replay_export(db):
     s1 = db[-1]['stop']
     print('replay experiment')
     rp = replay(db, db[-1], export=True)
-    lg = next(rp)
+    next(rp)
     next(rp)
     assert s1 != db[-1]['stop']
 
