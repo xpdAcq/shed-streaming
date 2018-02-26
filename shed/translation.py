@@ -1,9 +1,15 @@
+import inspect
 import time
 import uuid
 
-from databroker._core import ALL
 from streamz_ext.core import Stream
 import networkx as nx
+
+ALL = '--ALL THE DOCS--'
+
+
+def hash_or_uid(node):
+    return getattr(node, 'uid', hash(node))
 
 
 def walk_to_translation(node, graph, prior_node=None):
@@ -24,10 +30,10 @@ def walk_to_translation(node, graph, prior_node=None):
     """
     if node is None:
         return
-    t = hash(node)
+    t = hash_or_uid(node)
     graph.add_node(t, stream=node)
     if prior_node:
-        tt = hash(prior_node)
+        tt = hash_or_uid(prior_node)
         if graph.has_edge(t, tt):
             return
         else:
@@ -36,7 +42,7 @@ def walk_to_translation(node, graph, prior_node=None):
                 return
             else:
                 for downstream in node.downstreams:
-                    ttt = hash(downstream)
+                    ttt = hash_or_uid(downstream)
                     if isinstance(downstream,
                                   ToEventStream) and ttt not in graph:
                         graph.add_node(ttt, stream=downstream)
@@ -72,6 +78,8 @@ class FromEventStream(Stream):
     --------
     The result emitted from this stream no longer follows the document model.
 
+    This node also keeps track of when data came through the node.
+
 
     Examples
     -------------
@@ -90,7 +98,8 @@ class FromEventStream(Stream):
     1
     """
 
-    def __init__(self, upstream, doc_type, data_address, event_stream_name=ALL,
+    def __init__(self, doc_type, data_address, upstream=None,
+                 event_stream_name=ALL,
                  stream_name=None, principle=False):
         Stream.__init__(self, upstream, stream_name=stream_name)
         self.stopped = False
@@ -104,10 +113,14 @@ class FromEventStream(Stream):
         self.descriptor_uids = None
         self.run_start_uid = None
         self.subs = []
+        self.times = {}
+        self.uid = str(uuid.uuid4())
 
     def update(self, x, who=None):
         name, doc = x
+        self.times[time.time()] = doc['uid']
         if name == 'start':
+            self.times = {time.time(): doc['uid']}
             self.stopped = False
             self.start_uid = doc['uid']
             self.descriptor_uids = {}
@@ -195,6 +208,7 @@ class ToEventStream(Stream):
         self.parent_uids = None
         self.descriptor_uid = None
         self.stopped = False
+        self.uid = str(uuid.uuid4())
 
         # walk upstream to get all upstream nodes to the translation node
         # get start_uids from the translation node
@@ -202,12 +216,11 @@ class ToEventStream(Stream):
         walk_to_translation(self, graph=self.graph)
 
         self.translation_nodes = {k: n['stream'] for k, n in
-                                  self.graph.node.items()
-                                  if isinstance(n['stream'],
-                                                (FromEventStream,
-                                                 ToEventStream)
-                                                ) and n['stream'] != self}
-        self.principle_nodes = [n for n in self.translation_nodes.values()
+                                  self.graph.node.items() if
+                                  isinstance(n['stream'], (
+                                      FromEventStream, ToEventStream)) and n[
+                                      'stream'] != self}
+        self.principle_nodes = [n for k, n in self.translation_nodes.items()
                                 if n.principle is True]
         for p in self.principle_nodes:
             p.subs.append(self)
@@ -215,7 +228,7 @@ class ToEventStream(Stream):
     def update(self, x, who=None):
         rl = []
         # Need a way to address translation nodes and start_uids, maybe hash
-        current_start_uids = {k: v.start_uid for k, v in
+        current_start_uids = {v.uid: v.start_uid for k, v in
                               self.translation_nodes.items()}
 
         # Bootstrap
@@ -242,8 +255,8 @@ class ToEventStream(Stream):
             dict(
                 uid=self.start_uid,
                 time=time.time(),
-                graph=list(nx.generate_edgelist(self.graph, data=True)),
-                parent_uids={k: v.start_uid for k, v in
+                graph=self.graph,
+                parent_uids={v.uid: v.start_uid for k, v in
                              self.translation_nodes.items()
                              if v.start_uid is not None}))
         self.index_dict = dict()
@@ -255,13 +268,14 @@ class ToEventStream(Stream):
         else:
             tx = x
         self.descriptor_uid = str(uuid.uuid4())
-        self.index_dict[self.descriptor_uid] = 0
+        self.index_dict[self.descriptor_uid] = 1
 
         new_descriptor = dict(
             uid=self.descriptor_uid,
             time=time.time(),
             run_start=self.start_uid,
             name='primary',
+            # TODO: source should reflect graph? (maybe with a UID)
             data_keys={k: {'source': 'analysis',
                            'dtype': str(type(xx)),
                            'shape': getattr(xx, 'shape', [])
@@ -275,19 +289,87 @@ class ToEventStream(Stream):
             tx = x
         new_event = dict(uid=str(uuid.uuid4()),
                          time=time.time(),
-                         timestamps={},
+                         timestamps={k: time.time() for k in self.data_keys},
                          descriptor=self.descriptor_uid,
-                         filled={k[0]: True for k in self.data_keys},
+                         filled={k: True for k in self.data_keys},
                          data={k: v for k, v in zip(self.data_keys, tx)},
                          seq_num=self.index_dict[self.descriptor_uid])
         self.index_dict[self.descriptor_uid] += 1
         return 'event', new_event
 
     def create_stop(self, x):
+        times = {}
+        for k, node in self.translation_nodes.items():
+            for t, uid in node.times.items():
+                times[t] = {'node': node.uid, 'uid': uid}
         new_stop = dict(uid=str(uuid.uuid4()),
                         time=time.time(),
-                        run_start=self.start_uid)
+                        run_start=self.start_uid,
+                        times=times)
         self.start_uid = None
         self.stopped = True
         self.parent_uids = None
         return 'stop', new_stop
+
+
+@Stream.register_api()
+class DBFriendly(Stream):
+    """Make analyzed data (and graph) DB friendly"""
+
+    def __init__(self, upstream, stream_name=None):
+        Stream.__init__(self, upstream, stream_name=stream_name)
+
+    def update(self, x, who=None):
+        name, doc = x
+        if name == 'start':
+            doc = dict(doc)
+            graph = doc['graph']
+            for n in nx.topological_sort(graph):
+                graph.node[n]['stream'] = db_friendly_node(
+                    graph.node[n]['stream'])
+            doc['graph'] = nx.node_link_data(graph)
+        return self.emit((name, doc))
+
+
+def db_friendly_node(node):
+    """Extract data to make node db friendly"""
+    d = dict(node.__dict__)
+    d['stream_name'] = d['name']
+    d2 = {'name': node.__class__.__name__, 'mod': node.__module__}
+    for f_name in ['func', 'predicate']:
+        if f_name in d:
+            d2[f_name] = {'name': d[f_name].__name__,
+                          'mod': d[f_name].__module__}
+            d[f_name] = {'name': d[f_name].__name__,
+                         'mod': d[f_name].__module__}
+
+    for k in ['upstreams', 'downstreams']:
+        ups = []
+        for up in d[k]:
+            if up is not None:
+                ups.append(hash_or_uid(up))
+        d2[k] = ups
+        d[k] = ups
+    if len(d['upstreams']) == 1:
+        d2['upstream'] = d2['upstreams'][0]
+        d['upstream'] = d['upstreams'][0]
+
+    sig = inspect.signature(node.__init__)
+    params = sig.parameters
+    constructed_args = []
+    d2['arg_keys'] = []
+    for p in params:
+        d2['arg_keys'].append(p)
+        q = params[p]
+        # Exclude self
+        if str(p) != 'self':
+            if q.kind == q.POSITIONAL_OR_KEYWORD and p in d:
+                constructed_args.append(d[p])
+            elif q.default is not q.empty:
+                constructed_args.append(q.default)
+            if q.kind == q.VAR_POSITIONAL:
+                constructed_args.extend(d[p])
+    constructed_args.extend(d.get('args', ()))
+    d2['args'] = constructed_args
+    d2['kwargs'] = d.get('kwargs', {})
+    return d2

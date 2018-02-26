@@ -15,7 +15,7 @@ lp2 = LivePlot('binned', ax=ax)
 # Create a graph
 source = Stream()
 # Convert from raw event model to data
-fes = FromEventStream(source, 'event', ('data', 'noisy_det'), principle=True)
+fes = FromEventStream('event', ('data', 'noisy_det'), source, principle=True)
 
 # Averageing graph
 adder = fes.accumulate(lambda x, y: x + y)

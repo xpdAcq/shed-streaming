@@ -2,6 +2,7 @@
 from streamz_ext import Stream
 
 
+@Stream.register_api()
 class AssetInsert(Stream):
     def __init__(self, upstream, fs, root, *,
                  stream_name=None, external_writers=None):
@@ -18,7 +19,7 @@ class AssetInsert(Stream):
         fs_doc = getattr(self, name)(doc)
         fs_doc.pop('filled', None)
         fs_doc.pop('_name', None)
-        self._emit((name, fs_doc))
+        self.emit((name, fs_doc))
 
     def start(self, doc):
         # Make a fresh instance of any WriterClass classes.

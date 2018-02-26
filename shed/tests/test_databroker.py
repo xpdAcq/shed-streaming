@@ -3,7 +3,7 @@ import numpy as np
 from numpy.testing import assert_equal
 from streamz_ext import Stream
 
-from shed.databroker import AssetInsert
+from shed.databroker_tools import AssetInsert
 from shed.savers import NpyWriter
 from shed.utils import to_event_model
 
