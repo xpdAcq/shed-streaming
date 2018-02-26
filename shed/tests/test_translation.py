@@ -106,6 +106,26 @@ def test_walk_up():
     assert {hash_or_uid(k) for k in s} == set(g.nodes)
 
 
+def test_walk_up_partial():
+    raw = Stream()
+    a_translation = FromEventStream('start', ('time',), raw)
+    b_translation = FromEventStream('event', ('data', 'pe1_image'), raw)
+
+    d = b_translation.zip_latest(a_translation)
+    ddd = ToEventStream(d, ('data', ))
+    dd = d.map(op.truediv)
+    e = ToEventStream(dd, ('data',))
+
+    g = nx.DiGraph()
+    walk_to_translation(e, g)
+    att = []
+    for node, attrs in g.node.items():
+        att.append(attrs['stream'])
+    s = {ddd, dd, e, d}
+    assert s == set(att)
+    assert {hash_or_uid(k) for k in s} == set(g.nodes)
+
+
 def test_to_event_model():
     g = to_event_model(range(10), [('ct', {'units': 'arb'})])
 
