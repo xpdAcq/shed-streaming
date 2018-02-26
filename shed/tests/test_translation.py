@@ -122,7 +122,6 @@ def test_walk_up_partial():
     for node, attrs in g.node.items():
         att.append(attrs['stream'])
     s = {ddd, dd, e, d}
-    raw.visualize(source_node=False)
     assert s == set(att)
     assert {hash_or_uid(k) for k in s} == set(g.nodes)
 
