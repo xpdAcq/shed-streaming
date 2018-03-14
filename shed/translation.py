@@ -238,7 +238,7 @@ class ToEventStream(Stream):
                                       FromEventStream, ToEventStream)) and n[
                                       'stream'] != self}
         self.principle_nodes = [n for k, n in self.translation_nodes.items()
-                                if n.principle is True]
+                                if getattr(n, 'principle', False) is True]
         for p in self.principle_nodes:
             p.subs.append(self)
 
