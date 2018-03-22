@@ -1,0 +1,16 @@
+**Added:** None
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:**
+
+* ``ToEventStream`` now tracks the time that data was received
+
+* ``ToEventStream`` is now executed before the rest of the graph so graph times
+  match the execution time.
+
+**Security:** None
