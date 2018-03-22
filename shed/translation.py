@@ -199,6 +199,12 @@ class ToEventStream(Stream):
     def __init__(self, upstream, data_keys, stream_name=None, principle=False,
                  **kwargs):
         Stream.__init__(self, upstream, stream_name=stream_name)
+        for up in self.upstreams:
+            for n in up.downstreams.data:
+                if n() is self:
+                    break
+            up.downstreams.data._od.move_to_end(n, last=False)
+            del n
         self.index_dict = dict()
         self.data_keys = data_keys
         self.md = kwargs
@@ -209,6 +215,8 @@ class ToEventStream(Stream):
         self.descriptor_uid = None
         self.stopped = False
         self.uid = str(uuid.uuid4())
+
+        self.times = {}
 
         # walk upstream to get all upstream nodes to the translation node
         # get start_uids from the translation node
@@ -226,6 +234,8 @@ class ToEventStream(Stream):
             p.subs.append(self)
 
     def update(self, x, who=None):
+        if self.start_uid:
+            self.times[time.time()] = self.start_uid
         rl = []
         # Need a way to address translation nodes and start_uids, maybe hash
         current_start_uids = {v.uid: v.start_uid for k, v in
@@ -248,13 +258,15 @@ class ToEventStream(Stream):
         return rl
 
     def create_start(self, x):
+        tt = time.time()
+        self.times[tt] = self.start_uid
         self.stopped = False
         self.start_uid = str(uuid.uuid4())
         new_start_doc = self.md
         new_start_doc.update(
             dict(
                 uid=self.start_uid,
-                time=time.time(),
+                time=tt,
                 graph=self.graph,
                 parent_uids={v.uid: v.start_uid for k, v in
                              self.translation_nodes.items()
