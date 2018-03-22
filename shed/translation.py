@@ -101,6 +101,8 @@ class FromEventStream(Stream):
     def __init__(self, doc_type, data_address, upstream=None,
                  event_stream_name=ALL,
                  stream_name=None, principle=False):
+        if stream_name is None:
+            stream_name = doc_type + str(data_address)
         Stream.__init__(self, upstream, stream_name=stream_name)
         self.stopped = False
         self.principle = principle
@@ -198,6 +200,8 @@ class ToEventStream(Stream):
 
     def __init__(self, upstream, data_keys, stream_name=None, principle=False,
                  **kwargs):
+        if stream_name is None:
+            stream_name = str(data_keys)
         Stream.__init__(self, upstream, stream_name=stream_name)
         for up in self.upstreams:
             for n in up.downstreams.data:
