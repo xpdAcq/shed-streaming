@@ -1,5 +1,6 @@
 import operator as op
 import networkx as nx
+import time
 import uuid
 
 from streamz_ext import Stream
@@ -112,7 +113,7 @@ def test_walk_up_partial():
     b_translation = FromEventStream('event', ('data', 'pe1_image'), raw)
 
     d = b_translation.zip_latest(a_translation)
-    ddd = ToEventStream(d, ('data', ))
+    ddd = ToEventStream(d, ('data',))
     dd = d.map(op.truediv)
     e = ToEventStream(dd, ('data',))
 
@@ -140,3 +141,41 @@ def test_to_event_model():
         source.emit(gg)
 
     assert set(p) == {'start', 'stop', 'event', 'descriptor'}
+
+
+def test_execution_order():
+    def data():
+        suid = str(uuid.uuid4())
+        duid = str(uuid.uuid4())
+        yield 'start', {'hi': 'world', 'uid': suid}
+        yield 'descriptor', {'name': 'hi', 'data_keys': {'ct'},
+                             'uid': duid, 'run_start': suid}
+        for i in range(10):
+            yield 'event', {'uid': str(uuid.uuid4()),
+                            'data': {'ct': i}, 'descriptor': duid}
+        duid = str(uuid.uuid4())
+        yield 'descriptor', {'name': 'not hi', 'data_keys': {'ct'},
+                             'uid': duid, 'run_start': suid}
+        for i in range(100, 110):
+            yield 'event', {'uid': str(uuid.uuid4()),
+                            'data': {'ct': i}, 'descriptor': duid}
+        yield 'stop', {'uid': str(uuid.uuid4()), 'run_start': suid}
+
+    source = FromEventStream('event', ('data', 'ct'))
+    p = source.map(op.add, 1)
+    pp = p.ToEventStream('ctp1')
+    ppp = p.map(op.mul, 2)
+    l1 = ppp.sink_to_list()
+    pppp = ppp.ToEventStream('ctp2')
+    l2 = ppp.map(lambda *x: time.time()).sink_to_list()
+    assert next(iter(p.downstreams)) is pp
+    assert next(iter(ppp.downstreams)) is pppp
+    ex_l = [(i + 1) * 2 for i in range(10)] + [(i + 1) * 2 for i in range(100,
+                                                                          110)]
+    for d in data():
+        source.update(d)
+    assert l1 == ex_l
+    assert all((v == pppp.start_uid for v in pppp.times.values()))
+    t = sorted(pppp.times.keys())
+    # ToEventStream executed first
+    assert all((v < v2 for v, v2 in zip(t, l2)))
