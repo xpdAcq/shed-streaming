@@ -165,8 +165,8 @@ def test_execution_order():
     p = source.map(op.add, 1)
     pp = p.ToEventStream('ctp1')
     ppp = p.map(op.mul, 2)
-    pppp = ppp.ToEventStream('ctp2')
     l1 = ppp.sink_to_list()
+    pppp = ppp.ToEventStream('ctp2')
     l2 = ppp.map(lambda *x: time.time()).sink_to_list()
     assert next(iter(p.downstreams)) is pp
     assert next(iter(ppp.downstreams)) is pppp
