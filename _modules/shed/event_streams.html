@@ -195,8 +195,8 @@
     <span class="nd">@ft</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">wraps</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
-</div>
-    <span class="k">return</span> <span class="n">wraps</span>
+
+    <span class="k">return</span> <span class="n">wraps</span></div>
 
 
 <div class="viewcode-block" id="dstar"><a class="viewcode-back" href="../../shed.html#shed.event_streams.dstar">[docs]</a><span class="k">def</span> <span class="nf">dstar</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
@@ -206,8 +206,8 @@
     <span class="k">def</span> <span class="nf">wraps</span><span class="p">(</span><span class="n">kwargs1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs2</span><span class="p">):</span>
         <span class="n">kwargs1</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs2</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs1</span><span class="p">)</span>
-</div>
-    <span class="k">return</span> <span class="n">wraps</span>
+
+    <span class="k">return</span> <span class="n">wraps</span></div>
 
 
 <div class="viewcode-block" id="istar"><a class="viewcode-back" href="../../shed.html#shed.event_streams.istar">[docs]</a><span class="k">def</span> <span class="nf">istar</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
@@ -216,8 +216,8 @@
     <span class="nd">@ft</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">wraps</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-</div>
-    <span class="k">return</span> <span class="n">wraps</span>
+
+    <span class="k">return</span> <span class="n">wraps</span></div>
 
 
 <div class="viewcode-block" id="EventStream"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream">[docs]</a><span class="k">class</span> <span class="nc">EventStream</span><span class="p">(</span><span class="n">Stream</span><span class="p">):</span>
@@ -389,8 +389,8 @@
                 <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
                     <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></div>
-            <span class="k">return</span> <span class="p">[</span><span class="n">element</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">result</span> <span class="k">if</span> <span class="n">element</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">element</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">result</span> <span class="k">if</span> <span class="n">element</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="EventStream.dispatch"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.dispatch">[docs]</a>    <span class="k">def</span> <span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nds</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Dispatch to methods expecting particular doc types.</span>
@@ -405,8 +405,8 @@
 <span class="sd">        tuple:</span>
 <span class="sd">            New name document pair</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">name</span><span class="p">,</span> <span class="n">docs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curate_streams</span><span class="p">(</span><span class="n">nds</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
-        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)(</span><span class="n">docs</span><span class="p">)</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">docs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curate_streams</span><span class="p">(</span><span class="n">nds</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)(</span><span class="n">docs</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="EventStream.update"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Emit the new name document pair</span>
@@ -422,8 +422,8 @@
 <span class="sd">        -------</span>
 <span class="sd">        list:</span>
 <span class="sd">            The list of issued documents, used for back pressure</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="n">x</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="EventStream.curate_streams"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.curate_streams">[docs]</a>    <span class="k">def</span> <span class="nf">curate_streams</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nds</span><span class="p">,</span> <span class="n">outbound</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Standardize inbound/outbound name document pairs</span>
@@ -480,8 +480,8 @@
             <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">docs</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">docs</span> <span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
-            <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">docs</span>
+                <span class="n">docs</span> <span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">docs</span></div>
 
 <div class="viewcode-block" id="EventStream.generate_provenance"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.generate_provenance">[docs]</a>    <span class="k">def</span> <span class="nf">generate_provenance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generate provenance information about the stream function</span>
@@ -515,8 +515,8 @@
         <span class="n">full_event</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;full_event&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">full_event</span><span class="p">:</span>
             <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">full_event</span><span class="o">=</span><span class="n">full_event</span><span class="p">)</span>
-</div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">provenance</span> <span class="o">=</span> <span class="n">d</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">provenance</span> <span class="o">=</span> <span class="n">d</span></div>
 
 <div class="viewcode-block" id="EventStream.start"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">,</span> <span class="n">clear</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -541,8 +541,8 @@
         <span class="n">new_start_doc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">uid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run_start_uid</span><span class="p">,</span>
                              <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">bypass</span> <span class="o">=</span> <span class="kc">False</span></div>
-        <span class="k">return</span> <span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">new_start_doc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bypass</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">new_start_doc</span></div>
 
 <div class="viewcode-block" id="EventStream.descriptor"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.descriptor">[docs]</a>    <span class="k">def</span> <span class="nf">descriptor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -589,8 +589,8 @@
                     <span class="n">dk</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;data_keys&#39;</span><span class="p">))</span>
                 <span class="n">new_descriptor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data_keys</span><span class="o">=</span><span class="n">dk</span><span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span></div>
-            <span class="k">return</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="n">new_descriptor</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="n">new_descriptor</span></div>
 
 <div class="viewcode-block" id="EventStream.event"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -606,8 +606,8 @@
 <span class="sd">        doc: dict</span>
 <span class="sd">            The document</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">bypass</span><span class="p">:</span></div>
-            <span class="k">return</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="n">docs</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">bypass</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="n">docs</span></div>
 
 <div class="viewcode-block" id="EventStream.stop"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -649,8 +649,8 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">new_stop</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">exit_status</span><span class="o">=</span><span class="s1">&#39;success&#39;</span><span class="p">)</span>
             <span class="k">return</span> <span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="n">new_stop</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">raise_upon_error</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">excep</span><span class="p">:</span></div>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">excep</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">raise_upon_error</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">excep</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">excep</span></div>
 
 <div class="viewcode-block" id="EventStream.doc_contents"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.doc_contents">[docs]</a>    <span class="k">def</span> <span class="nf">doc_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">,</span> <span class="n">full_event</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -722,8 +722,8 @@
 <span class="s2">            Got </span><span class="si">{}</span><span class="s2"> instead&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args_positions</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errormsg</span><span class="p">)</span>
 
-        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">args_positions</span><span class="p">]</span></div>
-        <span class="k">return</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">args_positions</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span></div>
 
 <div class="viewcode-block" id="EventStream.issue_event"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.issue_event">[docs]</a>    <span class="k">def</span> <span class="nf">issue_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create a new event document based off of function returns</span>
@@ -778,8 +778,8 @@
                     <span class="n">errormsg</span> <span class="o">+=</span> <span class="s2">&quot;use the output_info keyword argument.</span><span class="se">\n</span><span class="s2">&quot;</span>
                     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">errormsg</span><span class="p">)</span>
                 <span class="n">new_event</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">outputs</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span></div>
-            <span class="k">return</span> <span class="n">new_event</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">new_event</span></div>
 
 <div class="viewcode-block" id="EventStream.refresh_event"><a class="viewcode-back" href="../../shed.html#shed.event_streams.EventStream.refresh_event">[docs]</a>    <span class="k">def</span> <span class="nf">refresh_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create a new event with the same data, but new metadata</span>
@@ -806,8 +806,8 @@
                                   <span class="n">timestamps</span><span class="o">=</span><span class="p">{},</span>
                                   <span class="n">seq_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">))</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span></div>
-            <span class="k">return</span> <span class="n">new_event</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">new_event</span></div>
 
     <span class="k">def</span> <span class="nf">_clean_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop_kwargs</span><span class="p">:</span>
@@ -822,8 +822,8 @@
 <span class="sd">        -------</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span></div>
-            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">v</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="map"><a class="viewcode-back" href="../../shed.html#shed.event_streams.map">[docs]</a><span class="k">class</span> <span class="nc">map</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -892,8 +892,8 @@
             <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">issue_event</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">stop</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span></div></div>
-            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="filter"><a class="viewcode-back" href="../../shed.html#shed.event_streams.filter">[docs]</a><span class="k">class</span> <span class="nc">filter</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1037,8 +1037,8 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predicate</span><span class="p">(</span><span class="o">*</span><span class="n">res_args</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">func_args</span><span class="p">,</span>
                               <span class="o">**</span><span class="n">res_kwargs</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">func_kwargs</span><span class="p">):</span>
                 <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span></div></div>
-            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">stop</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">stop</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="accumulate"><a class="viewcode-back" href="../../shed.html#shed.event_streams.accumulate">[docs]</a><span class="k">class</span> <span class="nc">accumulate</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1140,8 +1140,8 @@
                 <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">stop</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">result</span></div></div>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">issue_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">issue_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="zip"><a class="viewcode-back" href="../../shed.html#shed.event_streams.zip">[docs]</a><span class="k">class</span> <span class="nc">zip</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1237,8 +1237,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">tup</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">tup</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">:</span></div>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Bundle"><a class="viewcode-back" href="../../shed.html#shed.event_streams.Bundle">[docs]</a><span class="k">class</span> <span class="nc">Bundle</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1312,8 +1312,8 @@
                                        <span class="s2">&quot;this error instead&quot;</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">rvs</span>
-        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">:</span></div></div>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxsize</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span></div></div>
 
 
 <div class="viewcode-block" id="BundleSingleStream"><a class="viewcode-back" href="../../shed.html#shed.event_streams.BundleSingleStream">[docs]</a><span class="k">class</span> <span class="nc">BundleSingleStream</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1399,8 +1399,8 @@
                             <span class="s2">&quot;of them are events so we have reached &quot;</span>
                             <span class="s2">&quot;a potential deadlock, so we raise &quot;</span>
                             <span class="s2">&quot;this error instead&quot;</span><span class="p">)</span>
-</div></div>
-                <span class="k">return</span> <span class="n">rvs</span>
+
+                <span class="k">return</span> <span class="n">rvs</span></div></div>
 
 
 <div class="viewcode-block" id="combine_latest"><a class="viewcode-back" href="../../shed.html#shed.event_streams.combine_latest">[docs]</a><span class="k">class</span> <span class="nc">combine_latest</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1470,8 +1470,8 @@
 
         <span class="c1"># we have a document from every one or we are on the emitting stream</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">local_missing</span> <span class="ow">and</span> <span class="n">who</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit_on</span><span class="p">:</span>
-            <span class="n">tup</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">local_last</span><span class="p">)</span></div></div>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">tup</span><span class="p">)</span>
+            <span class="n">tup</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">local_last</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">tup</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="zip_latest"><a class="viewcode-back" href="../../shed.html#shed.event_streams.zip_latest">[docs]</a><span class="k">class</span> <span class="nc">zip_latest</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1568,8 +1568,8 @@
                 <span class="n">L</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">lossless_buffer</span><span class="p">:</span>
                     <span class="n">local_last</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lossless_buffer</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
-                    <span class="n">L</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">local_last</span><span class="p">)))</span></div></div>
-                <span class="k">return</span> <span class="n">L</span>
+                    <span class="n">L</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">local_last</span><span class="p">)))</span>
+                <span class="k">return</span> <span class="n">L</span></div></div>
 
 
 <div class="viewcode-block" id="Eventify"><a class="viewcode-back" href="../../shed.html#shed.event_streams.Eventify">[docs]</a><span class="k">class</span> <span class="nc">Eventify</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1664,13 +1664,13 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">unseen_docs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unseen_docs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
                 <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;start&#39;</span><span class="p">:</span>
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
-                <span class="k">else</span><span class="p">:</span></div>
-                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dispatch</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">docs</span><span class="p">)))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dispatch</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">docs</span><span class="p">)))</span></div>
 
 <div class="viewcode-block" id="Eventify.event"><a class="viewcode-back" href="../../shed.html#shed.event_streams.Eventify.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit_event</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">emit_event</span> <span class="o">=</span> <span class="kc">True</span></div></div>
-            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">issue_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vals</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">emit_event</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">issue_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vals</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="Query"><a class="viewcode-back" href="../../shed.html#shed.event_streams.Query">[docs]</a><span class="k">class</span> <span class="nc">Query</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1731,8 +1731,8 @@
                                    <span class="s2">&quot;number of headers, either your query was &quot;</span>
                                    <span class="s2">&quot;too broad or you need to up the &quot;</span>
                                    <span class="s2">&quot;max_n_hdrs.&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">n_hdrs</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uids</span><span class="p">))</span></div>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">n_hdrs</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uids</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Query.update"><a class="viewcode-back" href="../../shed.html#shed.event_streams.Query.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">name</span><span class="p">,</span> <span class="n">docs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curate_streams</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
@@ -1742,8 +1742,8 @@
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uids</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">uids</span><span class="p">:</span>
                     <span class="n">el</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">issue_event</span><span class="p">(</span><span class="n">u</span><span class="p">))))</span>
-            <span class="n">el</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">(</span><span class="n">docs</span><span class="p">)))</span></div></div>
-            <span class="k">return</span> <span class="n">el</span>
+            <span class="n">el</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">(</span><span class="n">docs</span><span class="p">)))</span>
+            <span class="k">return</span> <span class="n">el</span></div></div>
 
 
 <div class="viewcode-block" id="QueryUnpacker"><a class="viewcode-back" href="../../shed.html#shed.event_streams.QueryUnpacker">[docs]</a><span class="k">class</span> <span class="nc">QueryUnpacker</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1777,8 +1777,8 @@
         <span class="n">doc</span> <span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span>
             <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="n">doc</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;hdr_uid&#39;</span><span class="p">]]</span>
-            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">nd</span><span class="p">)</span> <span class="k">for</span> <span class="n">nd</span> <span class="ow">in</span></div></div>
-                    <span class="n">a</span><span class="o">.</span><span class="n">documents</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">nd</span><span class="p">)</span> <span class="k">for</span> <span class="n">nd</span> <span class="ow">in</span>
+                    <span class="n">a</span><span class="o">.</span><span class="n">documents</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="p">)]</span></div></div>
 
 
 <div class="viewcode-block" id="split"><a class="viewcode-back" href="../../shed.html#shed.event_streams.split">[docs]</a><span class="k">class</span> <span class="nc">split</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1789,8 +1789,8 @@
 
 <div class="viewcode-block" id="split.update"><a class="viewcode-back" href="../../shed.html#shed.event_streams.split.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">name</span><span class="p">,</span> <span class="n">docs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curate_streams</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">emit</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">doc</span><span class="p">))</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">zzip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_streams</span><span class="p">,</span></div></div>
-                                                       <span class="n">docs</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">emit</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">doc</span><span class="p">))</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">zzip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_streams</span><span class="p">,</span>
+                                                       <span class="n">docs</span><span class="p">)]</span></div></div>
 
 
 <div class="viewcode-block" id="fill_events"><a class="viewcode-back" href="../../shed.html#shed.event_streams.fill_events">[docs]</a><span class="k">class</span> <span class="nc">fill_events</span><span class="p">(</span><span class="n">EventStream</span><span class="p">):</span>
@@ -1802,19 +1802,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">descs</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="fill_events.start"><a class="viewcode-back" href="../../shed.html#shed.event_streams.fill_events.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">descs</span> <span class="o">=</span> <span class="p">[]</span></div>
-        <span class="k">return</span> <span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">docs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="n">docs</span></div>
 
 <div class="viewcode-block" id="fill_events.descriptor"><a class="viewcode-back" href="../../shed.html#shed.event_streams.fill_events.descriptor">[docs]</a>    <span class="k">def</span> <span class="nf">descriptor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">descs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
-        <span class="k">return</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="n">docs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="s1">&#39;descriptor&#39;</span><span class="p">,</span> <span class="n">docs</span></div>
 
 <div class="viewcode-block" id="fill_events.event"><a class="viewcode-back" href="../../shed.html#shed.event_streams.fill_events.event">[docs]</a>    <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
-        <span class="n">d</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">fill_events</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">descs</span><span class="p">))</span></div>
-        <span class="k">return</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="n">d</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">fill_events</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">descs</span><span class="p">))</span>
+        <span class="k">return</span> <span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="n">d</span></div>
 
-<div class="viewcode-block" id="fill_events.stop"><a class="viewcode-back" href="../../shed.html#shed.event_streams.fill_events.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span></div></div>
-        <span class="k">return</span> <span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="n">docs</span>
+<div class="viewcode-block" id="fill_events.stop"><a class="viewcode-back" href="../../shed.html#shed.event_streams.fill_events.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="n">docs</span></div></div>
 </pre></div>
 
            </div>
