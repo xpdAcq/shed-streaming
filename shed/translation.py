@@ -263,9 +263,9 @@ class ToEventStream(Stream):
 
     def create_start(self, x):
         tt = time.time()
-        self.times[tt] = self.start_uid
         self.stopped = False
         self.start_uid = str(uuid.uuid4())
+        self.times[tt] = self.start_uid
         new_start_doc = self.md
         new_start_doc.update(
             dict(
