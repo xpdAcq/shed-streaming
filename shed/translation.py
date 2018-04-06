@@ -8,12 +8,12 @@ import networkx as nx
 ALL = '--ALL THE DOCS--'
 
 
-def hash_or_uid(node):
+def _hash_or_uid(node):
     return getattr(node, 'uid', hash(node))
 
 
 def walk_to_translation(node, graph, prior_node=None):
-    """Creates a graph instance that is a subset of the graph from the stream.
+    """Creates a graph that is a subset of the graph from the stream.
 
     The walk starts at a translation ``ToEventStream`` node and ends at any
     instances of FromEventStream or ToEventStream.  Each iteration of the walk
@@ -21,19 +21,20 @@ def walk_to_translation(node, graph, prior_node=None):
     not walks one down to see if there are any ``ToEventStream`` nodes, if not
     it keeps walking up. The walk down allows us to replace live data with
     stored data/stubs when it comes time to get the parent uids. Graph nodes
-    are hashes of the node objects with ``stream=node`` in the nodes.
+    are hashes or uids of the node objects with ``stream=node`` in the nodes.
 
     Parameters
     ----------
-    node : ToEventStream instance
-    graph : networkx.DiGraph instance
+    node : Stream instance
+    graph : DiGraph instance
+    prior_node: Stream instance
     """
     if node is None:
         return
-    t = hash_or_uid(node)
+    t = _hash_or_uid(node)
     graph.add_node(t, stream=node)
     if prior_node:
-        tt = hash_or_uid(prior_node)
+        tt = _hash_or_uid(prior_node)
         if graph.has_edge(t, tt):
             return
         else:
@@ -42,7 +43,7 @@ def walk_to_translation(node, graph, prior_node=None):
                 return
             else:
                 for downstream in node.downstreams:
-                    ttt = hash_or_uid(downstream)
+                    ttt = _hash_or_uid(downstream)
                     if isinstance(downstream,
                                   ToEventStream) and ttt not in graph:
                         graph.add_node(ttt, stream=downstream)
@@ -57,28 +58,35 @@ def walk_to_translation(node, graph, prior_node=None):
 
 @Stream.register_api()
 class FromEventStream(Stream):
-    """Converts an element from the event stream into a base type, and passes
-    it down.
+    """Extracts data from the event stream, and passes it downstream.
 
     Parameters
-    ---------------
-    upstream :
-        the upstream node to receive streams from
-    doc_type:
-        The type of document ('start', 'descriptor', 'event', 'stop')
-    data_address:
-        A tuple of successive keys walking through the document considered
+    ----------
+
+    doc_type : {'start', 'descriptor', 'event', 'stop'}
+        The type of document to extract data from
+    data_address : tuple
+        A tuple of successive keys walking through the document considered,
+        if the tuple is empty all the data from that document is returned as
+        a dict
+    upstream : Stream instance or None, optional
+        The upstream node to receive streams from, defaults to None
     event_stream_name : str, optional
         Filter by en event stream name (see :
         http://nsls-ii.github.io/databroker/api.html?highlight=stream_name#data)
     stream_name : str, optional
         Name for this stream node
+    principle : bool, optional
+        If True then when this node receives a stop document then all
+        downstream ToEventStream nodes will issue a stop document.
+        Defaults to False. Note that one principle node is required for proper
+        pipeline operation.
 
     Notes
-    --------
+    -----
     The result emitted from this stream no longer follows the document model.
 
-    This node also keeps track of when data came through the node.
+    This node also keeps track of when and which data came through the node.
 
 
     Examples
@@ -159,11 +167,10 @@ class FromEventStream(Stream):
 
 @Stream.register_api()
 class ToEventStream(Stream):
-    """Converts an element from the base type into a event stream,
-    and passes it down.
+    """Converts data into a event stream, and passes it downstream.
 
     Parameters
-    ---------------
+    ----------
     upstream :
         the upstream node to receive streams from
     data_keys: tuple
@@ -198,8 +205,7 @@ class ToEventStream(Stream):
     ('stop',...)
     """
 
-    def __init__(self, upstream, data_keys, stream_name=None, principle=False,
-                 **kwargs):
+    def __init__(self, upstream, data_keys, stream_name=None, **kwargs):
         if stream_name is None:
             stream_name = str(data_keys)
         Stream.__init__(self, upstream, stream_name=stream_name)
@@ -212,7 +218,6 @@ class ToEventStream(Stream):
         self.index_dict = dict()
         self.data_keys = data_keys
         self.md = kwargs
-        self.principle = principle
 
         self.start_uid = None
         self.parent_uids = None
@@ -233,7 +238,7 @@ class ToEventStream(Stream):
                                       FromEventStream, ToEventStream)) and n[
                                       'stream'] != self}
         self.principle_nodes = [n for k, n in self.translation_nodes.items()
-                                if n.principle is True]
+                                if getattr(n, 'principle', False) is True]
         for p in self.principle_nodes:
             p.subs.append(self)
 
@@ -363,7 +368,7 @@ def db_friendly_node(node):
         ups = []
         for up in d[k]:
             if up is not None:
-                ups.append(hash_or_uid(up))
+                ups.append(_hash_or_uid(up))
         d2[k] = ups
         d[k] = ups
     if len(d['upstreams']) == 1:

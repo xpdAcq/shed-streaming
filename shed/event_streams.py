@@ -20,6 +20,7 @@ import traceback
 import uuid
 from builtins import zip as zzip
 from collections import deque
+from warnings import warn
 
 from streamz_ext.core import Stream, no_default
 from tornado.locks import Condition
@@ -161,6 +162,9 @@ class EventStream(Stream):
         data_keys.
         output_info = [('data_key', {'dtype': 'array', 'source': 'testing'})]
         """
+        warn('EventStreams are Deprecated, please use Streamz and '
+             'the nodes from shed.translation for event model'
+             'workflows.', DeprecationWarning)
         if md is None:
             md = {}
         if stream_name is not None:
