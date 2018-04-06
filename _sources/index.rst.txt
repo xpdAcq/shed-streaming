@@ -6,6 +6,11 @@
 Welcome to SHED's documentation!
 ================================
 
+Streaming Heterogeneous Event Data (SHED) is a system for streaming
+data from the event model into a Streamz graph while tracking data
+provenance and workflow execution.
+
+
 .. toctree::
    :maxdepth: 4
    :caption: Contents:

@@ -175,6 +175,7 @@
 <span class="kn">import</span> <span class="nn">uuid</span>
 <span class="kn">from</span> <span class="nn">builtins</span> <span class="k">import</span> <span class="nb">zip</span> <span class="k">as</span> <span class="n">zzip</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="k">import</span> <span class="n">warn</span>
 
 <span class="kn">from</span> <span class="nn">streamz_ext.core</span> <span class="k">import</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">no_default</span>
 <span class="kn">from</span> <span class="nn">tornado.locks</span> <span class="k">import</span> <span class="n">Condition</span>
@@ -316,6 +317,9 @@
 <span class="sd">        data_keys.</span>
 <span class="sd">        output_info = [(&#39;data_key&#39;, {&#39;dtype&#39;: &#39;array&#39;, &#39;source&#39;: &#39;testing&#39;})]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">warn</span><span class="p">(</span><span class="s1">&#39;EventStreams are Deprecated, please use Streamz and &#39;</span>
+             <span class="s1">&#39;the nodes from shed.translation for event model&#39;</span>
+             <span class="s1">&#39;workflows.&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">md</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">md</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">stream_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
