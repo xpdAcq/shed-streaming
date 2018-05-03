@@ -4,6 +4,33 @@ SHED Change Log
 
 .. current developments
 
+v0.3.0
+====================
+
+**Changed:**
+
+* Readme now reflects the current design architecture
+
+* Provenance example is now in the examples folder
+
+* ``hash_or_uid`` is now ``_hash_or_uid``
+
+
+**Deprecated:**
+
+* ``EventStream`` nodes in favor of ``streamz`` nodes and ``translation`` nodes
+
+
+**Fixed:**
+
+* ``ToEventStream`` now tracks the time that data was received
+
+* ``ToEventStream`` is now executed before the rest of the graph so graph times
+  match the execution time.
+
+
+
+
 v0.2.1
 ====================
 
