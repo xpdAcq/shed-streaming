@@ -50,6 +50,7 @@ def rebuild_node(node_dict, graph):
     d.pop('mod')
     for f_name in ['func', 'predicate']:
         if f_name in d:
+            # TODO: if pickled lambda function unpickle
             idx = d['args'].index(d[f_name])
             d[f_name] = getattr(importlib.import_module(d[f_name]['mod']),
                                 d[f_name]['name'])

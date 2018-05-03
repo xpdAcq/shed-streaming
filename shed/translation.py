@@ -359,6 +359,7 @@ def db_friendly_node(node):
     d2 = {'name': node.__class__.__name__, 'mod': node.__module__}
     for f_name in ['func', 'predicate']:
         if f_name in d:
+            # TODO: throw in pickle if lambda function
             d2[f_name] = {'name': d[f_name].__name__,
                           'mod': d[f_name].__module__}
             d[f_name] = {'name': d[f_name].__name__,
