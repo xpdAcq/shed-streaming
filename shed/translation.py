@@ -4,6 +4,7 @@ import uuid
 
 from streamz_ext.core import Stream
 import networkx as nx
+import numpy as np
 
 ALL = '--ALL THE DOCS--'
 
@@ -359,10 +360,16 @@ def db_friendly_node(node):
     d2 = {'name': node.__class__.__name__, 'mod': node.__module__}
     for f_name in ['func', 'predicate']:
         if f_name in d:
+            # carve out for numpy ufuncs which don't have modules
+            # TODO: needs replay testing
+            if isinstance(d[f_name], np.ufunc):
+                mod = 'numpy'
+            else:
+                mod = d[f_name].__module__
             d2[f_name] = {'name': d[f_name].__name__,
-                          'mod': d[f_name].__module__}
+                          'mod': mod}
             d[f_name] = {'name': d[f_name].__name__,
-                         'mod': d[f_name].__module__}
+                         'mod': mod}
 
     for k in ['upstreams', 'downstreams']:
         ups = []
