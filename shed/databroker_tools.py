@@ -65,3 +65,17 @@ class AssetInsert(Stream):
             writer.close()
             self.writers.pop(data_key)
         return doc
+
+
+def search_an_by_raw(analysis_db, headers):
+    for hdr in headers:
+        # get hdrs where hdr['uid'] in an_hdr['parent_uids'].values()
+        # TODO: this needs a change in schema
+        yield analysis_db(parent_uids=hdr['uid'])
+
+
+def search_raw_by_an(raw_db, headers):
+    for hdr in headers:
+        # get hdrs where hdr['uid'] matches a an_hdr['parent_uids'].values()
+        for parent_uid in hdr.start['parent_uids'].values():
+            yield raw_db[parent_uid]
