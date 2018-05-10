@@ -3,6 +3,8 @@ import time
 import uuid
 
 import networkx as nx
+import numpy as np
+
 from shed.replay import replay
 from shed.translation import FromEventStream
 
@@ -36,7 +38,7 @@ def test_replay_export(db):
     g11 = FromEventStream('event', ('data', 'det_image',),
                           stream_name='g11')
     g11_1 = g1.zip(g11)
-    g2 = g11_1.starmap(op.mul)
+    g2 = g11_1.starmap(op.mul).map(np.log)
     g = g2.ToEventStream(('img2',))
     dbf = g.DBFriendly()
     dbf.starsink(db.insert)
