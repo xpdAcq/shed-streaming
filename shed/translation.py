@@ -361,7 +361,6 @@ def db_friendly_node(node):
     for f_name in ['func', 'predicate']:
         if f_name in d:
             # carve out for numpy ufuncs which don't have modules
-            # TODO: needs replay testing
             if isinstance(d[f_name], np.ufunc):
                 mod = 'numpy'
             else:
