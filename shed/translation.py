@@ -1,6 +1,9 @@
 import inspect
 import time
 import uuid
+from collections import deque
+from streamz_ext.core import zip as szip
+import numpy as np
 
 from streamz_ext.core import Stream
 import networkx as nx
@@ -402,3 +405,40 @@ def db_friendly_node(node):
     d2['args'] = constructed_args
     d2['kwargs'] = d.get('kwargs', {})
     return d2
+
+
+@Stream.register_api()
+class AlignEventStreams(szip):
+    def __init__(self, *upstreams, stream_name=None, **kwargs):
+        zip.__init__(self, *upstreams, stream_name=stream_name)
+        doc_names = ['start', 'descriptors', 'events', 'stop']
+        self.true_buffers = {k: {upstream: deque()}
+                             for upstream in upstreams
+                             if isinstance(upstream, Stream) for k in
+                             doc_names}
+        self.true_literals = {k: [
+            (i, val) for i, val in enumerate(upstreams)
+            if not isinstance(val, Stream)] for k in doc_names}
+
+    def _emit(self, x):
+        # Merge the documents, see chainDB
+        super()._emit(x)
+
+
+    def update(self, x, who=None):
+        name, doc = x
+        self.buffers = self.true_buffers[name]
+        self.literals = self.true_literals[name]
+        super().update(doc, who)
+        # Almost mirror zip code
+        buffers = self.buffers[name]
+        L = buffers[who]
+        L.append(doc)
+        if len(L) == 1 and all(buffers[name].values()):
+            tup = tuple(buffers[up][0] for up in self.upstreams)
+            for buf in buffers.values():
+                buf.popleft()
+            self.condition.notify_all()
+            return self._emit(tup)
+        elif len(L) > self.maxsize:
+            return self.condition.wait()
