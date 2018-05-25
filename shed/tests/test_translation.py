@@ -142,7 +142,7 @@ def test_to_event_model():
         source.emit(gg)
 
     assert set(p) == {'start', 'stop', 'event', 'descriptor'}
-    assert d[1]['hints'] == {'ct': {'fields': ['ct']}}
+    assert d[1]['hints'] == {'analyzer': {'fields': ['ct']}}
 
 
 def test_execution_order():
