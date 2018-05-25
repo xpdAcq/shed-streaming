@@ -5,6 +5,8 @@ from collections import deque
 from streamz_ext.core import zip as szip
 import numpy as np
 
+from regolith.chained_db import ChainDB
+
 from streamz_ext.core import Stream
 import networkx as nx
 import numpy as np
@@ -409,8 +411,11 @@ def db_friendly_node(node):
 
 @Stream.register_api()
 class AlignEventStreams(szip):
+    """Zips and aligns multiple streams of documents, note that the last
+    upstream takes precedence where merging is not possible, this requires
+    the two streams to be of equal length."""
     def __init__(self, *upstreams, stream_name=None, **kwargs):
-        zip.__init__(self, *upstreams, stream_name=stream_name)
+        szip.__init__(self, *upstreams, stream_name=stream_name)
         doc_names = ['start', 'descriptors', 'events', 'stop']
         self.true_buffers = {k: {upstream: deque()}
                              for upstream in upstreams
@@ -421,24 +426,11 @@ class AlignEventStreams(szip):
             if not isinstance(val, Stream)] for k in doc_names}
 
     def _emit(self, x):
-        # Merge the documents, see chainDB
-        super()._emit(x)
-
+        # Merge the documents
+        super()._emit(ChainDB(*x))
 
     def update(self, x, who=None):
         name, doc = x
         self.buffers = self.true_buffers[name]
         self.literals = self.true_literals[name]
         super().update(doc, who)
-        # Almost mirror zip code
-        buffers = self.buffers[name]
-        L = buffers[who]
-        L.append(doc)
-        if len(L) == 1 and all(buffers[name].values()):
-            tup = tuple(buffers[up][0] for up in self.upstreams)
-            for buf in buffers.values():
-                buf.popleft()
-            self.condition.notify_all()
-            return self._emit(tup)
-        elif len(L) > self.maxsize:
-            return self.condition.wait()
