@@ -301,7 +301,9 @@ class ToEventStream(Stream):
             data_keys={k: {'source': 'analysis',
                            'dtype': str(type(xx)),
                            'shape': getattr(xx, 'shape', [])
-                           } for k, xx in zip(self.data_keys, tx)})
+                           } for k, xx in zip(self.data_keys, tx)},
+            hints={'analyzer': {'fields': [k]} for k in self.data_keys}
+        )
         return 'descriptor', new_descriptor
 
     def create_event(self, x):
