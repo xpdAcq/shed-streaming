@@ -302,7 +302,7 @@ class ToEventStream(Stream):
                            'dtype': str(type(xx)),
                            'shape': getattr(xx, 'shape', [])
                            } for k, xx in zip(self.data_keys, tx)},
-            hints={k: {'fields': [k]} for k in self.data_keys}
+            hints={'analyzer': {'fields': [k]} for k in self.data_keys}
         )
         return 'descriptor', new_descriptor
 
