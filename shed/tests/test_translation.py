@@ -135,12 +135,14 @@ def test_to_event_model():
 
     n = ToEventStream(t, ('ct',))
     p = n.pluck(0).sink_to_list()
+    d = n.pluck(1).sink_to_list()
 
     n.sink(print)
     for gg in g:
         source.emit(gg)
 
     assert set(p) == {'start', 'stop', 'event', 'descriptor'}
+    assert d[1]['hints'] == {'ct': {'fields': ['ct']}}
 
 
 def test_execution_order():
