@@ -47,11 +47,8 @@ before_install:
 
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
-  - conda install python=$TRAVIS_PYTHON_VERSION
-  - conda install --file requirements/build.txt
-  - conda install pip
-  - pip install -r requirements/pip.txt
-  - pip install .
+  - conda install python=$TRAVIS_PYTHON_VERSION, orch
+  - orch score.yaml
   # Need to clean the python build directory (and other cruft) or pytest is
   # going to find the build directory and get confused why there are two sets
   # of every test file
@@ -60,15 +57,11 @@ install:
 
 script:
   - set -e
-  - conda install --yes --file requirements/run.txt
   - python -c "from bluesky.utils import get_history; get_history()"
-  - conda install --yes --file requirements/test.txt
   - coverage run run_tests.py
   - coverage report -m
   - codecov
   - flake8 .
-  - conda install --file requirements/doc.txt
-  - pip install git+git://github.com/drdoctr/doctr.git
   - cd docs
   - make html
   - cd ..
