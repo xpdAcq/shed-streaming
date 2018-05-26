@@ -202,6 +202,4 @@ def test_align():
         b.emit((n, dd))
 
     assert len(l) == 4
-    # print(l[0])
-    # print(l[0][1])
     assert l[0][1].get('b') == {'hi': 'world', 'hi2': 'world'}
