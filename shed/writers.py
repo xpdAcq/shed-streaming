@@ -9,16 +9,13 @@ class Store(CallbackBase):
     def __init__(self, external_writers=None):
         """Decorate a generator of documents to save them to the databases.
         The input stream of (name, document) pairs passes through unchanged.
-        As a side effect, documents are inserted into the databases and external
-        files may be written.
+        As a side effect, documents are inserted into the databases and
+        external files may be written.
         Parameters
         ----------
-        db: ``databroker.Broker`` instance
-            The databroker to store the documents in, must have writeable
-            metadatastore and writeable filestore if ``external`` is not empty.
         external_writers : dict
-            Maps data keys to a ``WriterClass``, which is responsible for writing
-            data to disk and creating a record in filestore. It will be
+            Maps data keys to a ``WriterClass``, which is responsible for
+            writing data to disk and creating a record in filestore. It will be
             instantiated (possible multiple times) with the argument ``db.fs``.
             If it requires additional arguments, use ``functools.partial`` to
             produce a callable that requires only ``db.fs`` to instantiate the

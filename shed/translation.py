@@ -2,14 +2,12 @@ import inspect
 import time
 import uuid
 from collections import deque
-from streamz_ext.core import zip as szip
-import numpy as np
 
-from regolith.chained_db import ChainDB
-
-from streamz_ext.core import Stream
 import networkx as nx
 import numpy as np
+from regolith.chained_db import ChainDB
+from streamz_ext.core import Stream
+from streamz_ext.core import zip as szip
 
 ALL = '--ALL THE DOCS--'
 
