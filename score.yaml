@@ -32,7 +32,7 @@ run:
     default: {conda: networkx}
   regolith:
     default: {conda: regolith}
-    bleeding: {pip: 'https://github.com/regro/regolith.git#egg=regolith'}
+    bleeding: {pip: 'git+https://github.com/regro/regolith.git#egg=regolith'}
   networx:
     default: {conda: networkx}
 test:
