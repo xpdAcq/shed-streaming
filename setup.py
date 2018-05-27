@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='shed',
-    version='0.3.0',
+    version='0.2.3',
     packages=find_packages(),
     # description='data processing module',
     zip_safe=False,
