@@ -1,0 +1,1 @@
+$INSTALLERS_ORDER = ['conda', 'pip', 'orch']
