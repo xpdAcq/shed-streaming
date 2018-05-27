@@ -108,11 +108,3 @@ class NpyWriter:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
-
-
-class NpyHandler:
-    def __init__(self, fp):
-        self._fp = fp
-
-    def __call__(self):
-        return np.load(self._fp)
