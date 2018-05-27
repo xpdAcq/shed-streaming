@@ -187,7 +187,7 @@ def test_align():
     a = Stream()
     b = Stream()
     z = a.AlignEventStreams(b)
-    l = z.sink_to_list()
+    sl = z.sink_to_list()
     for n, d, dd in zip(['start', 'descriptor', 'event', 'stop'],
                         [{'a': 'hi', 'b': {'hi': 'world'}},
                          {'bla': 'foo'},
@@ -201,5 +201,5 @@ def test_align():
         a.emit((n, d))
         b.emit((n, dd))
 
-    assert len(l) == 4
-    assert l[0][1].get('b') == {'hi': 'world', 'hi2': 'world'}
+    assert len(sl) == 4
+    assert sl[0][1].get('b') == {'hi': 'world', 'hi2': 'world'}
