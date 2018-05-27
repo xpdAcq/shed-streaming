@@ -1,0 +1,66 @@
+section_order:
+  - build
+  - install
+  - run
+  - test
+  - docs
+install: pip install .
+build:
+  pip:
+    default:
+      conda: setuptools
+  python:
+    default:
+      conda: python
+run:
+  bluesky:
+    default: {conda: bluesky}
+  databroker:
+    default: {conda: databroker}
+  event_model:
+    default: {conda: event-model}
+  matplotlib:
+    default: {conda: matplotlib}
+  numpy:
+    default: {conda: numpy}
+  scipy:
+    default: {conda: scipy}
+  streamz_ext:
+    default: {conda: streamz_ext}
+    bleeding: {orch: 'https://github.com/xpdAcq/streamz_ext.git'}
+  networkx:
+    default: {conda: networkx}
+  regolith:
+    default: {conda: regolith}
+    bleeding: {pip: 'git+https://github.com/regro/regolith.git#egg=regolith'}
+  networx:
+    default: {conda: networkx}
+test:
+  pytest:
+    default:
+      conda: pytest
+  flake8:
+    default:
+      conda: flake8
+  codecov:
+    default:
+      conda: codecov
+  coverage:
+    default:
+      conda: coverage
+  pytest-env:
+    default:
+      conda: pytest-env
+  nose:
+    default: {conda: nose}
+  xpdsim:
+    default: {conda: xpdsim}
+  ophyd:
+    default: {conda: ophyd}
+docs:
+  doctr:
+    default: {conda: doctr}
+  sphinx:
+    default: {conda: sphinx}
+  sphinx_rtd_theme:
+    default: {conda: sphinx_rtd_theme}

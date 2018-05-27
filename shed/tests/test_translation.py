@@ -181,3 +181,25 @@ def test_execution_order():
     t = sorted(pppp.times.keys())
     # ToEventStream executed first
     assert all((v < v2 for v, v2 in zip(t, l2)))
+
+
+def test_align():
+    a = Stream()
+    b = Stream()
+    z = a.AlignEventStreams(b)
+    sl = z.sink_to_list()
+    for n, d, dd in zip(['start', 'descriptor', 'event', 'stop'],
+                        [{'a': 'hi', 'b': {'hi': 'world'}},
+                         {'bla': 'foo'},
+                         {'data': 'now'},
+                         {'stop': 'doc'}],
+                        [{'a': 'hi', 'b': {'hi2': 'world'}},
+                         {'bla': 'foo'},
+                         {'data': 'now'},
+                         {'stop': 'doc'}]
+                        ):
+        a.emit((n, d))
+        b.emit((n, dd))
+
+    assert len(sl) == 4
+    assert sl[0][1].get('b') == {'hi': 'world', 'hi2': 'world'}
