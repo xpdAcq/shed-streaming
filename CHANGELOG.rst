@@ -4,6 +4,16 @@ SHED Change Log
 
 .. current developments
 
+v0.2.3
+====================
+
+**Fixed:**
+
+* Carve out an if statement for numpy ufuncs to get the numpy module
+
+
+
+
 v0.3.0
 ====================
 
