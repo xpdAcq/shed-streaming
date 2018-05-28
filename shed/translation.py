@@ -33,7 +33,7 @@ def walk_to_translation(node, graph, prior_node=None):
     ----------
     node : Stream instance
     graph : DiGraph instance
-    prior_node: Stream instance
+    prior_node : Stream instance
     """
     if node is None:
         return
