@@ -4,6 +4,23 @@ SHED Change Log
 
 .. current developments
 
+v0.4.0
+====================
+
+**Added:**
+
+* Type mapping for ``ToEventStream``
+
+* Convert ``ChainDB`` to dict
+
+
+**Fixed:**
+
+* Carve out an if statement for numpy ufuncs to get the numpy module
+
+
+
+
 v0.3.0
 ====================
 
