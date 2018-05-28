@@ -5,12 +5,13 @@ from collections import deque
 
 import networkx as nx
 import numpy as np
-from regolith.chained_db import ChainDB
+from regolith.chained_db import ChainDB, _convert_to_dict
 from streamz_ext.core import Stream
 from streamz_ext.core import zip as szip
 
 ALL = '--ALL THE DOCS--'
 
+DTYPE_MAP = {np.ndarray: 'array', int: 'number', float: 'number'}
 
 def _hash_or_uid(node):
     return getattr(node, 'uid', hash(node))
@@ -302,10 +303,11 @@ class ToEventStream(Stream):
             name='primary',
             # TODO: source should reflect graph? (maybe with a UID)
             data_keys={k: {'source': 'analysis',
-                           'dtype': str(type(xx)),
+                           'dtype': DTYPE_MAP.get(type(xx), str(type(xx))),
                            'shape': getattr(xx, 'shape', [])
                            } for k, xx in zip(self.data_keys, tx)},
-            hints={'analyzer': {'fields': [k]} for k in self.data_keys}
+            hints={'analyzer': {'fields': [k]} for k in self.data_keys},
+            object_keys={k: [k] for k in self.data_keys}
         )
         return 'descriptor', new_descriptor
 
@@ -429,7 +431,7 @@ class AlignEventStreams(szip):
         names = x[::2]
         docs = x[1::2]
         # Merge the documents
-        super()._emit((names[0], ChainDB(*docs)))
+        super()._emit((names[0], _convert_to_dict(ChainDB(*docs))))
 
     def update(self, x, who=None):
         name, doc = x
