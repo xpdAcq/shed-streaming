@@ -13,6 +13,7 @@ ALL = '--ALL THE DOCS--'
 
 DTYPE_MAP = {np.ndarray: 'array', int: 'number', float: 'number'}
 
+
 def _hash_or_uid(node):
     return getattr(node, 'uid', hash(node))
 
