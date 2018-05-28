@@ -1,0 +1,15 @@
+**Added:**
+
+* Type mapping for ``ToEventStream``
+
+* Convert ``ChainDB`` to dict
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None
