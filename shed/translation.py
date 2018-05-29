@@ -134,7 +134,7 @@ class FromEventStream(Stream):
 
     def update(self, x, who=None):
         name, doc = x
-        self.times[time.time()] = doc['uid']
+        self.times[time.time()] = doc.get('uid', doc.get('datum_id'))
         if name == 'start':
             self.times = {time.time(): doc['uid']}
             self.stopped = False
