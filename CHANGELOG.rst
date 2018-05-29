@@ -4,6 +4,16 @@ SHED Change Log
 
 .. current developments
 
+v0.4.1
+====================
+
+**Fixed:**
+
+* ``FromEventStream`` now looks for ``uid`` or ``datum_id``
+
+
+
+
 v0.4.0
 ====================
 
