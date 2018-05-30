@@ -1,0 +1,14 @@
+**Added:**
+
+* ``ToEventStream`` can now take no ``data_keys``. This assumes that the
+  incoming data will be a dict and that the keys of the dict are the data keys.
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None

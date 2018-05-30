@@ -1,7 +1,7 @@
 import inspect
 import time
 import uuid
-from collections import deque
+from collections import deque, MutableMapping
 
 import networkx as nx
 import numpy as np
@@ -179,8 +179,9 @@ class ToEventStream(Stream):
     ----------
     upstream :
         the upstream node to receive streams from
-    data_keys: tuple
-        Names of the data keys
+    data_keys: tuple, optional
+        Names of the data keys. If None assume incoming data is dict and use
+        the keys from the dict. Defauls to None
     stream_name : str, optional
         Name for this stream node
 
@@ -211,7 +212,7 @@ class ToEventStream(Stream):
     ('stop',...)
     """
 
-    def __init__(self, upstream, data_keys, stream_name=None, **kwargs):
+    def __init__(self, upstream, data_keys=None, stream_name=None, **kwargs):
         if stream_name is None:
             stream_name = str(data_keys)
         Stream.__init__(self, upstream, stream_name=stream_name)
@@ -290,6 +291,13 @@ class ToEventStream(Stream):
         return 'start', new_start_doc
 
     def create_descriptor(self, x):
+        # If data_keys is none then we are working with a dict
+        if self.data_keys is None:
+            self.data_keys = tuple([k for k in x])
+
+        # If the incoming data is a dict extract the data as a tuple
+        if isinstance(x, MutableMapping):
+            x = tuple([x[k] for k in self.data_keys])
         if not isinstance(x, tuple):
             tx = tuple([x])
         else:
@@ -313,6 +321,8 @@ class ToEventStream(Stream):
         return 'descriptor', new_descriptor
 
     def create_event(self, x):
+        if isinstance(x, MutableMapping):
+            x = tuple([x[k] for k in self.data_keys])
         if not isinstance(x, tuple):
             tx = tuple([x])
         else:
