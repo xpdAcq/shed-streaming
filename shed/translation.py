@@ -297,8 +297,8 @@ class ToEventStream(Stream):
 
         # If the incoming data is a dict extract the data as a tuple
         if isinstance(x, MutableMapping):
-            tx = tuple([x[k] for k in self.data_keys])
-        if not isinstance(x, tuple) or not isinstance(x, MutableMapping):
+            x = tuple([x[k] for k in self.data_keys])
+        if not isinstance(x, tuple):
             tx = tuple([x])
         else:
             tx = x
