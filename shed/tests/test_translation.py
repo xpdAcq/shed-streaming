@@ -203,3 +203,22 @@ def test_align():
 
     assert len(sl) == 4
     assert sl[0][1].get('b') == {'hi': 'world', 'hi2': 'world'}
+
+
+def test_to_event_model_dict():
+    g = to_event_model(range(10), [('ct', {'units': 'arb'})])
+
+    source = Stream()
+    t = FromEventStream('event', ('data', ), source, principle=True)
+
+    n = ToEventStream(t)
+    p = n.pluck(0).sink_to_list()
+    d = n.pluck(1).sink_to_list()
+
+    n.sink(print)
+    for gg in g:
+        source.emit(gg)
+
+    assert set(p) == {'start', 'stop', 'event', 'descriptor'}
+    assert d[1]['hints'] == {'analyzer': {'fields': ['ct']}}
+    assert d[2]['data'] == {'ct': 0}
