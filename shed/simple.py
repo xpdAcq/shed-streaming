@@ -3,7 +3,6 @@ import time
 import uuid
 from collections import MutableMapping
 from collections import deque
-from itertools import chain
 
 import networkx as nx
 import numpy as np
@@ -145,9 +144,10 @@ class SimpleFromEventStream(Stream):
         ):
             self.descriptor_uids.append(doc["uid"])
         if name == "stop":
-            # FIXME: I don't know what this does to back pressure
+            # Trigger the downstream nodes to make a stop but they can emit
+            # on their own time
             self.descriptor_uids = []
-            [s.emit(s.create_stop(x)) for s in self.subs]
+            [s.create_stop(x) for s in self.subs]
         inner = doc.copy()
         if name == self.doc_type and (
             (
@@ -171,7 +171,7 @@ class SimpleFromEventStream(Stream):
                             inner = inner[da]
                         else:
                             return
-            return self._emit(inner)
+            return self.emit(inner)
 
 
 @Stream.register_api()
@@ -225,15 +225,18 @@ class SimpleToEventStream(Stream):
                     break
             up.downstreams.data._od.move_to_end(n, last=False)
             del n
-        self.index_dict = dict()
+        self.index_dict = None
         self.data_keys = data_keys
         self.md = kwargs
 
+        self.stop = None
         self.start_uid = None
         self.descriptor_uid = None
         self.stopped = False
         self.started = False
         self.uid = str(uuid.uuid4())
+
+        self.futures = {}
 
         self.times = {}
 
@@ -281,18 +284,25 @@ class SimpleToEventStream(Stream):
                 ]
             )
         rl.append(self.emit(self.create_event(x)))
+
+        # If all the futures that existed in the snapshot when stop was called
+        # are done then issue the stop doc and then reset self.stop
+        if not any(fs.intersection(set(b.queue._queue)) for b, fs in self.futures.items()):
+            rl.append(self.emit(self.stop))
+            self.stop = None
+            self.started = False
         return rl
 
     def create_start(self, x):
         # If we are producing a new start but haven't send out a stop do a stop
+        # TODO: odd behavior
         if not self.stopped:
             self.create_stop(x)
-        self.stopped = False
         self.started = True
         self.start_uid = str(uuid.uuid4())
-        new_start_doc = self.md
         tt = time.time()
-        new_start_doc.update(dict(uid=self.start_uid, time=tt))
+        new_start_doc = dict(uid=self.start_uid, time=tt)
+        new_start_doc.update(**self.md)
         self.index_dict = dict()
         return "start", new_start_doc
 
@@ -333,7 +343,7 @@ class SimpleToEventStream(Stream):
     def create_event(self, x):
         if isinstance(x, MutableMapping):
             x = tuple([x[k] for k in self.data_keys])
-        if not isinstance(x, tuple):
+        if not isinstance(x, tuple) or (len(self.data_keys) == 1 and len(x) > 1):
             tx = tuple([x])
         else:
             tx = x
@@ -347,22 +357,16 @@ class SimpleToEventStream(Stream):
             seq_num=self.index_dict[self.descriptor_uid],
         )
         self.index_dict[self.descriptor_uid] += 1
+        print(new_event)
         return "event", new_event
 
     def create_stop(self, x):
         # Take a snapshot of all the buffers contents
-        futures = chain(list(b.queue._queue) for b in self.buffers)
-        # FIXME: need to yield the future, not call result, since this grinds
-        # things to a screeching halt while yield will give the IO loop back
-        # Await all those futures
-        for f in futures:
-            f.result()
+        self.futures = {b: set(b.queue._queue) for b in self.buffers}
         new_stop = dict(
             uid=str(uuid.uuid4()), time=time.time(), run_start=self.start_uid
         )
-        # FIXME: may not need this
-        self.start_uid = None
-        self.stopped = True
+        self.stop = ('stop', new_stop)
         return "stop", new_stop
 
 
@@ -392,13 +396,13 @@ class AlignEventStreams(szip):
             for k in doc_names
         }
 
-    def _emit(self, x):
+    def emit(self, x, asynchronous=False):
         # flatten out the nested setup
         x = [k for l in x for k in l]
         names = x[::2]
         docs = x[1::2]
         # Merge the documents
-        super()._emit((names[0], _convert_to_dict(ChainDB(*docs))))
+        super().emit((names[0], _convert_to_dict(ChainDB(*docs))))
 
     def update(self, x, who=None):
         name, doc = x
