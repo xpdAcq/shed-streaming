@@ -420,32 +420,32 @@ def db_friendly_node(node):
     return d2
 
 
-@Stream.register_api()
-class AlignEventStreams(szip):
-    """Zips and aligns multiple streams of documents, note that the last
-    upstream takes precedence where merging is not possible, this requires
-    the two streams to be of equal length."""
-    def __init__(self, *upstreams, stream_name=None, **kwargs):
-        szip.__init__(self, *upstreams, stream_name=stream_name)
-        doc_names = ['start', 'descriptor', 'event', 'stop']
-        self.true_buffers = {k: {upstream: deque()
-                             for upstream in upstreams
-                             if isinstance(upstream, Stream)}
-                             for k in doc_names}
-        self.true_literals = {k: [
-            (i, val) for i, val in enumerate(upstreams)
-            if not isinstance(val, Stream)] for k in doc_names}
-
-    def _emit(self, x):
-        # flatten out the nested setup
-        x = [k for l in x for k in l]
-        names = x[::2]
-        docs = x[1::2]
-        # Merge the documents
-        super()._emit((names[0], _convert_to_dict(ChainDB(*docs))))
-
-    def update(self, x, who=None):
-        name, doc = x
-        self.buffers = self.true_buffers[name]
-        self.literals = self.true_literals[name]
-        super().update((name, doc), who)
+# @Stream.register_api()
+# class AlignEventStreams(szip):
+#     """Zips and aligns multiple streams of documents, note that the last
+#     upstream takes precedence where merging is not possible, this requires
+#     the two streams to be of equal length."""
+#     def __init__(self, *upstreams, stream_name=None, **kwargs):
+#         szip.__init__(self, *upstreams, stream_name=stream_name)
+#         doc_names = ['start', 'descriptor', 'event', 'stop']
+#         self.true_buffers = {k: {upstream: deque()
+#                              for upstream in upstreams
+#                              if isinstance(upstream, Stream)}
+#                              for k in doc_names}
+#         self.true_literals = {k: [
+#             (i, val) for i, val in enumerate(upstreams)
+#             if not isinstance(val, Stream)] for k in doc_names}
+#
+#     def _emit(self, x):
+#         # flatten out the nested setup
+#         x = [k for l in x for k in l]
+#         names = x[::2]
+#         docs = x[1::2]
+#         # Merge the documents
+#         super()._emit((names[0], _convert_to_dict(ChainDB(*docs))))
+#
+#     def update(self, x, who=None):
+#         name, doc = x
+#         self.buffers = self.true_buffers[name]
+#         self.literals = self.true_literals[name]
+#         super().update((name, doc), who)

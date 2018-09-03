@@ -249,7 +249,7 @@ def test_align():
             {"stop": "doc"},
         ],
         [
-            {"a": "hi", "b": {"hi2": "world"}},
+            {"a": "hi2", "b": {"hi2": "world"}},
             {"bla": "foo"},
             {"data": "now"},
             {"stop": "doc"},

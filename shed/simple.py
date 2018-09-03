@@ -396,13 +396,12 @@ class AlignEventStreams(szip):
             for k in doc_names
         }
 
-    def emit(self, x, asynchronous=False):
+    def _emit(self, x):
         # flatten out the nested setup
         x = [k for l in x for k in l]
         names = x[::2]
         docs = x[1::2]
-        # Merge the documents
-        super().emit((names[0], _convert_to_dict(ChainDB(*docs))))
+        super()._emit((names[0], _convert_to_dict(ChainDB(*docs))))
 
     def update(self, x, who=None):
         name, doc = x
