@@ -51,8 +51,8 @@ def walk_to_translation(node, graph, prior_node=None):
                 for downstream in node.downstreams:
                     ttt = _hash_or_uid(downstream)
                     if (
-                        isinstance(downstream, SimpleToEventStream)
-                        and ttt not in graph
+                            isinstance(downstream, SimpleToEventStream)
+                            and ttt not in graph
                     ):
                         graph.add_node(ttt, stream=downstream)
                         graph.add_edge(t, ttt)
@@ -115,13 +115,13 @@ class SimpleFromEventStream(Stream):
     """
 
     def __init__(
-        self,
-        doc_type,
-        data_address,
-        upstream=None,
-        event_stream_name=ALL,
-        stream_name=None,
-        principle=False,
+            self,
+            doc_type,
+            data_address,
+            upstream=None,
+            event_stream_name=ALL,
+            stream_name=None,
+            principle=False,
     ):
         if stream_name is None:
             stream_name = doc_type + str(data_address)
@@ -135,12 +135,17 @@ class SimpleFromEventStream(Stream):
         self.uid = str(uuid.uuid4())
         self.descriptor_uids = []
         self.subs = []
+        self.start_uid = None
 
     def update(self, x, who=None):
         name, doc = x
+        if name == 'start':
+            self.start_uid = doc['uid']
+            # Sideband start document in
+            [s.create_start(x) for s in self.subs]
         if name == "descriptor" and (
-            self.event_stream_name == ALL
-            or self.event_stream_name == doc.get("name", "primary")
+                self.event_stream_name == ALL
+                or self.event_stream_name == doc.get("name", "primary")
         ):
             self.descriptor_uids.append(doc["uid"])
         if name == "stop":
@@ -150,14 +155,15 @@ class SimpleFromEventStream(Stream):
             [s.create_stop(x) for s in self.subs]
         inner = doc.copy()
         if name == self.doc_type and (
-            (
-                name == "descriptor"
-                and (self.event_stream_name == doc.get("name", ALL))
-            )
-            or (
-                name == "event" and (doc["descriptor"] in self.descriptor_uids)
-            )
-            or name in ["start", "stop"]
+                (
+                        name == "descriptor"
+                        and (self.event_stream_name == doc.get("name", ALL))
+                )
+                or (
+                        name == "event" and (
+                        doc["descriptor"] in self.descriptor_uids)
+                )
+                or name in ["start", "stop"]
         ):
 
             # If we have an empty address get everything
@@ -189,12 +195,16 @@ class SimpleToEventStream(Stream):
         Name for this stream node
 
     Notes
-    --------
+    -----
     The result emitted from this stream follows the document model.
-
+    This is essentially a state machine. Transitions are:
+    start -> stop
+    start -> descriptor -> event -> stop
+    Note that start -> start is not allowed, this node always issues a stop
+    document so the data input times can be stored.
 
     Examples
-    -------------
+    --------
     import uuid
     from shed.event_streams import EventStream
     from shed.translation import FromEventStream, ToEventStream
@@ -216,9 +226,11 @@ class SimpleToEventStream(Stream):
     """
 
     def __init__(self, upstream, data_keys=None, stream_name=None, **kwargs):
+        self.start_doc = None
         if stream_name is None:
             stream_name = str(data_keys)
         Stream.__init__(self, upstream, stream_name=stream_name)
+        # TODO: use first
         for up in self.upstreams:
             for n in up.downstreams.data:
                 if n() is self:
@@ -232,9 +244,9 @@ class SimpleToEventStream(Stream):
         self.stop = None
         self.start_uid = None
         self.descriptor_uid = None
-        self.stopped = False
-        self.started = False
         self.uid = str(uuid.uuid4())
+        self.state = None
+        self.subs = []
 
         self.futures = {}
 
@@ -242,9 +254,8 @@ class SimpleToEventStream(Stream):
 
         # walk upstream to get all upstream nodes to the translation node
         # get start_uids from the translation node
-        # TODO: need to find and capture all the buffer nodes
-        graph = nx.DiGraph()
-        walk_to_translation(self, graph=graph)
+        self.graph = nx.DiGraph()
+        walk_to_translation(self, graph=self.graph)
 
         # XXX: what happens if we have multiple buffers in a path?
         # The outputs of one buffer would flow into the other, but we wouldn't
@@ -253,57 +264,82 @@ class SimpleToEventStream(Stream):
         # path
         self.buffers = [
             n["stream"]
-            for k, n in graph.node.items()
+            for k, n in self.graph.node.items()
             if isinstance(n["stream"], buffer)
         ]
 
-        translation_nodes = {
+        self.translation_nodes = {
             k: n["stream"]
-            for k, n in graph.node.items()
+            for k, n in self.graph.node.items()
             if isinstance(
-                n["stream"], (SimpleFromEventStream, SimpleToEventStream)
-            )
-            and n["stream"] != self
+            n["stream"], (SimpleFromEventStream, SimpleToEventStream)
+        )
+               and n["stream"] != self
         }
-        principle_nodes = [
+        self.principle_nodes = [
             n
-            for k, n in translation_nodes.items()
-            if getattr(n, "principle", False)
+            for k, n in self.translation_nodes.items()
+            if getattr(n, "principle", False) or isinstance(n,
+                                                            SimpleToEventStream)
         ]
-        for p in principle_nodes:
+        if not self.principle_nodes:
+            raise RuntimeError('No Principle Nodes Detected')
+        for p in self.principle_nodes:
             p.subs.append(self)
 
     def update(self, x, who=None):
         rl = []
-        # if not started, start!
-        if not self.started:
+        # If we have a start document ready to go, release it.
+        if self.start_doc:
+            # If we have a start doc, but are already started, issue emergency
+            # stop doc
+            if self.state == 'started':
+                rl.append(self.emit(self.create_stop(x)))
+                [s.create_stop(x) for s in self.subs]
+                self.stop = None
+                self.state = 'stopped'
             rl.extend(
                 [
-                    self.emit(self.create_start(x)),
+                    self.emit(self.start_doc),
                     self.emit(self.create_descriptor(x)),
                 ]
             )
+            [s.create_start(x) for s in self.subs]
+            self.state = 'started'
+            self.start_doc = None
         rl.append(self.emit(self.create_event(x)))
 
-        # If all the futures that existed in the snapshot when stop was called
-        # are done then issue the stop doc and then reset self.stop
-        if not any(fs.intersection(set(b.queue._queue)) for b, fs in self.futures.items()):
+        # If there are buffers and
+        # all the futures that existed in the snapshot when stop was called
+        # are done and
+        # and there is a stop document (we haven't already emitted it)
+        # then issue the stop doc and then reset self.stop
+        if (self.futures and
+                (not any(fs.intersection(set(b.queue._queue)) for b, fs in
+                         self.futures.items())) and
+                self.stop):
             rl.append(self.emit(self.stop))
+            [s.create_stop(x) for s in self.subs]
             self.stop = None
-            self.started = False
+            self.state = 'stopped'
         return rl
 
     def create_start(self, x):
-        # If we are producing a new start but haven't send out a stop do a stop
-        # TODO: odd behavior
-        if not self.stopped:
+        if self.stop:
             self.create_stop(x)
-        self.started = True
         self.start_uid = str(uuid.uuid4())
         tt = time.time()
-        new_start_doc = dict(uid=self.start_uid, time=tt)
+        new_start_doc = dict(uid=self.start_uid, time=tt,
+                             parent_uids=[v.start_uid for k, v in
+                                          self.translation_nodes.items()
+                                          if v.start_uid is not None],
+                             parent_node_map={v.uid: v.start_uid for k, v in
+                                              self.translation_nodes.items()
+                                              if v.start_uid is not None}
+                             )
         new_start_doc.update(**self.md)
         self.index_dict = dict()
+        self.start_doc = ('start', new_start_doc)
         return "start", new_start_doc
 
     def create_descriptor(self, x):
@@ -343,7 +379,8 @@ class SimpleToEventStream(Stream):
     def create_event(self, x):
         if isinstance(x, MutableMapping):
             x = tuple([x[k] for k in self.data_keys])
-        if not isinstance(x, tuple) or (len(self.data_keys) == 1 and len(x) > 1):
+        if not isinstance(x, tuple) or (
+                len(self.data_keys) == 1 and len(x) > 1):
             tx = tuple([x])
         else:
             tx = x
@@ -357,16 +394,26 @@ class SimpleToEventStream(Stream):
             seq_num=self.index_dict[self.descriptor_uid],
         )
         self.index_dict[self.descriptor_uid] += 1
-        print(new_event)
         return "event", new_event
 
-    def create_stop(self, x):
+    def _create_stop(self, x):
         # Take a snapshot of all the buffers contents
         self.futures = {b: set(b.queue._queue) for b in self.buffers}
         new_stop = dict(
             uid=str(uuid.uuid4()), time=time.time(), run_start=self.start_uid
         )
         self.stop = ('stop', new_stop)
+        # If no buffers (running perfect back pressure) or buffers are empty
+        # issue stop and clear
+        # Otherwise just make the stop doc, wait for all buffers to clear
+        # to issue
+        return new_stop
+
+    def create_stop(self, x):
+        new_stop = self._create_stop(x)
+        if not self.futures or all(not v for v in self.futures.values()):
+            self.emit(self.stop)
+            self.stop = None
         return "stop", new_stop
 
 

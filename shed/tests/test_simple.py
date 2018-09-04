@@ -2,6 +2,7 @@ import networkx as nx
 import operator as op
 import time
 import uuid
+import numpy as np
 
 from streamz_ext import Stream
 
@@ -125,7 +126,7 @@ def test_from_event_model_stream_name2():
 
 def test_walk_up():
     raw = Stream()
-    a_translation = FromEventStream("start", ("time",), raw)
+    a_translation = FromEventStream("start", ("time",), raw, principle=True)
     b_translation = FromEventStream("event", ("data", "pe1_image"), raw)
 
     d = b_translation.zip_latest(a_translation)
@@ -144,7 +145,7 @@ def test_walk_up():
 
 def test_walk_up_partial():
     raw = Stream()
-    a_translation = FromEventStream("start", ("time",), raw)
+    a_translation = FromEventStream("start", ("time",), raw, principle=True)
     b_translation = FromEventStream("event", ("data", "pe1_image"), raw)
 
     d = b_translation.zip_latest(a_translation)
@@ -180,6 +181,7 @@ def test_to_event_model():
     assert tt
     assert set(p) == {"start", "stop", "event", "descriptor"}
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert d[-1]['run_start']
 
 
 def test_execution_order():
@@ -214,7 +216,7 @@ def test_execution_order():
             }
         yield "stop", {"uid": str(uuid.uuid4()), "run_start": suid}
 
-    source = FromEventStream("event", ("data", "ct"))
+    source = FromEventStream("event", ("data", "ct"), principle=True)
     p = source.map(op.add, 1)
     pp = p.SimpleToEventStream("ctp1")
     ppp = p.map(op.mul, 2)
@@ -223,11 +225,11 @@ def test_execution_order():
     l2 = ppp.map(lambda *x: time.time()).sink_to_list()
     assert next(iter(p.downstreams)) is pp
     assert next(iter(ppp.downstreams)) is pppp
+    for d in data():
+        source.update(d)
     ex_l = [(i + 1) * 2 for i in range(10)] + [
         (i + 1) * 2 for i in range(100, 110)
     ]
-    for d in data():
-        source.update(d)
     assert l1 == ex_l
     assert all((v == pppp.start_uid for v in pppp.times.values()))
     t = sorted(pppp.times.keys())
@@ -274,6 +276,75 @@ def test_to_event_model_dict():
 
     n.sink(print)
     for gg in g:
+        source.emit(gg)
+
+    assert set(p) == {"start", "stop", "event", "descriptor"}
+    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert d[2]["data"] == {"ct": 0}
+    assert d[-1]['run_start']
+
+
+def test_replay_export_test():
+    def y():
+        suid = str(uuid.uuid4())
+        yield ('start', {'uid': suid,
+                         'time': time.time()})
+        duid = str(uuid.uuid4())
+        yield ('descriptor', {'uid': duid,
+                              'run_start': suid,
+                              'name': 'primary',
+                              'data_keys': {'det_image': {'dtype': 'int',
+                                                          'units': 'arb'}},
+                              'time': time.time()})
+        for i in range(5):
+            yield ('event', {'uid': str(uuid.uuid4()),
+                             'data': {'det_image': i},
+                             'timestamps': {'det_image': time.time()},
+                             'seq_num': i + 1,
+                             'time': time.time(),
+                             'descriptor': duid})
+        yield ('stop', {'uid': str(uuid.uuid4()),
+                        'time': time.time(),
+                        'run_start': suid})
+
+    print('build graph')
+    g1 = FromEventStream('event', ('data', 'det_image',), principle=True,
+                         stream_name='g1')
+    g11 = FromEventStream('event', ('data', 'det_image',),
+                          stream_name='g11')
+    g11_1 = g1.zip(g11)
+    g2 = g11_1.starmap(op.mul).map(np.log)
+    g = g2.SimpleToEventStream(('img2',))
+    from pprint import pprint
+    g.sink(pprint)
+    L = g.sink_to_list()
+
+    print('run experiment')
+    for yy in y():
+        print(yy[0])
+        g11.update(yy)
+        g1.update(yy)
+    assert L[-1][1]['run_start']
+
+
+def test_no_stop():
+    g = to_event_model(range(10), [("ct", {"units": "arb"})])
+
+    source = Stream()
+    t = FromEventStream("event", ("data",), source, principle=True)
+
+    n = ToEventStream(t)
+    p = n.pluck(0).sink_to_list()
+    d = n.pluck(1).sink_to_list()
+
+    for gg in g:
+        if gg[0] != 'stop':
+            source.emit(gg)
+
+    for gg in to_event_model(range(10), [("ct", {"units": "arb"})]):
+        if gg[0] == 'event':
+            source.emit(gg)
+            break
         source.emit(gg)
 
     assert set(p) == {"start", "stop", "event", "descriptor"}

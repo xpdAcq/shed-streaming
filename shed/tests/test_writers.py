@@ -11,7 +11,7 @@ from shed.writers import NpyWriter, Store
 def test_storage(exp_db, tmp_dir):
     s = Store(external_writers={'out': NpyWriter(exp_db.reg, root=tmp_dir)})
     source = Stream()
-    (FromEventStream('event', ('data', 'pe1_image'), source)
+    (FromEventStream('event', ('data', 'pe1_image'), source, principle=True)
      .map(op.mul, 2)
      .ToEventStream(('out',)).starmap(s).DBFriendly().starsink(exp_db.insert))
     for n, d in exp_db[-1].documents(fill=True):

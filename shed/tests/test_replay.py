@@ -23,7 +23,7 @@ def test_replay_export(db):
                               'time': time.time()})
         for i in range(5):
             yield ('event', {'uid': str(uuid.uuid4()),
-                             'data': {'det_image': i},
+                             'data': {'det_image': i+1},
                              'timestamps': {'det_image': time.time()},
                              'seq_num': i + 1,
                              'time': time.time(),
@@ -40,7 +40,9 @@ def test_replay_export(db):
     g11_1 = g1.zip(g11)
     g2 = g11_1.starmap(op.mul).map(np.log)
     g = g2.ToEventStream(('img2',))
+    L = g.sink_to_list()
     dbf = g.DBFriendly()
+    dbf.sink(print)
     dbf.starsink(db.insert)
 
     print('run experiment')
@@ -49,12 +51,17 @@ def test_replay_export(db):
         g11.update(yy)
         g1.update(yy)
 
-    s1 = db[-1]['stop']
+    print(L[0][1]['uid'])
+    s1 = db[L[0][1]['uid']]['stop']
     print('replay experiment')
-    rp = replay(db, db[-1], export=True)
+    rp = replay(db, db[L[0][1]['uid']], export=True)
     next(rp)
     next(rp)
     assert s1 != db[-1]['stop']
+    for (_, a), (_, b) in zip(db[-2].documents(), db[-1].documents()):
+        assert a['uid'] != b['uid']
+        if 'data' in a:
+            assert a['data'] == b['data']
 
 
 def test_replay(db):
