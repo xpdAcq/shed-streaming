@@ -181,7 +181,7 @@ def test_to_event_model():
     assert tt
     assert set(p) == {"start", "stop", "event", "descriptor"}
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert d[-1]['run_start']
+    assert d[-1]["run_start"]
 
 
 def test_execution_order():
@@ -281,50 +281,60 @@ def test_to_event_model_dict():
     assert set(p) == {"start", "stop", "event", "descriptor"}
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
     assert d[2]["data"] == {"ct": 0}
-    assert d[-1]['run_start']
+    assert d[-1]["run_start"]
 
 
 def test_replay_export_test():
     def y():
         suid = str(uuid.uuid4())
-        yield ('start', {'uid': suid,
-                         'time': time.time()})
+        yield ("start", {"uid": suid, "time": time.time()})
         duid = str(uuid.uuid4())
-        yield ('descriptor', {'uid': duid,
-                              'run_start': suid,
-                              'name': 'primary',
-                              'data_keys': {'det_image': {'dtype': 'int',
-                                                          'units': 'arb'}},
-                              'time': time.time()})
+        yield (
+            "descriptor",
+            {
+                "uid": duid,
+                "run_start": suid,
+                "name": "primary",
+                "data_keys": {"det_image": {"dtype": "int", "units": "arb"}},
+                "time": time.time(),
+            },
+        )
         for i in range(5):
-            yield ('event', {'uid': str(uuid.uuid4()),
-                             'data': {'det_image': i},
-                             'timestamps': {'det_image': time.time()},
-                             'seq_num': i + 1,
-                             'time': time.time(),
-                             'descriptor': duid})
-        yield ('stop', {'uid': str(uuid.uuid4()),
-                        'time': time.time(),
-                        'run_start': suid})
+            yield (
+                "event",
+                {
+                    "uid": str(uuid.uuid4()),
+                    "data": {"det_image": i},
+                    "timestamps": {"det_image": time.time()},
+                    "seq_num": i + 1,
+                    "time": time.time(),
+                    "descriptor": duid,
+                },
+            )
+        yield (
+            "stop",
+            {"uid": str(uuid.uuid4()), "time": time.time(), "run_start": suid},
+        )
 
-    print('build graph')
-    g1 = FromEventStream('event', ('data', 'det_image',), principle=True,
-                         stream_name='g1')
-    g11 = FromEventStream('event', ('data', 'det_image',),
-                          stream_name='g11')
+    print("build graph")
+    g1 = FromEventStream(
+        "event", ("data", "det_image"), principle=True, stream_name="g1"
+    )
+    g11 = FromEventStream("event", ("data", "det_image"), stream_name="g11")
     g11_1 = g1.zip(g11)
     g2 = g11_1.starmap(op.mul).map(np.log)
-    g = g2.SimpleToEventStream(('img2',))
+    g = g2.SimpleToEventStream(("img2",))
     from pprint import pprint
+
     g.sink(pprint)
     L = g.sink_to_list()
 
-    print('run experiment')
+    print("run experiment")
     for yy in y():
         print(yy[0])
         g11.update(yy)
         g1.update(yy)
-    assert L[-1][1]['run_start']
+    assert L[-1][1]["run_start"]
 
 
 def test_no_stop():
@@ -338,11 +348,11 @@ def test_no_stop():
     d = n.pluck(1).sink_to_list()
 
     for gg in g:
-        if gg[0] != 'stop':
+        if gg[0] != "stop":
             source.emit(gg)
 
     for gg in to_event_model(range(10), [("ct", {"units": "arb"})]):
-        if gg[0] == 'event':
+        if gg[0] == "event":
             source.emit(gg)
             break
         source.emit(gg)

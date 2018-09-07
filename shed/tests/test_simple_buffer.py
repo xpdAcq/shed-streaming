@@ -2,7 +2,7 @@ import pytest
 from streamz.utils_test import gen_test
 from tornado import gen
 
-pytest.importorskip('streamz_ext.thread')
+pytest.importorskip("streamz_ext.thread")
 
 import time
 
@@ -18,6 +18,7 @@ from shed.utils import to_event_model
 @gen_test()
 def test_slow_to_event_model():
     """This doesn't use threads so it should be slower due to sleep"""
+
     def slow_inc(x):
         time.sleep(.5)
         return x + 1
@@ -27,12 +28,8 @@ def test_slow_to_event_model():
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "ct"), source, principle=True)
     assert t.principle
-    a = (t
-         .map(slow_inc)
-         )
-    b = (a.buffer(100)
-         .gather()
-         )
+    a = t.map(slow_inc)
+    b = a.buffer(100).gather()
     L = b.sink_to_list()
     futures_L = a.sink_to_list()
     n = ToEventStream(b, ("ct",))
@@ -49,7 +46,7 @@ def test_slow_to_event_model():
     assert t1 - t0 > .5 * 10
 
     assert tt
-    assert p == ['start', 'descriptor'] + ['event'] * 10 + ['stop']
+    assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
 
 
@@ -62,13 +59,8 @@ def test_to_event_model():
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "ct"), source, principle=True)
     assert t.principle
-    a = (t
-         .thread_scatter()
-         .map(slow_inc)
-         )
-    b = (a.buffer(100)
-         .gather()
-         )
+    a = t.thread_scatter().map(slow_inc)
+    b = a.buffer(100).gather()
     L = b.sink_to_list()
     futures_L = a.sink_to_list()
     n = ToEventStream(b, ("ct",))
@@ -85,7 +77,7 @@ def test_to_event_model():
     assert t1 - t0 < .5 * 10
 
     assert tt
-    assert p == ['start', 'descriptor'] + ['event'] * 10 + ['stop']
+    assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
 
     for gg in to_event_model(range(100, 110), [("ct", {"units": "arb"})]):
@@ -97,7 +89,7 @@ def test_to_event_model():
     assert t1 - t0 < .5 * 10
 
     assert tt
-    assert p == (['start', 'descriptor'] + ['event'] * 10 + ['stop'])*2
+    assert p == (["start", "descriptor"] + ["event"] * 10 + ["stop"]) * 2
     assert d[14]["hints"] == {"analyzer": {"fields": ["ct"]}}
     for i, j in zip([0, 1, 12], [13, 14, 25]):
         assert p[i] == p[j]
@@ -113,14 +105,10 @@ def test_double_buffer_to_event_model():
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "ct"), source, principle=True)
     assert t.principle
-    ts = (t
-         .thread_scatter()
-         )
+    ts = t.thread_scatter()
     a = ts.map(slow_inc)
     aa = ts.map(slow_inc)
-    b = (a.buffer(100)
-         .gather()
-         )
+    b = a.buffer(100).gather()
     bb = aa.buffer(100).gather()
     L = b.sink_to_list()
     futures_L = a.sink_to_list()
@@ -140,7 +128,7 @@ def test_double_buffer_to_event_model():
     print(d)
 
     assert tt
-    assert p == ['start', 'descriptor'] + ['event'] * 10 + ['stop']
+    assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
 
     for gg in to_event_model(range(100, 110), [("ct", {"units": "arb"})]):
@@ -152,7 +140,7 @@ def test_double_buffer_to_event_model():
     assert t1 - t0 < .5 * 10
 
     assert tt
-    assert p == (['start', 'descriptor'] + ['event'] * 10 + ['stop'])*2
+    assert p == (["start", "descriptor"] + ["event"] * 10 + ["stop"]) * 2
     assert d[14]["hints"] == {"analyzer": {"fields": ["ct"]}}
     for i, j in zip([0, 1, 12], [13, 14, 25]):
         assert p[i] == p[j]

@@ -5,12 +5,11 @@ import networkx as nx
 import numpy as np
 from streamz_ext.core import Stream
 
-from .simple import SimpleToEventStream, SimpleFromEventStream, \
-    _hash_or_uid
+from .simple import SimpleToEventStream, SimpleFromEventStream, _hash_or_uid
 
-ALL = '--ALL THE DOCS--'
+ALL = "--ALL THE DOCS--"
 
-DTYPE_MAP = {np.ndarray: 'array', int: 'number', float: 'number'}
+DTYPE_MAP = {np.ndarray: "array", int: "number", float: "number"}
 
 
 @Stream.register_api()
@@ -63,23 +62,32 @@ class FromEventStream(SimpleFromEventStream):
     1
     """
 
-    def __init__(self, doc_type, data_address, upstream=None,
-                 event_stream_name=ALL,
-                 stream_name=None, principle=False):
-        super().__init__(doc_type=doc_type, data_address=data_address,
-                         upstream=upstream,
-                         stream_name=stream_name,
-                         principle=principle,
-                         event_stream_name=event_stream_name)
+    def __init__(
+        self,
+        doc_type,
+        data_address,
+        upstream=None,
+        event_stream_name=ALL,
+        stream_name=None,
+        principle=False,
+    ):
+        super().__init__(
+            doc_type=doc_type,
+            data_address=data_address,
+            upstream=upstream,
+            stream_name=stream_name,
+            principle=principle,
+            event_stream_name=event_stream_name,
+        )
         self.run_start_uid = None
         self.times = {}
 
     def update(self, x, who=None):
         name, doc = x
-        self.times[time.time()] = doc.get('uid', doc.get('datum_id'))
-        if name == 'start':
-            self.times = {time.time(): doc['uid']}
-            self.start_uid = doc['uid']
+        self.times[time.time()] = doc.get("uid", doc.get("datum_id"))
+        if name == "start":
+            self.times = {time.time(): doc["uid"]}
+            self.start_uid = doc["uid"]
         return super().update(x, who=None)
 
 
@@ -123,19 +131,20 @@ class ToEventStream(SimpleToEventStream):
     ('event',...)
     ('stop',...)
     """
+
     def create_start(self, x):
         name, new_start_doc = super().create_start(x)
         new_start_doc.update(graph=self.graph)
-        return 'start', new_start_doc
+        return "start", new_start_doc
 
     def create_stop(self, x):
         new_stop = super()._create_stop(x)
         times = {}
         for k, node in self.translation_nodes.items():
             for t, uid in node.times.items():
-                times[t] = {'node': node.uid, 'uid': uid}
+                times[t] = {"node": node.uid, "uid": uid}
         new_stop.update(times=times)
-        self.stop = ('stop', new_stop)
+        self.stop = ("stop", new_stop)
         if not self.futures or all(not v for v in self.futures.values()):
             self.emit(self.stop)
             self.stop = None
@@ -145,15 +154,17 @@ class ToEventStream(SimpleToEventStream):
 @Stream.register_api()
 class DBFriendly(Stream):
     """Make analyzed data (and graph) DB friendly"""
+
     def update(self, x, who=None):
         name, doc = x
-        if name == 'start':
+        if name == "start":
             doc = dict(doc)
-            graph = doc['graph']
+            graph = doc["graph"]
             for n in nx.topological_sort(graph):
-                graph.node[n]['stream'] = db_friendly_node(
-                    graph.node[n]['stream'])
-            doc['graph'] = nx.node_link_data(graph)
+                graph.node[n]["stream"] = db_friendly_node(
+                    graph.node[n]["stream"]
+                )
+            doc["graph"] = nx.node_link_data(graph)
         return self.emit((name, doc))
 
 
@@ -162,47 +173,45 @@ def db_friendly_node(node):
     if isinstance(node, dict):
         return node
     d = dict(node.__dict__)
-    d['stream_name'] = d['name']
-    d2 = {'name': node.__class__.__name__, 'mod': node.__module__}
-    for f_name in ['func', 'predicate']:
+    d["stream_name"] = d["name"]
+    d2 = {"name": node.__class__.__name__, "mod": node.__module__}
+    for f_name in ["func", "predicate"]:
         if f_name in d:
             # carve out for numpy ufuncs which don't have modules
             if isinstance(d[f_name], np.ufunc):
-                mod = 'numpy'
+                mod = "numpy"
             else:
                 mod = d[f_name].__module__
-            d2[f_name] = {'name': d[f_name].__name__,
-                          'mod': mod}
-            d[f_name] = {'name': d[f_name].__name__,
-                         'mod': mod}
+            d2[f_name] = {"name": d[f_name].__name__, "mod": mod}
+            d[f_name] = {"name": d[f_name].__name__, "mod": mod}
 
-    for k in ['upstreams', 'downstreams']:
+    for k in ["upstreams", "downstreams"]:
         ups = []
         for up in d[k]:
             if up is not None:
                 ups.append(_hash_or_uid(up))
         d2[k] = ups
         d[k] = ups
-    if len(d['upstreams']) == 1:
-        d2['upstream'] = d2['upstreams'][0]
-        d['upstream'] = d['upstreams'][0]
+    if len(d["upstreams"]) == 1:
+        d2["upstream"] = d2["upstreams"][0]
+        d["upstream"] = d["upstreams"][0]
 
     sig = inspect.signature(node.__init__)
     params = sig.parameters
     constructed_args = []
-    d2['arg_keys'] = []
+    d2["arg_keys"] = []
     for p in params:
-        d2['arg_keys'].append(p)
+        d2["arg_keys"].append(p)
         q = params[p]
         # Exclude self
-        if str(p) != 'self':
+        if str(p) != "self":
             if q.kind == q.POSITIONAL_OR_KEYWORD and p in d:
                 constructed_args.append(d[p])
             elif q.default is not q.empty:
                 constructed_args.append(q.default)
             if q.kind == q.VAR_POSITIONAL:
                 constructed_args.extend(d[p])
-    constructed_args.extend(d.get('args', ()))
-    d2['args'] = constructed_args
-    d2['kwargs'] = d.get('kwargs', {})
+    constructed_args.extend(d.get("args", ()))
+    d2["args"] = constructed_args
+    d2["kwargs"] = d.get("kwargs", {})
     return d2
