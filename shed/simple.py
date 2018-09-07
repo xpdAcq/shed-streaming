@@ -414,6 +414,7 @@ class SimpleToEventStream(Stream):
         if not self.futures or all(not v for v in self.futures.values()):
             self.emit(self.stop)
             self.stop = None
+            self.state = 'stopped'
         return "stop", new_stop
 
 
