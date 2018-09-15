@@ -1,8 +1,5 @@
-import pytest
 from streamz.utils_test import gen_test
 from tornado import gen
-
-pytest.importorskip("streamz_ext.thread")
 
 import time
 

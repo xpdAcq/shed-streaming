@@ -9,3 +9,4 @@ exclude =
     examples,
     shed/tests/conftest.py
 ignore = C901
+ignore = W503
