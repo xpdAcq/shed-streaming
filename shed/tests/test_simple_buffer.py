@@ -12,7 +12,7 @@ from shed.simple import (
 from shed.utils import to_event_model
 
 
-@gen_test()
+@gen_test(20)
 def test_slow_to_event_model():
     """This doesn't use threads so it should be slower due to sleep"""
 
@@ -56,7 +56,7 @@ def test_to_event_model():
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "ct"), source, principle=True)
     assert t.principle
-    a = t.thread_scatter().map(slow_inc)
+    a = t.scatter(backend='thread').map(slow_inc)
     b = a.buffer(100).gather()
     L = b.sink_to_list()
     futures_L = a.sink_to_list()
@@ -102,7 +102,7 @@ def test_double_buffer_to_event_model():
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "ct"), source, principle=True)
     assert t.principle
-    ts = t.thread_scatter()
+    ts = t.scatter(backend='thread')
     a = ts.map(slow_inc)
     aa = ts.map(slow_inc)
     b = a.buffer(100).gather()
