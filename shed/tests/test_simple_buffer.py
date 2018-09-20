@@ -122,7 +122,6 @@ def test_double_buffer_to_event_model():
     t1 = time.time()
     # check that this was faster than running in series
     assert t1 - t0 < .5 * 10
-    print(d)
 
     assert tt
     assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
@@ -132,6 +131,7 @@ def test_double_buffer_to_event_model():
         yield source.emit(gg)
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
+    print(len(L), len(futures_L))
     t1 = time.time()
     # check that this was faster than running in series
     assert t1 - t0 < .5 * 10
