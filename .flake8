@@ -8,4 +8,4 @@ exclude =
     dist,
     examples,
     shed/tests/conftest.py
-ignore = C901
+ignore = C901, W503

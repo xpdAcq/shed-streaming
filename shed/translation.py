@@ -1,69 +1,19 @@
 import inspect
 import time
-import uuid
-from collections import deque, MutableMapping
 
 import networkx as nx
 import numpy as np
-from regolith.chained_db import ChainDB, _convert_to_dict
 from streamz_ext.core import Stream
-from streamz_ext.core import zip as szip
 
-ALL = '--ALL THE DOCS--'
+from .simple import SimpleToEventStream, SimpleFromEventStream, _hash_or_uid
 
-DTYPE_MAP = {np.ndarray: 'array', int: 'number', float: 'number'}
+ALL = "--ALL THE DOCS--"
 
-
-def _hash_or_uid(node):
-    return getattr(node, 'uid', hash(node))
-
-
-def walk_to_translation(node, graph, prior_node=None):
-    """Creates a graph that is a subset of the graph from the stream.
-
-    The walk starts at a translation ``ToEventStream`` node and ends at any
-    instances of FromEventStream or ToEventStream.  Each iteration of the walk
-    goes up one node, determines if that node is a ``FromEventStream`` node, if
-    not walks one down to see if there are any ``ToEventStream`` nodes, if not
-    it keeps walking up. The walk down allows us to replace live data with
-    stored data/stubs when it comes time to get the parent uids. Graph nodes
-    are hashes or uids of the node objects with ``stream=node`` in the nodes.
-
-    Parameters
-    ----------
-    node : Stream instance
-    graph : DiGraph instance
-    prior_node : Stream instance
-    """
-    if node is None:
-        return
-    t = _hash_or_uid(node)
-    graph.add_node(t, stream=node)
-    if prior_node:
-        tt = _hash_or_uid(prior_node)
-        if graph.has_edge(t, tt):
-            return
-        else:
-            graph.add_edge(t, tt)
-            if isinstance(node, FromEventStream):
-                return
-            else:
-                for downstream in node.downstreams:
-                    ttt = _hash_or_uid(downstream)
-                    if isinstance(downstream,
-                                  ToEventStream) and ttt not in graph:
-                        graph.add_node(ttt, stream=downstream)
-                        graph.add_edge(t, ttt)
-                        return
-
-    for node2 in node.upstreams:
-        # Stop at translation node
-        if node2 is not None:
-            walk_to_translation(node2, graph, node)
+DTYPE_MAP = {np.ndarray: "array", int: "number", float: "number"}
 
 
 @Stream.register_api()
-class FromEventStream(Stream):
+class FromEventStream(SimpleFromEventStream):
     """Extracts data from the event stream, and passes it downstream.
 
     Parameters
@@ -112,67 +62,37 @@ class FromEventStream(Stream):
     1
     """
 
-    def __init__(self, doc_type, data_address, upstream=None,
-                 event_stream_name=ALL,
-                 stream_name=None, principle=False):
-        if stream_name is None:
-            stream_name = doc_type + str(data_address)
-        Stream.__init__(self, upstream, stream_name=stream_name)
-        self.stopped = False
-        self.principle = principle
-        self.doc_type = doc_type
-        if isinstance(data_address, str):
-            data_address = tuple([data_address])
-        self.data_address = data_address
-        self.event_stream_name = event_stream_name
-        self.start_uid = None
-        self.descriptor_uids = None
+    def __init__(
+        self,
+        doc_type,
+        data_address,
+        upstream=None,
+        event_stream_name=ALL,
+        stream_name=None,
+        principle=False,
+    ):
+        super().__init__(
+            doc_type=doc_type,
+            data_address=data_address,
+            upstream=upstream,
+            stream_name=stream_name,
+            principle=principle,
+            event_stream_name=event_stream_name,
+        )
         self.run_start_uid = None
-        self.subs = []
         self.times = {}
-        self.uid = str(uuid.uuid4())
 
     def update(self, x, who=None):
         name, doc = x
-        self.times[time.time()] = doc.get('uid', doc.get('datum_id'))
-        if name == 'start':
-            self.times = {time.time(): doc['uid']}
-            self.stopped = False
-            self.start_uid = doc['uid']
-            self.descriptor_uids = {}
-        if name == 'descriptor':
-            self.descriptor_uids[doc['uid']] = doc.get('name', 'primary')
-        if name == 'stop':
-            self.start_uid = None
-            # FIXME: I don't know what this does to backpressure
-            [s.emit(s.create_stop(x)) for s in self.subs]
-        inner = doc.copy()
-        if (name == self.doc_type and
-                ((name == 'descriptor' and
-                  (self.event_stream_name is ALL or
-                   self.event_stream_name == doc.get('name', 'primary'))) or
-                 (name == 'event' and
-                  (self.event_stream_name == ALL or
-                   self.descriptor_uids[doc['descriptor']] ==
-                   self.event_stream_name)) or
-                 name in ['start', 'stop'])):
-
-            # If we have an empty address get everything
-            if self.data_address != ():
-                for da in self.data_address:
-                    # If it's a tuple we want multiple things at once
-                    if isinstance(da, tuple):
-                        inner = tuple(inner[daa] for daa in da)
-                    else:
-                        if da in inner:
-                            inner = inner[da]
-                        else:
-                            return
-            return self._emit(inner)
+        self.times[time.time()] = doc.get("uid", doc.get("datum_id"))
+        if name == "start":
+            self.times = {time.time(): doc["uid"]}
+            self.start_uid = doc["uid"]
+        return super().update(x, who=None)
 
 
 @Stream.register_api()
-class ToEventStream(Stream):
+class ToEventStream(SimpleToEventStream):
     """Converts data into a event stream, and passes it downstream.
 
     Parameters
@@ -212,240 +132,86 @@ class ToEventStream(Stream):
     ('stop',...)
     """
 
-    def __init__(self, upstream, data_keys=None, stream_name=None, **kwargs):
-        if stream_name is None:
-            stream_name = str(data_keys)
-        Stream.__init__(self, upstream, stream_name=stream_name)
-        for up in self.upstreams:
-            for n in up.downstreams.data:
-                if n() is self:
-                    break
-            up.downstreams.data._od.move_to_end(n, last=False)
-            del n
-        self.index_dict = dict()
-        self.data_keys = data_keys
-        self.md = kwargs
-
-        self.start_uid = None
-        self.parent_uids = None
-        self.descriptor_uid = None
-        self.stopped = False
-        self.uid = str(uuid.uuid4())
-
-        self.times = {}
-
-        # walk upstream to get all upstream nodes to the translation node
-        # get start_uids from the translation node
-        self.graph = nx.DiGraph()
-        walk_to_translation(self, graph=self.graph)
-
-        self.translation_nodes = {k: n['stream'] for k, n in
-                                  self.graph.node.items() if
-                                  isinstance(n['stream'], (
-                                      FromEventStream, ToEventStream)) and n[
-                                      'stream'] != self}
-        self.principle_nodes = [n for k, n in self.translation_nodes.items()
-                                if getattr(n, 'principle', False) is True]
-        for p in self.principle_nodes:
-            p.subs.append(self)
-
-    def update(self, x, who=None):
-        if self.start_uid:
-            self.times[time.time()] = self.start_uid
-        rl = []
-        # Need a way to address translation nodes and start_uids, maybe hash
-        current_start_uids = {v.uid: v.start_uid for k, v in
-                              self.translation_nodes.items()}
-
-        # Bootstrap
-        if self.parent_uids is None:
-            self.parent_uids = current_start_uids
-            rl.extend([self.emit(self.create_start(x)),
-                       self.emit(self.create_descriptor(x))])
-
-        # If the start uids are different then we have new data
-        # Issue a stop then the start/descriptor
-        elif self.parent_uids != current_start_uids and not self.stopped:
-            rl.extend([self.emit(self.create_stop(x)),
-                       self.emit(self.create_start(x)),
-                       self.emit(self.create_descriptor(x))])
-
-        rl.append(self.emit(self.create_event(x)))
-        return rl
-
     def create_start(self, x):
-        tt = time.time()
-        self.stopped = False
-        self.start_uid = str(uuid.uuid4())
-        self.times[tt] = self.start_uid
-        new_start_doc = self.md
-        new_start_doc.update(
-            dict(
-                uid=self.start_uid,
-                time=tt,
-                graph=self.graph,
-                parent_uids={v.uid: v.start_uid for k, v in
-                             self.translation_nodes.items()
-                             if v.start_uid is not None}))
-        self.index_dict = dict()
-        return 'start', new_start_doc
-
-    def create_descriptor(self, x):
-        # If data_keys is none then we are working with a dict
-        if self.data_keys is None:
-            self.data_keys = tuple([k for k in x])
-
-        # If the incoming data is a dict extract the data as a tuple
-        if isinstance(x, MutableMapping):
-            x = tuple([x[k] for k in self.data_keys])
-        if not isinstance(x, tuple):
-            tx = tuple([x])
-        else:
-            tx = x
-        self.descriptor_uid = str(uuid.uuid4())
-        self.index_dict[self.descriptor_uid] = 1
-
-        new_descriptor = dict(
-            uid=self.descriptor_uid,
-            time=time.time(),
-            run_start=self.start_uid,
-            name='primary',
-            # TODO: source should reflect graph? (maybe with a UID)
-            data_keys={k: {'source': 'analysis',
-                           'dtype': DTYPE_MAP.get(type(xx), str(type(xx))),
-                           'shape': getattr(xx, 'shape', [])
-                           } for k, xx in zip(self.data_keys, tx)},
-            hints={'analyzer': {'fields': [k]} for k in self.data_keys},
-            object_keys={k: [k] for k in self.data_keys}
-        )
-        return 'descriptor', new_descriptor
-
-    def create_event(self, x):
-        if isinstance(x, MutableMapping):
-            x = tuple([x[k] for k in self.data_keys])
-        if not isinstance(x, tuple):
-            tx = tuple([x])
-        else:
-            tx = x
-        new_event = dict(uid=str(uuid.uuid4()),
-                         time=time.time(),
-                         timestamps={k: time.time() for k in self.data_keys},
-                         descriptor=self.descriptor_uid,
-                         filled={k: True for k in self.data_keys},
-                         data={k: v for k, v in zip(self.data_keys, tx)},
-                         seq_num=self.index_dict[self.descriptor_uid])
-        self.index_dict[self.descriptor_uid] += 1
-        return 'event', new_event
+        name, new_start_doc = super().create_start(x)
+        new_start_doc.update(graph=self.graph)
+        return "start", new_start_doc
 
     def create_stop(self, x):
+        new_stop = super()._create_stop(x)
         times = {}
         for k, node in self.translation_nodes.items():
             for t, uid in node.times.items():
-                times[t] = {'node': node.uid, 'uid': uid}
-        new_stop = dict(uid=str(uuid.uuid4()),
-                        time=time.time(),
-                        run_start=self.start_uid,
-                        times=times)
-        self.start_uid = None
-        self.stopped = True
-        self.parent_uids = None
-        return 'stop', new_stop
+                times[t] = {"node": node.uid, "uid": uid}
+        new_stop.update(times=times)
+        self.stop = ("stop", new_stop)
+        if not self.futures or all(not v for v in self.futures.values()):
+            self.emit(self.stop)
+            self.stop = None
+        return "stop", new_stop
 
 
 @Stream.register_api()
 class DBFriendly(Stream):
     """Make analyzed data (and graph) DB friendly"""
 
-    def __init__(self, upstream, stream_name=None):
-        Stream.__init__(self, upstream, stream_name=stream_name)
-
     def update(self, x, who=None):
         name, doc = x
-        if name == 'start':
+        if name == "start":
             doc = dict(doc)
-            graph = doc['graph']
+            graph = doc["graph"]
             for n in nx.topological_sort(graph):
-                graph.node[n]['stream'] = db_friendly_node(
-                    graph.node[n]['stream'])
-            doc['graph'] = nx.node_link_data(graph)
+                graph.node[n]["stream"] = db_friendly_node(
+                    graph.node[n]["stream"]
+                )
+            doc["graph"] = nx.node_link_data(graph)
         return self.emit((name, doc))
 
 
 def db_friendly_node(node):
     """Extract data to make node db friendly"""
+    if isinstance(node, dict):
+        return node
     d = dict(node.__dict__)
-    d['stream_name'] = d['name']
-    d2 = {'name': node.__class__.__name__, 'mod': node.__module__}
-    for f_name in ['func', 'predicate']:
+    d["stream_name"] = d["name"]
+    d2 = {"name": node.__class__.__name__, "mod": node.__module__}
+    for f_name in ["func", "predicate"]:
         if f_name in d:
             # carve out for numpy ufuncs which don't have modules
             if isinstance(d[f_name], np.ufunc):
-                mod = 'numpy'
+                mod = "numpy"
             else:
                 mod = d[f_name].__module__
-            d2[f_name] = {'name': d[f_name].__name__,
-                          'mod': mod}
-            d[f_name] = {'name': d[f_name].__name__,
-                         'mod': mod}
+            d2[f_name] = {"name": d[f_name].__name__, "mod": mod}
+            d[f_name] = {"name": d[f_name].__name__, "mod": mod}
 
-    for k in ['upstreams', 'downstreams']:
+    for k in ["upstreams", "downstreams"]:
         ups = []
         for up in d[k]:
             if up is not None:
                 ups.append(_hash_or_uid(up))
         d2[k] = ups
         d[k] = ups
-    if len(d['upstreams']) == 1:
-        d2['upstream'] = d2['upstreams'][0]
-        d['upstream'] = d['upstreams'][0]
+    if len(d["upstreams"]) == 1:
+        d2["upstream"] = d2["upstreams"][0]
+        d["upstream"] = d["upstreams"][0]
 
     sig = inspect.signature(node.__init__)
     params = sig.parameters
     constructed_args = []
-    d2['arg_keys'] = []
+    d2["arg_keys"] = []
     for p in params:
-        d2['arg_keys'].append(p)
+        d2["arg_keys"].append(p)
         q = params[p]
         # Exclude self
-        if str(p) != 'self':
+        if str(p) != "self":
             if q.kind == q.POSITIONAL_OR_KEYWORD and p in d:
                 constructed_args.append(d[p])
             elif q.default is not q.empty:
                 constructed_args.append(q.default)
             if q.kind == q.VAR_POSITIONAL:
                 constructed_args.extend(d[p])
-    constructed_args.extend(d.get('args', ()))
-    d2['args'] = constructed_args
-    d2['kwargs'] = d.get('kwargs', {})
+    constructed_args.extend(d.get("args", ()))
+    d2["args"] = constructed_args
+    d2["kwargs"] = d.get("kwargs", {})
     return d2
-
-
-@Stream.register_api()
-class AlignEventStreams(szip):
-    """Zips and aligns multiple streams of documents, note that the last
-    upstream takes precedence where merging is not possible, this requires
-    the two streams to be of equal length."""
-    def __init__(self, *upstreams, stream_name=None, **kwargs):
-        szip.__init__(self, *upstreams, stream_name=stream_name)
-        doc_names = ['start', 'descriptor', 'event', 'stop']
-        self.true_buffers = {k: {upstream: deque()
-                             for upstream in upstreams
-                             if isinstance(upstream, Stream)}
-                             for k in doc_names}
-        self.true_literals = {k: [
-            (i, val) for i, val in enumerate(upstreams)
-            if not isinstance(val, Stream)] for k in doc_names}
-
-    def _emit(self, x):
-        # flatten out the nested setup
-        x = [k for l in x for k in l]
-        names = x[::2]
-        docs = x[1::2]
-        # Merge the documents
-        super()._emit((names[0], _convert_to_dict(ChainDB(*docs))))
-
-    def update(self, x, who=None):
-        name, doc = x
-        self.buffers = self.true_buffers[name]
-        self.literals = self.true_literals[name]
-        super().update((name, doc), who)
