@@ -122,10 +122,16 @@ class SimpleFromEventStream(Stream):
         event_stream_name=ALL,
         stream_name=None,
         principle=False,
+        **kwargs
     ):
         if stream_name is None:
             stream_name = doc_type + str(data_address)
-        Stream.__init__(self, upstream, stream_name=stream_name)
+        asynchronous = False
+        if "asynchronous" in kwargs:
+            asynchronous = kwargs.pop("asynchronous")
+        Stream.__init__(
+            self, upstream, stream_name=stream_name, asynchronous=asynchronous
+        )
         self.principle = principle
         self.doc_type = doc_type
         if isinstance(data_address, str):
