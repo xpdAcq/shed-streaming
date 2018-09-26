@@ -3,13 +3,10 @@ import time
 import uuid
 
 import networkx as nx
-import numpy as np
 import pytest
-
 from shed.replay import replay
 from shed.translation import FromEventStream
 from tornado import gen
-from streamz_ext import Stream
 
 
 def y():
@@ -44,8 +41,8 @@ def y():
     )
 
 
-def test_replay_thread_single(db):
-    print("build graph")
+def test_replay(db):
+    # build the graph
     g1 = FromEventStream(
         "event",
         ("data", "det_image"),
@@ -54,31 +51,30 @@ def test_replay_thread_single(db):
         asynchronous=True,
     )
     g11_1 = g1
-    g2 = g11_1.starmap(op.mul, 5, stream_name="mul")
+    g2 = g11_1.map(op.mul, 5, stream_name="mul")
     g = g2.ToEventStream(("img2",))
     graph = g.graph
     dbf = g.DBFriendly()
     l1 = dbf.sink_to_list()
     dbf.starsink(db.insert)
 
-    print("run experiment")
+    # run the experiment
     l0 = []
     for yy in y():
         l0.append(yy)
         db.insert(*yy)
-        print(yy)
         g1.update(yy)
 
-    print("replay experiment")
+    # generate the replay
     lg, parents, data, vs = replay(db, db[-1])
-    assert set(graph.nodes) == set(lg.nodes)
-    ts = list(nx.topological_sort(lg))
-    lg.node[ts[-1]]["stream"].sink(print)
 
-    l2 = lg.node[ts[-1]]["stream"].sink_to_list()
+    assert set(graph.nodes) == set(lg.nodes)
+    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
+    # run the replay
     for v in vs:
         parents[v["node"]].update(data[v["uid"]])
 
+    # check that all the things are ok
     assert len(l1) == len(l2)
     assert len(l0) == len(l2)
     for nd1, nd2 in zip(l0, l2):
@@ -91,8 +87,8 @@ def test_replay_thread_single(db):
             assert nd1[1]["data"]["img2"] == nd2[1]["data"]["img2"]
 
 
-def test_replay(db):
-    print("build graph")
+def test_replay_double(db):
+    # build the graph
     g1 = FromEventStream(
         "event", ("data", "det_image"), principle=True, stream_name="g1"
     )
@@ -106,7 +102,7 @@ def test_replay(db):
 
     graph = g.graph
 
-    print("run experiment")
+    # run the experiment
     l0 = []
     for yy in y():
         l0.append(yy)
@@ -114,13 +110,13 @@ def test_replay(db):
         g11.update(yy)
         g1.update(yy)
 
-    print("replay experiment")
+    # replay the experiment
     lg, parents, data, vs = replay(db, db[-1])
     assert set(graph.nodes) == set(lg.nodes)
-    ts = list(nx.topological_sort(lg))
-    lg.node[ts[-1]]["stream"].sink(print)
 
+    ts = list(nx.topological_sort(lg))
     l2 = lg.node[ts[-1]]["stream"].sink_to_list()
+
     for v in vs:
         parents[v["node"]].update(data[v["uid"]])
 
@@ -137,7 +133,6 @@ def test_replay(db):
 
 
 def test_replay_export(db):
-    print("build graph")
     g1 = FromEventStream(
         "event", ("data", "det_image"), principle=True, stream_name="g1"
     )
@@ -149,7 +144,6 @@ def test_replay_export(db):
     dbf = g.DBFriendly()
     dbf.starsink(db.insert)
 
-    print("run experiment")
     l0 = []
     for yy in y():
         l0.append(yy)
@@ -159,7 +153,6 @@ def test_replay_export(db):
 
     s1 = db[L[0][1]["uid"]]["stop"]
 
-    print("replay experiment")
     lg, parents, data, vs = replay(db, db[-1], export=True)
 
     for v in vs:
@@ -176,8 +169,7 @@ def test_replay_export(db):
 
 
 @pytest.mark.gen_test
-def test_replay_thread_single(db):
-    print("build graph")
+def test_replay_thread(db):
     g1 = FromEventStream(
         "event",
         ("data", "det_image"),
@@ -186,7 +178,7 @@ def test_replay_thread_single(db):
         asynchronous=True,
     )
     g11_1 = g1.scatter(backend="thread")
-    g2 = g11_1.starmap(op.mul, 5, stream_name="mul")
+    g2 = g11_1.map(op.mul, 5, stream_name="mul")
     g = (
         g2.buffer(10, stream_name="buff")
         .gather(stream_name="gather")
@@ -199,25 +191,29 @@ def test_replay_thread_single(db):
     l1 = dbf.sink_to_list()
     dbf.starsink(db.insert)
 
-    print("run experiment")
     l0 = []
+    t0 = None
     for yy in y():
         l0.append(yy)
         db.insert(*yy)
-        print(yy)
         yield g1.update(yy)
+        t1 = list(g1.times.keys())
+        if t0:
+            assert max(t0) < max(t1)
+        t0 = t1
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
 
-    print("replay experiment")
     lg, parents, data, vs = replay(db, db[-1])
-    assert set(graph.nodes) == set(lg.nodes)
-    ts = list(nx.topological_sort(lg))
-    lg.node[ts[-1]]["stream"].sink(print)
 
-    l2 = lg.node[ts[-1]]["stream"].sink_to_list()
+    assert set(graph.nodes) == set(lg.nodes)
+
+    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
+
     for v in vs:
         yield parents[v["node"]].update(data[v["uid"]])
+    while len(l2) < len(l1):
+        yield gen.sleep(.01)
 
     assert len(l1) == len(l2)
     assert len(l0) == len(l2)
@@ -232,8 +228,7 @@ def test_replay_thread_single(db):
 
 
 @pytest.mark.gen_test
-def test_replay_thread(db):
-    print("build graph")
+def test_replay_double_thread(db):
     g1 = FromEventStream(
         "event",
         ("data", "det_image"),
@@ -261,27 +256,34 @@ def test_replay_thread(db):
     futures_L = g2.sink_to_list()
     L = g.sink_to_list()
 
-    print("run experiment")
     l0 = []
+    t0 = None
     for yy in y():
         l0.append(yy)
         db.insert(*yy)
-        yield g1.update(yy)
         yield g11.update(yy)
+        yield g1.update(yy)
+        t1 = list(g1.times.keys())
+        if t0:
+            assert max(t0) < max(t1)
+        t0 = t1
+        # yield gen.sleep(.01)
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
 
-    print("replay experiment")
     lg, parents, data, vs = replay(db, db[-1])
     assert set(graph.nodes) == set(lg.nodes)
-    ts = list(nx.topological_sort(lg))
-    lg.node[ts[-1]]["stream"].sink(print)
 
-    l2 = lg.node[ts[-1]]["stream"].sink_to_list()
-    print(len(parents))
+    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
+
     for v in vs:
         p = parents[v["node"]]
         yield p.update(data[v["uid"]])
+    while len(l2) < len(l1):
+        yield gen.sleep(.01)
+
+    for (n1, _), (n2, _) in zip(l1, l2):
+        assert n1 == n2
 
     assert len(l1) == len(l2)
     assert len(l0) == len(l2)
@@ -293,3 +295,61 @@ def test_replay_thread(db):
         assert nd1[0] == nd2[0]
         if nd1[0] == "event":
             assert nd1[1]["data"]["img2"] == nd2[1]["data"]["img2"]
+
+
+@pytest.mark.gen_test
+def test_replay_export(db):
+    g1 = FromEventStream(
+        "event",
+        ("data", "det_image"),
+        principle=True,
+        stream_name="g1",
+        asynchronous=True,
+    )
+    g11 = FromEventStream("event", ("data", "det_image"), stream_name="g11")
+    g11_1 = g1
+    g2 = (
+        g11_1.scatter(backend="thread")
+            .zip(g11.scatter(backend="thread"))
+            .starmap(op.mul, stream_name="mul")
+    )
+    g = (
+        g2.buffer(10, stream_name="buff")
+            .gather(stream_name="gather")
+            .ToEventStream(("img2",))
+    )
+    dbf = g.DBFriendly()
+    l1 = dbf.sink_to_list()
+    dbf.starsink(db.insert)
+
+    futures_L = g2.sink_to_list()
+    L = g.sink_to_list()
+
+    l0 = []
+    for yy in y():
+        l0.append(yy)
+        db.insert(*yy)
+        yield g11.update(yy)
+        yield g1.update(yy)
+    while len(L) < len(futures_L):
+        yield gen.sleep(.01)
+
+    s1 = db[L[0][1]["uid"]]["stop"]
+
+    lg, parents, data, vs = replay(db, db[-1], export=True)
+
+    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
+
+    for v in vs:
+        yield parents[v["node"]].update(data[v["uid"]])
+    while len(l2) < len(l1):
+        yield gen.sleep(.01)
+    assert s1 != db[-1]["stop"]
+
+    f = False
+    for (_, a), (_, b) in zip(db[-2].documents(), db[-1].documents()):
+        assert a["uid"] != b["uid"]
+        if "data" in a:
+            assert a["data"] == b["data"]
+            f = True
+    assert f

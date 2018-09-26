@@ -172,7 +172,6 @@ class DBFriendly(Stream):
                     graph.node[n]["stream"]
                 )
             doc["graph"] = nx.node_link_data(graph)
-            # pprint(doc['graph'])
         return self.emit((name, doc))
 
 
@@ -234,5 +233,4 @@ def db_friendly_node(node):
 
     d2["args"] = tuple(aa)
     d2["kwargs"] = kk
-    print(d2)
     return d2
