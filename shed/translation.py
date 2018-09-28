@@ -17,25 +17,8 @@ DTYPE_MAP = {np.ndarray: "array", int: "number", float: "number"}
 @args_kwargs
 @Stream.register_api()
 class FromEventStream(SimpleFromEventStream):
-    def __init__(
-        self,
-        doc_type,
-        data_address,
-        upstream=None,
-        event_stream_name=ALL,
-        stream_name=None,
-        principle=False,
-        **kwargs
-    ):
-        super().__init__(
-            doc_type=doc_type,
-            data_address=data_address,
-            upstream=upstream,
-            stream_name=stream_name,
-            principle=principle,
-            event_stream_name=event_stream_name,
-            **kwargs
-        )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.run_start_uid = None
         self.times = {}
 
