@@ -1,4 +1,5 @@
-from shed.event_streams import EventStream
+from shed.simple import SimpleToEventStream, SimpleFromEventStream
+from zstreamz import Stream
 
 
 def to_event_model(data, output_info, md=None):
@@ -31,11 +32,14 @@ def to_event_model(data, output_info, md=None):
         md = md.copy()
     # add some metadata
     md.update({'source': 'to_event_model'})
-    es = EventStream(md=md, output_info=output_info)
+    source = Stream()
+    fes = SimpleFromEventStream('start', (),source, principle=True)
+    tes = SimpleToEventStream(fes, output_info, **md)
 
-    yield es.dispatch(('start', None))
-    yield es.dispatch(('descriptor', None))
+    start = None
     for d in data:
-        e = es.issue_event(d)
-        yield es.event(e)
-    yield es.dispatch(('stop', None))
+        if not start:
+            yield tes.create_start(d)
+            yield tes.create_descriptor(d)
+        yield tes.create_event(d)
+    yield 'stop', tes._create_stop(d)

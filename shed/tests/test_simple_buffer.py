@@ -20,7 +20,7 @@ def test_slow_to_event_model():
         time.sleep(.5)
         return x + 1
 
-    g = to_event_model(range(10), [("ct", {"units": "arb"})])
+    g = to_event_model(range(10), ("ct",))
 
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "ct"), source, principle=True)
@@ -65,7 +65,7 @@ def test_to_event_model():
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
     t0 = time.time()
-    for gg in to_event_model(range(10), [("ct", {"units": "arb"})]):
+    for gg in to_event_model(range(10), ("ct",)):
         yield source.emit(gg)
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
@@ -77,7 +77,7 @@ def test_to_event_model():
     assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
 
-    for gg in to_event_model(range(100, 110), [("ct", {"units": "arb"})]):
+    for gg in to_event_model(range(100, 110), ("ct",)):
         yield source.emit(gg)
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
@@ -115,7 +115,7 @@ def test_double_buffer_to_event_model():
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
     t0 = time.time()
-    for gg in to_event_model(range(10), [("ct", {"units": "arb"})]):
+    for gg in to_event_model(range(10), ("ct",)):
         yield source.emit(gg)
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
@@ -127,7 +127,7 @@ def test_double_buffer_to_event_model():
     assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
 
-    for gg in to_event_model(range(100, 110), [("ct", {"units": "arb"})]):
+    for gg in to_event_model(range(100, 110), ("ct", )):
         yield source.emit(gg)
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
