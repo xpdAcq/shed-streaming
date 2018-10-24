@@ -272,7 +272,13 @@ def test_replay_double_thread(db):
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
 
-    assert len(l0) == len(l1)
+    for name, l in zip(['l1'], [l1]):
+        print(name)
+        assert len(l0) == len(l)
+        for (n1, d1), (n2, d2) in zip(l0, l):
+            assert n1 == n2
+            if n1 == "event":
+                assert d1["data"]["det_image"] ** 2 == d2["data"]["img2"]
 
     lg, parents, data, vs = replay(db, db[-1])
     assert set(graph.nodes) == set(lg.nodes)
@@ -282,10 +288,11 @@ def test_replay_double_thread(db):
     for v in vs:
         p = parents[v["node"]]
         yield p.update(data[v["uid"]])
-    while len(l2) < len(l1):
+    while len(l2) < len(l0):
         yield gen.sleep(.01)
 
-    for l in [l1, l2]:
+    for name, l in zip(['l1', 'l2'], [l1, l2]):
+        print(name)
         assert len(l0) == len(l)
         for (n1, d1), (n2, d2) in zip(l0, l):
             assert n1 == n2
