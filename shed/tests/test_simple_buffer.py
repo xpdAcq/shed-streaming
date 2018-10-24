@@ -1,4 +1,4 @@
-from streamz.utils_test import gen_test
+from zstreamz.utils_test import gen_test
 from tornado import gen
 
 import time
@@ -20,7 +20,7 @@ def test_slow_to_event_model():
         time.sleep(.5)
         return x + 1
 
-    g = to_event_model(range(10), [("ct", {"units": "arb"})])
+    g = to_event_model(range(10), ("ct",))
 
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "ct"), source, principle=True)
@@ -56,7 +56,7 @@ def test_to_event_model():
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "ct"), source, principle=True)
     assert t.principle
-    a = t.scatter(backend='thread').map(slow_inc)
+    a = t.scatter(backend="thread").map(slow_inc)
     b = a.buffer(100).gather()
     L = b.sink_to_list()
     futures_L = a.sink_to_list()
@@ -65,7 +65,7 @@ def test_to_event_model():
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
     t0 = time.time()
-    for gg in to_event_model(range(10), [("ct", {"units": "arb"})]):
+    for gg in to_event_model(range(10), ("ct",)):
         yield source.emit(gg)
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
@@ -77,7 +77,7 @@ def test_to_event_model():
     assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
 
-    for gg in to_event_model(range(100, 110), [("ct", {"units": "arb"})]):
+    for gg in to_event_model(range(100, 110), ("ct",)):
         yield source.emit(gg)
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
@@ -102,20 +102,20 @@ def test_double_buffer_to_event_model():
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "ct"), source, principle=True)
     assert t.principle
-    ts = t.scatter(backend='thread')
+    ts = t.scatter(backend="thread")
     a = ts.map(slow_inc)
     aa = ts.map(slow_inc)
     b = a.buffer(100).gather()
     bb = aa.buffer(100).gather()
     L = b.sink_to_list()
-    futures_L = a.sink_to_list()
+    futures_L = ts.sink_to_list()
     n = ToEventStream(b.zip(bb), ("ct",))
     assert len(n.buffers) == 2
     tt = t.sink_to_list()
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
     t0 = time.time()
-    for gg in to_event_model(range(10), [("ct", {"units": "arb"})]):
+    for gg in to_event_model(range(10), ("ct",)):
         yield source.emit(gg)
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
@@ -127,7 +127,7 @@ def test_double_buffer_to_event_model():
     assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
 
-    for gg in to_event_model(range(100, 110), [("ct", {"units": "arb"})]):
+    for gg in to_event_model(range(100, 110), ("ct",)):
         yield source.emit(gg)
     while len(L) < len(futures_L):
         yield gen.sleep(.01)

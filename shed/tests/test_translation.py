@@ -12,7 +12,7 @@ from shed.utils import to_event_model
 
 
 def test_from_event_model():
-    g = to_event_model(range(10), [("ct", {"units": "arb"})])
+    g = to_event_model(range(10), ("ct",))
 
     source = Stream()
     t = FromEventStream("event", ("data", "ct"), source)
@@ -160,7 +160,7 @@ def test_walk_up_partial():
 
 
 def test_to_event_model():
-    g = to_event_model(range(10), [("ct", {"units": "arb"})])
+    g = to_event_model(range(10), ("ct",))
 
     source = Stream()
     t = FromEventStream("event", ("data", "ct"), source, principle=True)
@@ -234,7 +234,7 @@ def test_execution_order():
 
 
 def test_to_event_model_dict():
-    g = to_event_model(range(10), [("ct", {"units": "arb"})])
+    g = to_event_model(range(10), ("ct",))
 
     source = Stream()
     t = FromEventStream("event", ("data",), source, principle=True)
@@ -307,7 +307,7 @@ def test_replay_export_test():
 
 
 def test_no_stop():
-    g = to_event_model(range(10), [("ct", {"units": "arb"})])
+    g = to_event_model(range(10), ("ct",))
 
     source = Stream()
     t = FromEventStream("event", ("data",), source, principle=True)
@@ -320,7 +320,7 @@ def test_no_stop():
         if gg[0] != "stop":
             source.emit(gg)
 
-    for gg in to_event_model(range(10), [("ct", {"units": "arb"})]):
+    for gg in to_event_model(range(10), ("ct",)):
         if gg[0] == "event":
             source.emit(gg)
             break

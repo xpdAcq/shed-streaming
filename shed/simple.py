@@ -368,6 +368,7 @@ class SimpleToEventStream(Stream):
         self.descriptor_uid = str(uuid.uuid4())
         self.index_dict[self.descriptor_uid] = 1
 
+        print(self.data_keys)
         new_descriptor = dict(
             uid=self.descriptor_uid,
             time=time.time(),
@@ -412,7 +413,10 @@ class SimpleToEventStream(Stream):
         # Take a snapshot of all the buffers contents
         self.futures = {b: set(b.queue._queue) for b in self.buffers}
         new_stop = dict(
-            uid=str(uuid.uuid4()), time=time.time(), run_start=self.start_uid
+            uid=str(uuid.uuid4()),
+            time=time.time(),
+            run_start=self.start_uid,
+            exit_status="success",
         )
         self.stop = ("stop", new_stop)
         # If no buffers (running perfect back pressure) or buffers are empty

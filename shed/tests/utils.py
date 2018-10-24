@@ -16,10 +16,8 @@ import tempfile
 from uuid import uuid4
 
 import numpy as np
-from ophyd import sim
 from bluesky.plans import count
-from bluesky.callbacks.core import CallbackBase
-
+from ophyd import sim
 
 pyFAI_calib = {'calibrant_name': 'Ni24',
                'centerX': 997.79605730878336,
@@ -113,32 +111,3 @@ def insert_imgs(RE, reg, n, shape, save_dir=tempfile.mkdtemp(), **kwargs):
     uid = RE(count([light_det], num=n), **light_md)
 
     return uid
-
-
-class SinkAssertion(CallbackBase):
-    def __init__(self, fail=True, expected_docs=None):
-        self.fail = fail
-        self.docs = []
-        if expected_docs is None:
-            if fail:
-                self.expected_docs = {'start', 'descriptor', 'stop'}
-            else:
-                self.expected_docs = {'start', 'descriptor', 'event', 'stop'}
-        else:
-            self.expected_docs = expected_docs
-
-    def __call__(self, name, doc):
-        """Dispatch to methods expecting particular doc types."""
-        self.docs.append(name)
-        return getattr(self, name)(doc)
-
-    def stop(self, doc):
-        if self.fail:
-            assert doc['exit_status'] == 'failure'
-            assert doc.get('reason')
-        else:
-            assert doc['exit_status']
-            if not doc.get('reason', None):
-                print(doc.get('reason', None))
-            assert not doc.get('reason', None)
-        assert self.expected_docs == set(self.docs)
