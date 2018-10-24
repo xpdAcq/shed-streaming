@@ -272,6 +272,8 @@ def test_replay_double_thread(db):
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
 
+    assert len(l0) == len(l1)
+
     lg, parents, data, vs = replay(db, db[-1])
     assert set(graph.nodes) == set(lg.nodes)
 
@@ -283,15 +285,12 @@ def test_replay_double_thread(db):
     while len(l2) < len(l1):
         yield gen.sleep(.01)
 
-    for (n1, _), (n2, _) in zip(l1, l2):
-        assert n1 == n2
-
-    assert len(l1) == len(l2)
-    assert len(l0) == len(l2)
-    for nd1, nd2 in zip(l0, l2):
-        assert nd1[0] == nd2[0]
-        if nd1[0] == "event":
-            assert nd1[1]["data"]["det_image"] ** 2 == nd2[1]["data"]["img2"]
+    for l in [l1, l2]:
+        assert len(l0) == len(l)
+        for (n1, d1), (n2, d2) in zip(l0, l):
+            assert n1 == n2
+            if n1 == "event":
+                assert d1["data"]["det_image"] ** 2 == d2["data"]["img2"]
     for nd1, nd2 in zip(l1, l2):
         assert nd1[0] == nd2[0]
         if nd1[0] == "event":
