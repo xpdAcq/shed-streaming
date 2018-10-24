@@ -238,9 +238,10 @@ def test_replay_double_thread(db):
     )
     g11 = FromEventStream("event", ("data", "det_image"), stream_name="g11")
     g11_1 = g1
+    g2s = g11_1.scatter(backend="thread").zip(
+        g11.scatter(backend="thread"))
     g2 = (
-        g11_1.scatter(backend="thread")
-        .zip(g11.scatter(backend="thread"))
+        g2s
         .starmap(op.mul, stream_name="mul")
     )
     g = (
@@ -253,7 +254,7 @@ def test_replay_double_thread(db):
     dbf.starsink(db.insert)
 
     graph = g.graph
-    futures_L = g2.sink_to_list()
+    futures_L = g2s.sink_to_list()
     L = g.sink_to_list()
 
     l0 = []
