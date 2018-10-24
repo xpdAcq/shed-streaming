@@ -16,10 +16,8 @@ import tempfile
 from uuid import uuid4
 
 import numpy as np
-from ophyd import sim
 from bluesky.plans import count
-from bluesky.callbacks.core import CallbackBase
-
+from ophyd import sim
 
 pyFAI_calib = {'calibrant_name': 'Ni24',
                'centerX': 997.79605730878336,
