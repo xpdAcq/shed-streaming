@@ -1,4 +1,4 @@
-from streamz.utils_test import gen_test
+from zstream.utils_test import gen_test
 from tornado import gen
 
 import time

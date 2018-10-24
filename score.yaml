@@ -35,6 +35,8 @@ run:
     bleeding: {pip: 'git+https://github.com/regro/regolith.git#egg=regolith'}
   networx:
     default: {conda: networkx}
+  zstreamz:
+    default: {orch: 'https://github.com/xpdAcq/streamz_ext.git'}
 test:
   pytest:
     default:
