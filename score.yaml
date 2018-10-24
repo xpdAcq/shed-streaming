@@ -25,9 +25,9 @@ run:
     default: {conda: numpy}
   scipy:
     default: {conda: scipy}
-  streamz_ext:
-    default: {conda: streamz_ext}
-    bleeding: {orch: 'https://github.com/xpdAcq/streamz_ext.git'}
+#  streamz_ext:
+#    default: {conda: streamz_ext}
+#    bleeding: {orch: 'https://github.com/xpdAcq/streamz_ext.git'}
   networkx:
     default: {conda: networkx}
   regolith:
