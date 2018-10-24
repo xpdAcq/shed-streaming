@@ -108,7 +108,7 @@ def test_double_buffer_to_event_model():
     b = a.buffer(100).gather()
     bb = aa.buffer(100).gather()
     L = b.sink_to_list()
-    futures_L = a.sink_to_list()
+    futures_L = ts.sink_to_list()
     n = ToEventStream(b.zip(bb), ("ct",))
     assert len(n.buffers) == 2
     tt = t.sink_to_list()
