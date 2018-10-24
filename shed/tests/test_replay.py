@@ -1,6 +1,7 @@
 import operator as op
 import time
 import uuid
+from pprint import pprint
 
 import networkx as nx
 import pytest
@@ -254,8 +255,6 @@ def test_replay_double_thread(db):
     dbf.starsink(db.insert)
 
     graph = g.graph
-    futures_L = g2s.sink_to_list()
-    L = g.sink_to_list()
 
     l0 = []
     t0 = None
@@ -268,7 +267,6 @@ def test_replay_double_thread(db):
         if t0:
             assert max(t0) < max(t1)
         t0 = t1
-        # yield gen.sleep(.01)
     while len(l1) < len(l0):
         yield gen.sleep(.01)
 
@@ -276,6 +274,8 @@ def test_replay_double_thread(db):
         print(name)
         assert len(l0) == len(l)
         for (n1, d1), (n2, d2) in zip(l0, l):
+            pprint(d1)
+            pprint(d2)
             assert n1 == n2
             if n1 == "event":
                 assert d1["data"]["det_image"] ** 2 == d2["data"]["img2"]
