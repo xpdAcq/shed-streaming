@@ -31,9 +31,9 @@ def to_event_model(data, output_info, md=None):
     else:
         md = md.copy()
     # add some metadata
-    md.update({'source': 'to_event_model'})
+    md.update({"source": "to_event_model"})
     source = Stream()
-    fes = SimpleFromEventStream('start', (),source, principle=True)
+    fes = SimpleFromEventStream("start", (), source, principle=True)
     tes = SimpleToEventStream(fes, output_info, **md)
 
     start = None
@@ -42,4 +42,4 @@ def to_event_model(data, output_info, md=None):
             yield tes.create_start(d)
             yield tes.create_descriptor(d)
         yield tes.create_event(d)
-    yield 'stop', tes._create_stop(d)
+    yield "stop", tes._create_stop(d)

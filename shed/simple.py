@@ -413,8 +413,10 @@ class SimpleToEventStream(Stream):
         # Take a snapshot of all the buffers contents
         self.futures = {b: set(b.queue._queue) for b in self.buffers}
         new_stop = dict(
-            uid=str(uuid.uuid4()), time=time.time(), run_start=self.start_uid,
-            exit_status='success'
+            uid=str(uuid.uuid4()),
+            time=time.time(),
+            run_start=self.start_uid,
+            exit_status="success",
         )
         self.stop = ("stop", new_stop)
         # If no buffers (running perfect back pressure) or buffers are empty
