@@ -126,17 +126,18 @@ def test_double_buffer_to_event_model():
     assert tt
     assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert len(p) == 10+3
 
     for gg in to_event_model(range(100, 110), ("ct",)):
         yield source.emit(gg)
     while len(L) < len(futures_L):
         yield gen.sleep(.01)
-    print(len(L), len(futures_L))
     t1 = time.time()
     # check that this was faster than running in series
     assert t1 - t0 < .5 * 10
 
     assert tt
+    assert len(p) == (10+3)*2
     assert p == (["start", "descriptor"] + ["event"] * 10 + ["stop"]) * 2
     assert d[14]["hints"] == {"analyzer": {"fields": ["ct"]}}
     for i, j in zip([0, 1, 12], [13, 14, 25]):
