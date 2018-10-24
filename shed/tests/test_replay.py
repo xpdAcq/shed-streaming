@@ -269,7 +269,7 @@ def test_replay_double_thread(db):
             assert max(t0) < max(t1)
         t0 = t1
         # yield gen.sleep(.01)
-    while len(L) < len(futures_L):
+    while len(l1) < len(l0):
         yield gen.sleep(.01)
 
     for name, l in zip(['l1'], [l1]):
