@@ -15,6 +15,11 @@ from shed.utils import to_event_model
 from shed.tests.utils import y, slow_inc
 
 
+from distributed import Future, Client
+from distributed.utils import sync
+from distributed.utils_test import gen_cluster, inc, cluster, loop, slowinc  # flake8: noqa
+
+
 @gen_test(20)
 def test_slow_to_event_model():
     """This doesn't use threads so it should be slower due to sleep"""
@@ -44,6 +49,58 @@ def test_slow_to_event_model():
     assert tt
     assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+
+
+@gen_test(40)
+def test_double_buffer_to_event_model():
+    source = Stream(asynchronous=True)
+    t = FromEventStream("event", ("data", "det_image"), source, principle=True)
+    assert t.principle
+    ts = t
+    a = ts.map(slow_inc)
+    aa = ts.map(slow_inc)
+    n = a.zip(aa).SimpleToEventStream(("ct",))
+
+    b = n
+    b.sink(print)
+    L = b.sink_to_list()
+
+    futures_L = []
+
+    tt = t.sink_to_list()
+    p = b.pluck(0).sink_to_list()
+    d = b.pluck(1).sink_to_list()
+    t0 = time.time()
+    for gg in y(10):
+        futures_L.append(gg)
+        yield source.emit(gg)
+    while len(L) < len(futures_L):
+        yield gen.sleep(.01)
+    t1 = time.time()
+    # check that this was faster than running in series
+    assert t1 - t0 > .5 * 10
+
+    assert tt
+    assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
+    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+
+    t0 = time.time()
+    for gg in y(10):
+        futures_L.append(gg)
+        yield source.emit(gg)
+    while len(L) < len(futures_L):
+        yield gen.sleep(.01)
+    print(len(L), len(futures_L))
+    t1 = time.time()
+    # check that this was faster than running in series
+    assert t1 - t0 > .5 * 10
+
+    assert tt
+    assert p == (["start", "descriptor"] + ["event"] * 10 + ["stop"]) * 2
+    assert d[14]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    for i, j in zip([0, 1, 12], [13, 14, 25]):
+        assert p[i] == p[j]
+        assert d[i] != d[j]
 
 
 @gen_test()
@@ -136,17 +193,56 @@ def test_double_buffer_to_event_model_parallel():
         assert d[i] != d[j]
 
 
-@gen_test(40)
-def test_double_buffer_to_event_model():
+@gen_cluster(client=True)
+def test_slow_to_event_model_parallel_dask(c, s, a, b):
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "det_image"), source, principle=True)
     assert t.principle
-    ts = t
+    ts = t.scatter(backend='dask')
+    # futures_L = t.sink_to_list()
+    a = ts.map(slow_inc)
+    n = a.SimpleToEventStream(("ct",))
+
+    b = n.buffer(100).gather()
+    b.sink(print)
+    L = b.sink_to_list()
+
+    tt = t.sink_to_list()
+    p = b.pluck(0).sink_to_list()
+    d = b.pluck(1).sink_to_list()
+
+    t0 = time.time()
+    futures_L = []
+    for gg in y(10):
+        futures_L.append(gg)
+        yield source.emit(gg)
+    while len(L) < len(futures_L):
+        yield gen.sleep(.01)
+    t1 = time.time()
+    # check that this was faster than running in series
+    td = t1 - t0
+    ted = .5 * 10
+    assert td < ted
+
+    assert tt
+    assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
+    assert 'uid' in d[0]
+    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert d[1]["data_keys"]['ct']['dtype'] == 'number'
+    assert d[2]['data']['ct'] == 2
+
+
+@gen_cluster(client=True)
+def test_double_buffer_to_event_model_parallel_dask(c, s, a, b):
+    source = Stream(asynchronous=True)
+    t = FromEventStream("event", ("data", "det_image"), source, principle=True)
+    assert t.principle
+    ts = t.scatter(backend="dask")
     a = ts.map(slow_inc)
     aa = ts.map(slow_inc)
     n = a.zip(aa).SimpleToEventStream(("ct",))
 
-    b = n
+    b = n.buffer(100).gather()
     b.sink(print)
     L = b.sink_to_list()
 
@@ -163,13 +259,12 @@ def test_double_buffer_to_event_model():
         yield gen.sleep(.01)
     t1 = time.time()
     # check that this was faster than running in series
-    assert t1 - t0 > .5 * 10
+    assert t1 - t0 < .5 * 10
 
     assert tt
     assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
 
-    t0 = time.time()
     for gg in y(10):
         futures_L.append(gg)
         yield source.emit(gg)
@@ -178,7 +273,7 @@ def test_double_buffer_to_event_model():
     print(len(L), len(futures_L))
     t1 = time.time()
     # check that this was faster than running in series
-    assert t1 - t0 > .5 * 10
+    assert t1 - t0 < .5 * 10
 
     assert tt
     assert p == (["start", "descriptor"] + ["event"] * 10 + ["stop"]) * 2
