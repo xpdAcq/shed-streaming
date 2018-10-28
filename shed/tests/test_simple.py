@@ -13,17 +13,21 @@ from shed.simple import (
     _hash_or_uid,
 )
 from shed.utils import to_event_model
+from bluesky.plans import scan
+from shed.utils import unstar
+from shed.tests.utils import y
 
 
-def test_from_event_model():
-    g = to_event_model(range(10), ("ct",))
 
+def test_from_event_model(RE, hw):
     source = Stream()
-    t = FromEventStream("event", ("data", "ct"), source)
+    t = FromEventStream("event", ("data", "motor"), source)
     L = t.sink_to_list()
 
-    for gg in g:
-        source.emit(gg)
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
 
     assert len(L) == 10
     for i, ll in enumerate(L):
@@ -338,25 +342,21 @@ def test_replay_export_test():
 
 
 def test_no_stop():
-    g = to_event_model(range(10), ("ct",))
-
     source = Stream()
-    t = FromEventStream("event", ("data",), source, principle=True)
+    t = FromEventStream("event", ("data", 'det_image'), source, principle=True)
 
-    n = ToEventStream(t)
+    n = ToEventStream(t, ('ct', ))
+    n.pluck(0).sink(print)
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
 
-    for gg in g:
+    for gg in y(5):
         if gg[0] != "stop":
             source.emit(gg)
 
-    for gg in to_event_model(range(10), ("ct",)):
-        if gg[0] == "event":
-            source.emit(gg)
-            break
+    for gg in y(5):
         source.emit(gg)
 
     assert set(p) == {"start", "stop", "event", "descriptor"}
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert d[2]["data"] == {"ct": 0}
+    assert d[2]["data"] == {"ct": 1}

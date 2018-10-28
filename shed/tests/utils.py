@@ -13,6 +13,8 @@
 #
 ##############################################################################
 import tempfile
+import time
+import uuid
 from uuid import uuid4
 
 import numpy as np
@@ -111,3 +113,41 @@ def insert_imgs(RE, reg, n, shape, save_dir=tempfile.mkdtemp(), **kwargs):
     uid = RE(count([light_det], num=n), **light_md)
 
     return uid
+
+
+# TODO: convert this to use a bs scan
+def y(n):
+    suid = str(uuid.uuid4())
+    yield ("start", {"uid": suid, "time": time.time()})
+    duid = str(uuid.uuid4())
+    yield (
+        "descriptor",
+        {
+            "uid": duid,
+            "run_start": suid,
+            "name": "primary",
+            "data_keys": {"det_image": {"dtype": "int", "units": "arb"}},
+            "time": time.time(),
+        },
+    )
+    for i in range(n):
+        yield (
+            "event",
+            {
+                "uid": str(uuid.uuid4()),
+                "data": {"det_image": i + 1},
+                "timestamps": {"det_image": time.time()},
+                "seq_num": i + 1,
+                "time": time.time(),
+                "descriptor": duid,
+            },
+        )
+    yield (
+        "stop",
+        {"uid": str(uuid.uuid4()), "time": time.time(), "run_start": suid},
+    )
+
+
+def slow_inc(x):
+    time.sleep(.5)
+    return x + 1

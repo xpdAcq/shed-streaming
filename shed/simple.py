@@ -6,8 +6,11 @@ from collections import deque
 
 import networkx as nx
 import numpy as np
+from doc_gen import CreateDocs
 from regolith.chained_db import ChainDB, _convert_to_dict
-from streamz_ext.core import Stream, buffer, zip as szip
+from streamz_ext.clients import result_maybe
+from streamz_ext.core import Stream, buffer, zip as szip, move_to_first
+from streamz_ext.parallel import ParallelStream
 
 ALL = "--ALL THE DOCS--"
 
@@ -51,8 +54,8 @@ def walk_to_translation(node, graph, prior_node=None):
                 for downstream in node.downstreams:
                     ttt = _hash_or_uid(downstream)
                     if (
-                        isinstance(downstream, SimpleToEventStream)
-                        and ttt not in graph
+                            isinstance(downstream, SimpleToEventStream)
+                            and ttt not in graph
                     ):
                         graph.add_node(ttt, stream=downstream)
                         graph.add_edge(t, ttt)
@@ -62,7 +65,6 @@ def walk_to_translation(node, graph, prior_node=None):
         # Stop at translation node
         if node2 is not None:
             walk_to_translation(node2, graph, node)
-
 
 @Stream.register_api()
 class SimpleFromEventStream(Stream):
@@ -115,13 +117,13 @@ class SimpleFromEventStream(Stream):
     """
 
     def __init__(
-        self,
-        doc_type,
-        data_address,
-        upstream=None,
-        event_stream_name=ALL,
-        stream_name=None,
-        principle=False,
+            self,
+            doc_type,
+            data_address,
+            upstream=None,
+            event_stream_name=ALL,
+            stream_name=None,
+            principle=False,
     ):
         if stream_name is None:
             stream_name = doc_type + str(data_address)
@@ -142,27 +144,28 @@ class SimpleFromEventStream(Stream):
         if name == "start":
             self.start_uid = doc["uid"]
             # Sideband start document in
-            [s.create_start(x) for s in self.subs]
+            [s.emit_start(x) for s in self.subs]
         if name == "descriptor" and (
-            self.event_stream_name == ALL
-            or self.event_stream_name == doc.get("name", "primary")
+                self.event_stream_name == ALL
+                or self.event_stream_name == doc.get("name", "primary")
         ):
             self.descriptor_uids.append(doc["uid"])
         if name == "stop":
             # Trigger the downstream nodes to make a stop but they can emit
             # on their own time
             self.descriptor_uids = []
-            [s.create_stop(x) for s in self.subs]
+            [s.emit_stop(x) for s in self.subs]
         inner = doc.copy()
         if name == self.doc_type and (
-            (
-                name == "descriptor"
-                and (self.event_stream_name == doc.get("name", ALL))
-            )
-            or (
-                name == "event" and (doc["descriptor"] in self.descriptor_uids)
-            )
-            or name in ["start", "stop"]
+                (
+                        name == "descriptor"
+                        and (self.event_stream_name == doc.get("name", ALL))
+                )
+                or (
+                        name == "event" and (
+                        doc["descriptor"] in self.descriptor_uids)
+                )
+                or name in ["start", "stop"]
         ):
 
             # If we have an empty address get everything
@@ -180,7 +183,7 @@ class SimpleFromEventStream(Stream):
 
 
 @Stream.register_api()
-class SimpleToEventStream(Stream):
+class SimpleToEventStream(Stream, CreateDocs):
     """Converts data into a event stream, and passes it downstream.
 
     Parameters
@@ -225,118 +228,75 @@ class SimpleToEventStream(Stream):
     """
 
     def __init__(self, upstream, data_keys=None, stream_name=None, **kwargs):
-        self.start_doc = None
         if stream_name is None:
             stream_name = str(data_keys)
-        Stream.__init__(self, upstream, stream_name=stream_name)
-        # TODO: use first
-        for up in self.upstreams:
-            for n in up.downstreams.data:
-                if n() is self:
-                    break
-            up.downstreams.data._od.move_to_end(n, last=False)
-            del n
-        self.index_dict = None
-        self.data_keys = data_keys
-        self.md = kwargs
 
-        self.stop = None
-        self.start_uid = None
-        self.descriptor_uid = None
-        self.uid = str(uuid.uuid4())
-        self.state = None
+        Stream.__init__(self, upstream, stream_name=stream_name)
+        CreateDocs.__init__(self, data_keys, **kwargs)
+
+        move_to_first(self)
+
+        self.start_document = None
+
+        self.state = 'stopped'
         self.subs = []
 
-        self.futures = {}
-
-        self.times = {}
+        self.uid = str(uuid.uuid4())
 
         # walk upstream to get all upstream nodes to the translation node
         # get start_uids from the translation node
         self.graph = nx.DiGraph()
         walk_to_translation(self, graph=self.graph)
 
-        # XXX: what happens if we have multiple buffers in a path?
-        # The outputs of one buffer would flow into the other, but we wouldn't
-        # know about that since we only capture the snapshot
-        # For now we just need to mandate that there is only one buffer per
-        # path
-        self.buffers = [
-            n["stream"]
-            for k, n in self.graph.node.items()
-            if isinstance(n["stream"], buffer)
-        ]
-
         self.translation_nodes = {
             k: n["stream"]
             for k, n in self.graph.node.items()
             if isinstance(
-                n["stream"], (SimpleFromEventStream, SimpleToEventStream)
-            )
-            and n["stream"] != self
+            n["stream"], (SimpleFromEventStream, SimpleToEventStream)
+        )
+               and n["stream"] != self
         }
         self.principle_nodes = [
             n
             for k, n in self.translation_nodes.items()
             if getattr(n, "principle", False)
-            or isinstance(n, SimpleToEventStream)
+               or isinstance(n, SimpleToEventStream)
         ]
         if not self.principle_nodes:
             raise RuntimeError("No Principle Nodes Detected")
         for p in self.principle_nodes:
             p.subs.append(self)
 
+    def emit_start(self, x):
+        # Emergency stop
+        if self.state != 'stopped':
+            self.emit_stop(x)
+        start = self.create_doc('start', x)
+        self.emit(start)
+        [s.emit_start(x) for s in self.subs]
+        self.state = "started"
+        self.start_document = None
+
+    def emit_stop(self, x):
+        stop = self.create_doc('stop', x)
+        ret = self.emit(stop)
+        [s.emit_stop(x) for s in self.subs]
+        self.state = "stopped"
+        return ret
+
     def update(self, x, who=None):
         rl = []
         # If we have a start document ready to go, release it.
-        if self.start_doc:
-            # If we have a start doc, but are already started, issue emergency
-            # stop doc
-            if self.state == "started":
-                rl.append(self.emit(self.create_stop(x)))
-                [s.create_stop(x) for s in self.subs]
-                self.stop = None
-                self.state = "stopped"
-            rl.extend(
-                [
-                    self.emit(self.start_doc),
-                    self.emit(self.create_descriptor(x)),
-                ]
-            )
-            [s.create_start(x) for s in self.subs]
-            self.state = "started"
-            self.start_doc = None
-        rl.append(self.emit(self.create_event(x)))
+        if self.state == 'started':
+            rl.append(self.emit(self.create_doc('descriptor', x)))
+            self.state = 'described'
+        rl.append(self.emit(self.create_doc('event', x)))
 
-        # If there are buffers and
-        # all the futures that existed in the snapshot when stop was called
-        # are done and
-        # and there is a stop document (we haven't already emitted it)
-        # then issue the stop doc and then reset self.stop
-        if (
-            self.futures
-            and (
-                not any(
-                    fs.intersection(set(b.queue._queue))
-                    for b, fs in self.futures.items()
-                )
-            )
-            and self.stop
-        ):
-            rl.append(self.emit(self.stop))
-            [s.create_stop(x) for s in self.subs]
-            self.stop = None
-            self.state = "stopped"
         return rl
 
-    def create_start(self, x):
-        if self.stop:
-            self.create_stop(x)
-        self.start_uid = str(uuid.uuid4())
-        tt = time.time()
-        new_start_doc = dict(
-            uid=self.start_uid,
-            time=tt,
+    def start_doc(self, x):
+        new_start_doc = super().start_doc(x)
+        new_start_doc.update(dict(
             parent_uids=[
                 v.start_uid
                 for k, v in self.translation_nodes.items()
@@ -347,91 +307,9 @@ class SimpleToEventStream(Stream):
                 for k, v in self.translation_nodes.items()
                 if v.start_uid is not None
             },
-        )
-        new_start_doc.update(**self.md)
-        self.index_dict = dict()
-        self.start_doc = ("start", new_start_doc)
-        return "start", new_start_doc
-
-    def create_descriptor(self, x):
-        # If data_keys is none then we are working with a dict
-        if self.data_keys is None:
-            self.data_keys = tuple([k for k in x])
-
-        # If the incoming data is a dict extract the data as a tuple
-        if isinstance(x, MutableMapping):
-            x = tuple([x[k] for k in self.data_keys])
-        if not isinstance(x, tuple):
-            tx = tuple([x])
-        else:
-            tx = x
-        self.descriptor_uid = str(uuid.uuid4())
-        self.index_dict[self.descriptor_uid] = 1
-
-        print(self.data_keys)
-        new_descriptor = dict(
-            uid=self.descriptor_uid,
-            time=time.time(),
-            run_start=self.start_uid,
-            name="primary",
-            # TODO: source should reflect graph? (maybe with a UID)
-            data_keys={
-                k: {
-                    "source": "analysis",
-                    "dtype": DTYPE_MAP.get(type(xx), str(type(xx))),
-                    "shape": getattr(xx, "shape", []),
-                }
-                for k, xx in zip(self.data_keys, tx)
-            },
-            hints={"analyzer": {"fields": [k]} for k in self.data_keys},
-            object_keys={k: [k] for k in self.data_keys},
-        )
-        return "descriptor", new_descriptor
-
-    def create_event(self, x):
-        if isinstance(x, MutableMapping):
-            x = tuple([x[k] for k in self.data_keys])
-        if not isinstance(x, tuple) or (
-            len(self.data_keys) == 1 and len(x) > 1
-        ):
-            tx = tuple([x])
-        else:
-            tx = x
-        new_event = dict(
-            uid=str(uuid.uuid4()),
-            time=time.time(),
-            timestamps={k: time.time() for k in self.data_keys},
-            descriptor=self.descriptor_uid,
-            filled={k: True for k in self.data_keys},
-            data={k: v for k, v in zip(self.data_keys, tx)},
-            seq_num=self.index_dict[self.descriptor_uid],
-        )
-        self.index_dict[self.descriptor_uid] += 1
-        return "event", new_event
-
-    def _create_stop(self, x):
-        # Take a snapshot of all the buffers contents
-        self.futures = {b: set(b.queue._queue) for b in self.buffers}
-        new_stop = dict(
-            uid=str(uuid.uuid4()),
-            time=time.time(),
-            run_start=self.start_uid,
-            exit_status="success",
-        )
-        self.stop = ("stop", new_stop)
-        # If no buffers (running perfect back pressure) or buffers are empty
-        # issue stop and clear
-        # Otherwise just make the stop doc, wait for all buffers to clear
-        # to issue
-        return new_stop
-
-    def create_stop(self, x):
-        new_stop = self._create_stop(x)
-        if not self.futures or all(not v for v in self.futures.values()):
-            self.emit(self.stop)
-            self.stop = None
-            self.state = "stopped"
-        return "stop", new_stop
+        ))
+        self.start_document = ("start", new_start_doc)
+        return new_start_doc
 
 
 @Stream.register_api()

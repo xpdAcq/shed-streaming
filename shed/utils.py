@@ -39,7 +39,13 @@ def to_event_model(data, output_info, md=None):
     start = None
     for d in data:
         if not start:
-            yield tes.create_start(d)
-            yield tes.create_descriptor(d)
-        yield tes.create_event(d)
+            yield tes.start(d)
+            yield tes.descriptor(d)
+        yield tes.event(d)
     yield "stop", tes._create_stop(d)
+
+
+def unstar(func):
+    def inner(*x):
+        return func(x)
+    return inner

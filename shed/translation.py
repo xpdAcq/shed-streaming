@@ -132,12 +132,12 @@ class ToEventStream(SimpleToEventStream):
     ('stop',...)
     """
 
-    def create_start(self, x):
-        name, new_start_doc = super().create_start(x)
+    def start(self, x):
+        name, new_start_doc = super().start(x)
         new_start_doc.update(graph=self.graph)
         return "start", new_start_doc
 
-    def create_stop(self, x):
+    def stop(self, x):
         new_stop = super()._create_stop(x)
         times = {}
         for k, node in self.translation_nodes.items():
