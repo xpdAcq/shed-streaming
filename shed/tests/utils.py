@@ -151,3 +151,13 @@ def y(n):
 def slow_inc(x):
     time.sleep(.5)
     return x + 1
+
+
+def slow_filter0(x):
+    time.sleep(.5)
+    return x % 2 == 0
+
+
+def slow_filter1(x):
+    time.sleep(.5)
+    return x % 2 == 1

@@ -1,4 +1,3 @@
-from tests.utils import slow_inc
 from zstreamz.utils_test import gen_test
 from tornado import gen
 
@@ -12,7 +11,7 @@ from shed.simple import (
 from streamz_ext import Stream
 from shed.utils import to_event_model
 
-from shed.tests.utils import y, slow_inc
+from shed.tests.utils import y, slow_inc, slow_filter0, slow_filter1
 
 
 from distributed import Future, Client
@@ -49,6 +48,92 @@ def test_slow_to_event_model():
     assert tt
     assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+
+
+@gen_test(20)
+def test_slow_to_event_model_filter():
+    """This doesn't use threads so it should be slower due to sleep"""
+
+    source = Stream(asynchronous=True)
+    t = FromEventStream("event", ("data", "det_image"), source, principle=True)
+    assert t.principle
+    a = t.filter(slow_filter0)
+    b = t.filter(slow_filter1)
+
+    futures_L = source.sink_to_list()
+    n = a.SimpleToEventStream(("ct",))
+    nn = b.SimpleToEventStream(("ct",))
+    L = n.sink_to_list()
+    LL = nn.sink_to_list()
+    n.sink(print)
+    nn.sink(print)
+    tt = t.sink_to_list()
+    p = n.pluck(0).sink_to_list()
+    d = n.pluck(1).sink_to_list()
+    pp = nn.pluck(0).sink_to_list()
+    dd = nn.pluck(1).sink_to_list()
+    t0 = time.time()
+    for gg in y(10):
+        yield source.emit(gg)
+    while (len(L) + len(LL)) < len(futures_L):
+        yield gen.sleep(.01)
+    t1 = time.time()
+    # check that this was faster than running in series
+    td = t1 - t0
+    ted = .5 * 10 * 2
+    assert td > ted
+
+    assert tt
+    assert p == ["start", "descriptor"] + ["event"] * 5 + ["stop"]
+    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert pp == ["start", "descriptor"] + ["event"] * 5 + ["stop"]
+    assert dd[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+
+
+@gen_test()
+def test_slow_to_event_model_filter_parallel():
+    """This doesn't use threads so it should be slower due to sleep"""
+
+    source = Stream(asynchronous=True)
+    t = FromEventStream("event", ("data", "det_image"), source, principle=True)
+    assert t.principle
+    source.sink(print)
+    fa = t.filter(lambda x: x % 2 == 0).sink_to_list()
+    fb = t.filter(lambda x: x % 2 == 1).sink_to_list()
+    a = t.scatter(backend='thread').filter(slow_filter0)
+    b = t.scatter(backend='thread').filter(slow_filter1)
+
+    futures_L = source.sink_to_list()
+    n = a.SimpleToEventStream(("ct",)).buffer(10).gather()
+    nn = b.SimpleToEventStream(("ct",)).buffer(10).gather()
+    L = n.sink_to_list()
+    LL = nn.sink_to_list()
+    n.sink(print)
+    nn.sink(print)
+    tt = t.sink_to_list()
+    p = n.pluck(0).sink_to_list()
+    d = n.pluck(1).sink_to_list()
+    pp = nn.pluck(0).sink_to_list()
+    dd = nn.pluck(1).sink_to_list()
+    t0 = time.time()
+    for gg in y(10):
+        yield source.emit(gg)
+    while (len(L) + len(LL)) < (len(fa) + len(fb) + 6):
+        yield gen.sleep(.01)
+    print(len(fa), len(fb), len(L), len(LL))
+    t1 = time.time()
+    # check that this was faster than running in series
+    td = t1 - t0
+    ted = .5 * 10 * 2
+    assert td < ted
+
+    assert tt
+    assert p == ["start", "descriptor"] + ["event"] * 5 + ["stop"]
+    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert pp == ["start", "descriptor"] + ["event"] * 5 + ["stop"]
+    assert dd[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+
+
 
 
 @gen_test(40)
