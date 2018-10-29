@@ -4,15 +4,17 @@ import time
 import networkx as nx
 import numpy as np
 from streamz_ext.core import Stream
+from streamz_ext.parallel import ParallelStream
 
-from .simple import SimpleToEventStream, SimpleFromEventStream, _hash_or_uid
+from .simple_parallel import SimpleToEventStream, SimpleFromEventStream
+from .simple import _hash_or_uid
 
 ALL = "--ALL THE DOCS--"
 
 DTYPE_MAP = {np.ndarray: "array", int: "number", float: "number"}
 
 
-@Stream.register_api()
+@ParallelStream.register_api()
 class FromEventStream(SimpleFromEventStream):
     """Extracts data from the event stream, and passes it downstream.
 
@@ -91,7 +93,7 @@ class FromEventStream(SimpleFromEventStream):
         return super().update(x, who=None)
 
 
-@Stream.register_api()
+@ParallelStream.register_api()
 class ToEventStream(SimpleToEventStream):
     """Converts data into a event stream, and passes it downstream.
 
@@ -138,13 +140,17 @@ class ToEventStream(SimpleToEventStream):
         return new_start_doc
 
     def stop(self, x):
-        new_stop = super().stop(x)
+        new_stop = super()._create_stop(x)
         times = {}
         for k, node in self.translation_nodes.items():
             for t, uid in node.times.items():
                 times[t] = {"node": node.uid, "uid": uid}
         new_stop.update(times=times)
-        return new_stop
+        self.stop = ("stop", new_stop)
+        if not self.futures or all(not v for v in self.futures.values()):
+            self.emit(self.stop)
+            self.stop = None
+        return "stop", new_stop
 
 
 @Stream.register_api()
@@ -206,6 +212,8 @@ def db_friendly_node(node):
             elif q.default is not q.empty:
                 constructed_args.append(q.default)
             if q.kind == q.VAR_POSITIONAL:
+                print(q.kind)
+                print(d)
                 constructed_args.extend(d[p])
     constructed_args.extend(d.get("args", ()))
     d2["args"] = constructed_args

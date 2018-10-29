@@ -60,6 +60,13 @@ class SimpleToEventStream(ParallelStream, CreateDocs):
     ('stop',...)
     """
 
+    # XXX: need to replace event seq_num with a conditional future.
+    # f(value, current_seq_num_future)
+    # If the value of the data is not null compute increment and return the
+    # value otherwise don't increment and return same number.
+    # Keep passing the previous future in as the current future so we
+    # chain the futures.
+
     def __init__(self, upstream, data_keys=None, stream_name=None, **kwargs):
         if stream_name is None:
             stream_name = str(data_keys)

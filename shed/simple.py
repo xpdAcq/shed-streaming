@@ -6,7 +6,7 @@ from collections import deque
 
 import networkx as nx
 import numpy as np
-from doc_gen import CreateDocs
+from shed.doc_gen import CreateDocs
 from regolith.chained_db import ChainDB, _convert_to_dict
 from streamz_ext.clients import result_maybe
 from streamz_ext.core import Stream, buffer, zip as szip, move_to_first
@@ -65,6 +65,7 @@ def walk_to_translation(node, graph, prior_node=None):
         # Stop at translation node
         if node2 is not None:
             walk_to_translation(node2, graph, node)
+
 
 @Stream.register_api()
 class SimpleFromEventStream(Stream):

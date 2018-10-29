@@ -161,3 +161,8 @@ def slow_filter0(x):
 def slow_filter1(x):
     time.sleep(.5)
     return x % 2 == 1
+
+
+def slow_mul(x, y):
+    time.sleep(.5)
+    return x * y
