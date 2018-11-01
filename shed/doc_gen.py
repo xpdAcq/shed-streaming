@@ -66,7 +66,7 @@ class CreateDocs(object):
                 }
                 for k, xx in zip(self.data_keys, tx)
             },
-            hints={"analyzer": {"fields": [k]} for k in self.data_keys},
+            hints={"analyzer": {"fields": sorted(list(self.data_keys))}},
             object_keys={k: [k] for k in self.data_keys},
         )
         return new_descriptor

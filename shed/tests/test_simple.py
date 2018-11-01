@@ -1,27 +1,24 @@
-import networkx as nx
 import operator as op
 import time
 import uuid
+
+import networkx as nx
 import numpy as np
-
-from streamz_ext import Stream
-
+from bluesky.plans import scan
 from shed.simple import (
     SimpleFromEventStream as FromEventStream,
     SimpleToEventStream as ToEventStream,
     walk_to_translation,
     _hash_or_uid,
 )
-from shed.utils import to_event_model
-from bluesky.plans import scan
-from shed.utils import unstar
 from shed.tests.utils import y
-
+from shed.utils import unstar
+from streamz_ext import Stream
 
 
 def test_from_event_model(RE, hw):
     source = Stream()
-    t = FromEventStream("event", ("data", "motor"), source)
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
     L = t.sink_to_list()
 
     RE.subscribe(unstar(source.emit))
@@ -167,11 +164,9 @@ def test_walk_up_partial():
     assert {_hash_or_uid(k) for k in s} == set(g.nodes)
 
 
-def test_to_event_model():
-    g = to_event_model(range(10), ("ct",))
-
+def test_to_event_model(RE, hw):
     source = Stream()
-    t = FromEventStream("event", ("data", "ct"), source, principle=True)
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
     assert t.principle
 
     n = ToEventStream(t, ("ct",))
@@ -179,66 +174,15 @@ def test_to_event_model():
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
 
-    for gg in g:
-        source.emit(gg)
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
 
     assert tt
     assert set(p) == {"start", "stop", "event", "descriptor"}
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
     assert d[-1]["run_start"]
-
-
-def test_execution_order():
-    def data():
-        suid = str(uuid.uuid4())
-        duid = str(uuid.uuid4())
-        yield "start", {"hi": "world", "uid": suid}
-        yield "descriptor", {
-            "name": "hi",
-            "data_keys": {"ct"},
-            "uid": duid,
-            "run_start": suid,
-        }
-        for i in range(10):
-            yield "event", {
-                "uid": str(uuid.uuid4()),
-                "data": {"ct": i},
-                "descriptor": duid,
-            }
-        duid = str(uuid.uuid4())
-        yield "descriptor", {
-            "name": "not hi",
-            "data_keys": {"ct"},
-            "uid": duid,
-            "run_start": suid,
-        }
-        for i in range(100, 110):
-            yield "event", {
-                "uid": str(uuid.uuid4()),
-                "data": {"ct": i},
-                "descriptor": duid,
-            }
-        yield "stop", {"uid": str(uuid.uuid4()), "run_start": suid}
-
-    source = FromEventStream("event", ("data", "ct"), principle=True)
-    p = source.map(op.add, 1)
-    pp = p.SimpleToEventStream("ctp1")
-    ppp = p.map(op.mul, 2)
-    l1 = ppp.sink_to_list()
-    pppp = ppp.SimpleToEventStream("ctp2")
-    l2 = ppp.map(lambda *x: time.time()).sink_to_list()
-    assert next(iter(p.downstreams)) is pp
-    assert next(iter(ppp.downstreams)) is pppp
-    for d in data():
-        source.update(d)
-    ex_l = [(i + 1) * 2 for i in range(10)] + [
-        (i + 1) * 2 for i in range(100, 110)
-    ]
-    assert l1 == ex_l
-    assert all((v == pppp.start_uid for v in pppp.times.values()))
-    t = sorted(pppp.times.keys())
-    # ToEventStream executed first
-    assert all((v < v2 for v, v2 in zip(t, l2)))
 
 
 def test_align():
@@ -268,9 +212,7 @@ def test_align():
     assert sl[0][1].get("b") == {"hi": "world", "hi2": "world"}
 
 
-def test_to_event_model_dict():
-    g = to_event_model(range(10), ("ct",))
-
+def test_to_event_model_dict(RE, hw):
     source = Stream()
     t = FromEventStream("event", ("data",), source, principle=True)
 
@@ -279,12 +221,17 @@ def test_to_event_model_dict():
     d = n.pluck(1).sink_to_list()
 
     n.sink(print)
-    for gg in g:
-        source.emit(gg)
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
 
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    print(d[1]['hints'])
+    # AAA
     assert set(p) == {"start", "stop", "event", "descriptor"}
-    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert d[2]["data"] == {"ct": 0}
+    assert d[1]["hints"] == {"analyzer": {"fields": ["motor",
+                                                     'motor_setpoint']}}
+    assert d[2]["data"] == {"motor_setpoint": 0, 'motor': 0}
     assert d[-1]["run_start"]
 
 
@@ -341,22 +288,54 @@ def test_replay_export_test():
     assert L[-1][1]["run_start"]
 
 
-def test_no_stop():
-    source = Stream()
-    t = FromEventStream("event", ("data", 'det_image'), source, principle=True)
+def test_no_stop(hw, RE):
+    source = Stream().filter(lambda x: x[0] != 'stop')
+    t = FromEventStream("event", ("data",), source, principle=True)
 
-    n = ToEventStream(t, ('ct', ))
-    n.pluck(0).sink(print)
+    n = ToEventStream(t)
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
 
-    for gg in y(5):
-        if gg[0] != "stop":
-            source.emit(gg)
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
 
-    for gg in y(5):
-        source.emit(gg)
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
 
     assert set(p) == {"start", "stop", "event", "descriptor"}
-    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert d[2]["data"] == {"ct": 1}
+    assert d[1]["hints"] == {'analyzer': {'fields': ['motor',
+                                                     'motor_setpoint']}}
+    assert d[2]["data"] == {"motor_setpoint": 0, 'motor': 0}
+
+
+def test_parent_nodes():
+    # build the graph
+    g1 = FromEventStream(
+        "event",
+        ("data", "det_image"),
+        principle=True,
+        stream_name="g1",
+        asynchronous=True,
+    )
+    g11 = FromEventStream(
+        "event",
+        ("data", "det_image"),
+        stream_name="g11",
+        asynchronous=True,
+    )
+    g2 = g1.zip(g11).starmap(op.mul, stream_name="mul")
+    g = g2.SimpleToEventStream(("img2",))
+    l1 = g.sink_to_list()
+    # g.sink(print)
+    assert len(g.translation_nodes) == 2
+    print('start experiment')
+
+    # run the experiment
+    l0 = []
+    for yy in y(5):
+        l0.append(yy)
+        g11.update(yy)
+        g1.update(yy)
+        print(g11.start_uid)
+
+    assert len(l1[0][1]['parent_node_map']) == 2

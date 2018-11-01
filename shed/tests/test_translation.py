@@ -3,23 +3,24 @@ import operator as op
 import time
 import uuid
 import numpy as np
+from bluesky.plans import scan
 
 from streamz_ext import Stream
 
 from shed.translation import FromEventStream, ToEventStream
 from shed.simple import walk_to_translation, _hash_or_uid
-from shed.utils import to_event_model
+from shed.utils import to_event_model, unstar
 
 
-def test_from_event_model():
-    g = to_event_model(range(10), ("ct",))
-
+def test_from_event_model(RE, hw):
     source = Stream()
-    t = FromEventStream("event", ("data", "ct"), source)
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
     L = t.sink_to_list()
 
-    for gg in g:
-        source.emit(gg)
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
 
     assert len(L) == 10
     for i, ll in enumerate(L):
@@ -159,11 +160,9 @@ def test_walk_up_partial():
     assert {_hash_or_uid(k) for k in s} == set(g.nodes)
 
 
-def test_to_event_model():
-    g = to_event_model(range(10), ("ct",))
-
+def test_to_event_model(RE, hw):
     source = Stream()
-    t = FromEventStream("event", ("data", "ct"), source, principle=True)
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
     assert t.principle
 
     n = ToEventStream(t, ("ct",))
@@ -171,8 +170,10 @@ def test_to_event_model():
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
 
-    for gg in g:
-        source.emit(gg)
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
 
     assert tt
     assert set(p) == {"start", "stop", "event", "descriptor"}
@@ -214,10 +215,10 @@ def test_execution_order():
 
     source = FromEventStream("event", ("data", "ct"), principle=True)
     p = source.map(op.add, 1)
-    pp = p.SimpleToEventStream("ctp1")
+    pp = p.ToEventStream("ctp1")
     ppp = p.map(op.mul, 2)
     l1 = ppp.sink_to_list()
-    pppp = ppp.SimpleToEventStream("ctp2")
+    pppp = ppp.ToEventStream("ctp2")
     l2 = ppp.map(lambda *x: time.time()).sink_to_list()
     assert next(iter(p.downstreams)) is pp
     assert next(iter(ppp.downstreams)) is pppp
@@ -233,9 +234,7 @@ def test_execution_order():
     assert all((v < v2 for v, v2 in zip(t, l2)))
 
 
-def test_to_event_model_dict():
-    g = to_event_model(range(10), ("ct",))
-
+def test_to_event_model_dict(RE, hw):
     source = Stream()
     t = FromEventStream("event", ("data",), source, principle=True)
 
@@ -244,12 +243,17 @@ def test_to_event_model_dict():
     d = n.pluck(1).sink_to_list()
 
     n.sink(print)
-    for gg in g:
-        source.emit(gg)
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
 
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    print(d[1]['hints'])
+    # AAA
     assert set(p) == {"start", "stop", "event", "descriptor"}
-    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert d[2]["data"] == {"ct": 0}
+    assert d[1]["hints"] == {"analyzer": {"fields": ["motor",
+                                                     'motor_setpoint']}}
+    assert d[2]["data"] == {"motor_setpoint": 0, 'motor': 0}
     assert d[-1]["run_start"]
 
 
@@ -306,26 +310,22 @@ def test_replay_export_test():
     assert L[-1][1]["run_start"]
 
 
-def test_no_stop():
-    g = to_event_model(range(10), ("ct",))
+def test_no_stop(hw, RE):
 
-    source = Stream()
+    source = Stream().filter(lambda x: x[0] != 'stop')
     t = FromEventStream("event", ("data",), source, principle=True)
 
     n = ToEventStream(t)
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
 
-    for gg in g:
-        if gg[0] != "stop":
-            source.emit(gg)
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
 
-    for gg in to_event_model(range(10), ("ct",)):
-        if gg[0] == "event":
-            source.emit(gg)
-            break
-        source.emit(gg)
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
 
     assert set(p) == {"start", "stop", "event", "descriptor"}
-    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert d[2]["data"] == {"ct": 0}
+    assert d[1]["hints"] == {'analyzer': {'fields': ['motor',
+                                                     'motor_setpoint']}}
+    assert d[2]["data"] == {"motor_setpoint": 0, 'motor': 0}

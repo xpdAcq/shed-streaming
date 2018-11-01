@@ -4,7 +4,7 @@ from doc_gen import CreateDocs
 def test_docs():
     cd = CreateDocs(('ct', ), my_md='md')
 
-    start = cd.start(None)
+    start = cd.start_doc(None)
     for k in ['uid', 'time']:
         assert k in start
     assert start['my_md'] == 'md'
