@@ -139,9 +139,12 @@ class ToEventStream(SimpleToEventStream):
     """
 
     def __init__(self, upstream, data_keys=None, stream_name=None, **kwargs):
-        super().__init__(upstream=upstream, data_keys=data_keys,
-                         stream_name=stream_name,
-                         **kwargs)
+        super().__init__(
+            upstream=upstream,
+            data_keys=data_keys,
+            stream_name=stream_name,
+            **kwargs
+        )
         self.times = {}
 
     def emit(self, x, asynchronous=False):
@@ -240,6 +243,6 @@ def db_friendly_node(node):
             kk[i] = a
 
     d2["args"] = tuple(aa)
-    print('args', d2['args'])
+    print("args", d2["args"])
     d2["kwargs"] = kk
     return d2

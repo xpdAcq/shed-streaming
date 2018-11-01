@@ -34,7 +34,7 @@ def test_replay(db):
     l1 = dbf.sink_to_list()
     dbf.starsink(db.insert)
 
-    print('start experiment')
+    print("start experiment")
 
     # run the experiment
     l0 = []
@@ -43,7 +43,7 @@ def test_replay(db):
         db.insert(*yy)
         yield g1.update(yy)
 
-    print('start replay')
+    print("start replay")
 
     # generate the replay
     lg, parents, data, vs = replay(db, db[-1])
@@ -51,7 +51,7 @@ def test_replay(db):
     assert set(graph.nodes) == set(lg.nodes)
     l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
     # run the replay
-    lg.nodes[g1.uid]['stream'].sink(print)
+    lg.nodes[g1.uid]["stream"].sink(print)
     for v in vs:
         parents[v["node"]].update(data[v["uid"]])
 
@@ -78,14 +78,14 @@ def test_replay_parallel(db):
         stream_name="g1",
         asynchronous=True,
     )
-    g2 = g1.scatter(backend='thread').map(op.mul, 5, stream_name="mul")
+    g2 = g1.scatter(backend="thread").map(op.mul, 5, stream_name="mul")
     g = g2.ToEventStream(("img2",))
     graph = g.graph
     dbf = g.buffer(10).gather().DBFriendly()
     l1 = dbf.sink_to_list()
     dbf.starsink(db.insert)
 
-    print('start experiment')
+    print("start experiment")
 
     # run the experiment
     l0 = []
@@ -96,15 +96,20 @@ def test_replay_parallel(db):
     while len(l1) < len(l0):
         yield gen.sleep(.01)
 
-    print('start replay')
+    print("start replay")
 
     # generate the replay
     lg, parents, data, vs = replay(db, db[-1])
 
     assert set(graph.nodes) == set(lg.nodes)
-    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].buffer(10).gather().sink_to_list()
+    l2 = (
+        lg.node[list(nx.topological_sort(lg))[-1]]["stream"]
+        .buffer(10)
+        .gather()
+        .sink_to_list()
+    )
     # run the replay
-    lg.nodes[g1.uid]['stream'].sink(print)
+    lg.nodes[g1.uid]["stream"].sink(print)
     for v in vs:
         parents[v["node"]].update(data[v["uid"]])
 
@@ -136,10 +141,7 @@ def test_replay(db):
         asynchronous=True,
     )
     g11 = FromEventStream(
-        "event",
-        ("data", "det_image"),
-        stream_name="g11",
-        asynchronous=True,
+        "event", ("data", "det_image"), stream_name="g11", asynchronous=True
     )
     g2 = g1.zip(g11).starmap(op.mul, stream_name="mul")
     g = g2.ToEventStream(("img2",))
@@ -149,7 +151,7 @@ def test_replay(db):
     l1 = dbf.sink_to_list()
     dbf.starsink(db.insert)
 
-    print('start experiment')
+    print("start experiment")
 
     # run the experiment
     l0 = []
@@ -159,7 +161,7 @@ def test_replay(db):
         yield g11.update(yy)
         yield g1.update(yy)
 
-    print('start replay')
+    print("start replay")
 
     # generate the replay
     lg, parents, data, vs = replay(db, db[-1])
@@ -167,11 +169,11 @@ def test_replay(db):
     assert set(graph.nodes) == set(lg.nodes)
     l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
     # run the replay
-    lg.nodes[g1.uid]['stream'].sink(print)
+    lg.nodes[g1.uid]["stream"].sink(print)
     print(graph.nodes)
     print(parents)
     for v in vs:
-        print(v['node'])
+        print(v["node"])
         parents[v["node"]].update(data[v["uid"]])
 
     # check that all the things are ok
@@ -199,19 +201,20 @@ def test_replay_parallel(db):
         asynchronous=True,
     )
     g11 = FromEventStream(
-        "event",
-        ("data", "det_image"),
-        stream_name="g11",
-        asynchronous=True,
+        "event", ("data", "det_image"), stream_name="g11", asynchronous=True
     )
-    g2 = g1.scatter(backend='thread').zip(g11.scatter(backend='thread')).starmap(op.mul, stream_name="mul")
+    g2 = (
+        g1.scatter(backend="thread")
+        .zip(g11.scatter(backend="thread"))
+        .starmap(op.mul, stream_name="mul")
+    )
     g = g2.ToEventStream(("img2",))
     graph = g.graph
     dbf = g.buffer(10).gather().DBFriendly()
     l1 = dbf.sink_to_list()
     dbf.starsink(db.insert)
 
-    print('start experiment')
+    print("start experiment")
 
     # run the experiment
     l0 = []
@@ -223,19 +226,24 @@ def test_replay_parallel(db):
     while len(l1) < len(l0):
         yield gen.sleep(.01)
 
-    print('start replay')
+    print("start replay")
 
     # generate the replay
     lg, parents, data, vs = replay(db, db[-1])
 
     assert set(graph.nodes) == set(lg.nodes)
-    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].buffer(10).gather().sink_to_list()
+    l2 = (
+        lg.node[list(nx.topological_sort(lg))[-1]]["stream"]
+        .buffer(10)
+        .gather()
+        .sink_to_list()
+    )
     # run the replay
-    lg.nodes[g1.uid]['stream'].sink(print)
+    lg.nodes[g1.uid]["stream"].sink(print)
     print(graph.nodes)
     print(parents)
     for v in vs:
-        print(v['node'])
+        print(v["node"])
         parents[v["node"]].update(data[v["uid"]])
 
     while len(l2) < len(l0):
@@ -285,6 +293,3 @@ def test_replay_parallel(db):
 #         assert a["uid"] != b["uid"]
 #         if "data" in a:
 #             assert a["data"] == b["data"]
-
-
-

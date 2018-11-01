@@ -144,7 +144,7 @@ def test_slow_to_event_model_parallel():
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "det_image"), source, principle=True)
     assert t.principle
-    ts = t.scatter(backend='thread')
+    ts = t.scatter(backend="thread")
     # futures_L = t.sink_to_list()
     a = ts.map(slow_inc)
     n = a.SimpleToEventStream(("ct",))
@@ -172,10 +172,10 @@ def test_slow_to_event_model_parallel():
 
     assert tt
     assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
-    assert 'uid' in d[0]
+    assert "uid" in d[0]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert d[1]["data_keys"]['ct']['dtype'] == 'number'
-    assert d[2]['data']['ct'] == 2
+    assert d[1]["data_keys"]["ct"]["dtype"] == "number"
+    assert d[2]["data"]["ct"] == 2
 
 
 @gen_test()
@@ -239,8 +239,8 @@ def test_slow_to_event_model_filter_parallel():
     source.sink(print)
     fa = t.filter(lambda x: x % 2 == 0).sink_to_list()
     fb = t.filter(lambda x: x % 2 == 1).sink_to_list()
-    a = t.scatter(backend='thread').filter(slow_filter0)
-    b = t.scatter(backend='thread').filter(slow_filter1)
+    a = t.scatter(backend="thread").filter(slow_filter0)
+    b = t.scatter(backend="thread").filter(slow_filter1)
 
     n = a.SimpleToEventStream(("ct",)).buffer(10).gather()
     nn = b.SimpleToEventStream(("ct",)).buffer(10).gather()
@@ -277,7 +277,7 @@ def test_slow_to_event_model_parallel_dask(c, s, a, b):
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "det_image"), source, principle=True)
     assert t.principle
-    ts = t.scatter(backend='dask')
+    ts = t.scatter(backend="dask")
     # futures_L = t.sink_to_list()
     a = ts.map(slow_inc)
     n = a.SimpleToEventStream(("ct",))
@@ -305,10 +305,10 @@ def test_slow_to_event_model_parallel_dask(c, s, a, b):
 
     assert tt
     assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
-    assert 'uid' in d[0]
+    assert "uid" in d[0]
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert d[1]["data_keys"]['ct']['dtype'] == 'number'
-    assert d[2]['data']['ct'] == 2
+    assert d[1]["data_keys"]["ct"]["dtype"] == "number"
+    assert d[2]["data"]["ct"] == 2
 
 
 @gen_cluster(client=True)
@@ -372,8 +372,8 @@ def test_slow_to_event_model_filter_parallel_dask(c, s, a, b):
     source.sink(print)
     fa = t.filter(lambda x: x % 2 == 0).sink_to_list()
     fb = t.filter(lambda x: x % 2 == 1).sink_to_list()
-    a = t.scatter(backend='dask').filter(slow_filter0)
-    b = t.scatter(backend='dask').filter(slow_filter1)
+    a = t.scatter(backend="dask").filter(slow_filter0)
+    b = t.scatter(backend="dask").filter(slow_filter1)
 
     n = a.SimpleToEventStream(("ct",)).buffer(10).gather()
     nn = b.SimpleToEventStream(("ct",)).buffer(10).gather()

@@ -248,12 +248,13 @@ def test_to_event_model_dict(RE, hw):
 
     RE(scan([hw.motor], hw.motor, 0, 9, 10))
 
-    print(d[1]['hints'])
+    print(d[1]["hints"])
     # AAA
     assert set(p) == {"start", "stop", "event", "descriptor"}
-    assert d[1]["hints"] == {"analyzer": {"fields": ["motor",
-                                                     'motor_setpoint']}}
-    assert d[2]["data"] == {"motor_setpoint": 0, 'motor': 0}
+    assert d[1]["hints"] == {
+        "analyzer": {"fields": ["motor", "motor_setpoint"]}
+    }
+    assert d[2]["data"] == {"motor_setpoint": 0, "motor": 0}
     assert d[-1]["run_start"]
 
 
@@ -312,7 +313,7 @@ def test_replay_export_test():
 
 def test_no_stop(hw, RE):
 
-    source = Stream().filter(lambda x: x[0] != 'stop')
+    source = Stream().filter(lambda x: x[0] != "stop")
     t = FromEventStream("event", ("data",), source, principle=True)
 
     n = ToEventStream(t)
@@ -326,6 +327,7 @@ def test_no_stop(hw, RE):
     RE(scan([hw.motor], hw.motor, 0, 9, 10))
 
     assert set(p) == {"start", "stop", "event", "descriptor"}
-    assert d[1]["hints"] == {'analyzer': {'fields': ['motor',
-                                                     'motor_setpoint']}}
-    assert d[2]["data"] == {"motor_setpoint": 0, 'motor': 0}
+    assert d[1]["hints"] == {
+        "analyzer": {"fields": ["motor", "motor_setpoint"]}
+    }
+    assert d[2]["data"] == {"motor_setpoint": 0, "motor": 0}

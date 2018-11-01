@@ -23,9 +23,7 @@ class CreateDocs(object):
     def start_doc(self, x):
         self.start_uid = str(uuid.uuid4())
         tt = time.time()
-        new_start_doc = dict(
-            uid=self.start_uid,
-            time=tt, )
+        new_start_doc = dict(uid=self.start_uid, time=tt)
         new_start_doc.update(**self.md)
         self.index_dict = dict()
         return new_start_doc
@@ -75,7 +73,7 @@ class CreateDocs(object):
         if isinstance(x, MutableMapping):
             x = tuple([x[k] for k in self.data_keys])
         if not isinstance(x, tuple) or (
-                len(self.data_keys) == 1 and len(x) > 1
+            len(self.data_keys) == 1 and len(x) > 1
         ):
             tx = tuple([x])
         else:
@@ -102,8 +100,8 @@ class CreateDocs(object):
         return new_stop
 
     def create_doc(self, name, x):
-        if name == 'start':
-            _name = 'start_doc'
+        if name == "start":
+            _name = "start_doc"
         else:
             _name = name
         return name, getattr(self, _name)(x)

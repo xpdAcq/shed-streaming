@@ -48,4 +48,5 @@ def to_event_model(data, output_info, md=None):
 def unstar(func):
     def inner(*x):
         return func(x)
+
     return inner

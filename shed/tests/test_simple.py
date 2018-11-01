@@ -226,12 +226,13 @@ def test_to_event_model_dict(RE, hw):
 
     RE(scan([hw.motor], hw.motor, 0, 9, 10))
 
-    print(d[1]['hints'])
+    print(d[1]["hints"])
     # AAA
     assert set(p) == {"start", "stop", "event", "descriptor"}
-    assert d[1]["hints"] == {"analyzer": {"fields": ["motor",
-                                                     'motor_setpoint']}}
-    assert d[2]["data"] == {"motor_setpoint": 0, 'motor': 0}
+    assert d[1]["hints"] == {
+        "analyzer": {"fields": ["motor", "motor_setpoint"]}
+    }
+    assert d[2]["data"] == {"motor_setpoint": 0, "motor": 0}
     assert d[-1]["run_start"]
 
 
@@ -289,7 +290,7 @@ def test_replay_export_test():
 
 
 def test_no_stop(hw, RE):
-    source = Stream().filter(lambda x: x[0] != 'stop')
+    source = Stream().filter(lambda x: x[0] != "stop")
     t = FromEventStream("event", ("data",), source, principle=True)
 
     n = ToEventStream(t)
@@ -303,9 +304,10 @@ def test_no_stop(hw, RE):
     RE(scan([hw.motor], hw.motor, 0, 9, 10))
 
     assert set(p) == {"start", "stop", "event", "descriptor"}
-    assert d[1]["hints"] == {'analyzer': {'fields': ['motor',
-                                                     'motor_setpoint']}}
-    assert d[2]["data"] == {"motor_setpoint": 0, 'motor': 0}
+    assert d[1]["hints"] == {
+        "analyzer": {"fields": ["motor", "motor_setpoint"]}
+    }
+    assert d[2]["data"] == {"motor_setpoint": 0, "motor": 0}
 
 
 def test_parent_nodes():
@@ -318,17 +320,14 @@ def test_parent_nodes():
         asynchronous=True,
     )
     g11 = FromEventStream(
-        "event",
-        ("data", "det_image"),
-        stream_name="g11",
-        asynchronous=True,
+        "event", ("data", "det_image"), stream_name="g11", asynchronous=True
     )
     g2 = g1.zip(g11).starmap(op.mul, stream_name="mul")
     g = g2.SimpleToEventStream(("img2",))
     l1 = g.sink_to_list()
     # g.sink(print)
     assert len(g.translation_nodes) == 2
-    print('start experiment')
+    print("start experiment")
 
     # run the experiment
     l0 = []
@@ -338,4 +337,4 @@ def test_parent_nodes():
         g1.update(yy)
         print(g11.start_uid)
 
-    assert len(l1[0][1]['parent_node_map']) == 2
+    assert len(l1[0][1]["parent_node_map"]) == 2
