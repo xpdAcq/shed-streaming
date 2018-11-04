@@ -243,6 +243,5 @@ def db_friendly_node(node):
             kk[i] = a
 
     d2["args"] = tuple(aa)
-    print("args", d2["args"])
     d2["kwargs"] = kk
     return d2

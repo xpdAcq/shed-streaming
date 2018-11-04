@@ -229,49 +229,6 @@ def test_double_buffer_to_event_model_parallel():
         assert d[i] != d[j]
 
 
-@gen_test()
-def test_slow_to_event_model_filter_parallel():
-    """This doesn't use threads so it should be slower due to sleep"""
-
-    source = Stream(asynchronous=True)
-    t = FromEventStream("event", ("data", "det_image"), source, principle=True)
-    assert t.principle
-    # source.sink(print)
-    fa = t.filter(lambda x: x % 2 == 0).sink_to_list()
-    fb = t.filter(lambda x: x % 2 == 1).sink_to_list()
-    a = t.scatter(backend="thread").filter(slow_filter0)
-    b = t.scatter(backend="thread").filter(slow_filter1)
-
-    n = a.SimpleToEventStream(("ct",)).buffer(10).gather()
-    nn = b.SimpleToEventStream(("ct",)).buffer(10).gather()
-    L = n.sink_to_list()
-    LL = nn.sink_to_list()
-    n.sink(lambda x: print('n', x))
-    nn.sink(lambda x: print('nn', x))
-    tt = t.sink_to_list()
-    p = n.pluck(0).sink_to_list()
-    d = n.pluck(1).sink_to_list()
-    pp = nn.pluck(0).sink_to_list()
-    dd = nn.pluck(1).sink_to_list()
-    t0 = time.time()
-    for gg in y(10):
-        yield source.emit(gg)
-    while (len(L) + len(LL)) < (len(fa) + len(fb) + 6):
-        yield gen.sleep(.01)
-    print(len(fa), len(fb), len(L), len(LL))
-    t1 = time.time()
-    # check that this was faster than running in series
-    td = t1 - t0
-    ted = .5 * 10 * 2
-    assert td < ted
-
-    assert tt
-    assert p == ["start", "descriptor"] + ["event"] * 5 + ["stop"]
-    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert pp == ["start", "descriptor"] + ["event"] * 5 + ["stop"]
-    assert dd[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-
-
 @gen_cluster(client=True)
 def test_slow_to_event_model_parallel_dask(c, s, a, b):
     source = Stream(asynchronous=True)
@@ -360,46 +317,3 @@ def test_double_buffer_to_event_model_parallel_dask(c, s, a, b):
     for i, j in zip([0, 1, 12], [13, 14, 25]):
         assert p[i] == p[j]
         assert d[i] != d[j]
-
-
-@gen_cluster(client=True)
-def test_slow_to_event_model_filter_parallel_dask(c, s, a, b):
-    """This doesn't use threads so it should be slower due to sleep"""
-
-    source = Stream(asynchronous=True)
-    t = FromEventStream("event", ("data", "det_image"), source, principle=True)
-    assert t.principle
-    source.sink(print)
-    fa = t.filter(lambda x: x % 2 == 0).sink_to_list()
-    fb = t.filter(lambda x: x % 2 == 1).sink_to_list()
-    a = t.scatter(backend="dask").filter(slow_filter0)
-    b = t.scatter(backend="dask").filter(slow_filter1)
-
-    n = a.SimpleToEventStream(("ct",)).buffer(10).gather()
-    nn = b.SimpleToEventStream(("ct",)).buffer(10).gather()
-    L = n.sink_to_list()
-    LL = nn.sink_to_list()
-    n.sink(print)
-    nn.sink(print)
-    tt = t.sink_to_list()
-    p = n.pluck(0).sink_to_list()
-    d = n.pluck(1).sink_to_list()
-    pp = nn.pluck(0).sink_to_list()
-    dd = nn.pluck(1).sink_to_list()
-    t0 = time.time()
-    for gg in y(10):
-        yield source.emit(gg)
-    while (len(L) + len(LL)) < (len(fa) + len(fb) + 6):
-        yield gen.sleep(.01)
-    print(len(fa), len(fb), len(L), len(LL))
-    t1 = time.time()
-    # check that this was faster than running in series
-    td = t1 - t0
-    ted = .5 * 10 * 2
-    assert td < ted
-
-    assert tt
-    assert p == ["start", "descriptor"] + ["event"] * 5 + ["stop"]
-    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert pp == ["start", "descriptor"] + ["event"] * 5 + ["stop"]
-    assert dd[1]["hints"] == {"analyzer": {"fields": ["ct"]}}

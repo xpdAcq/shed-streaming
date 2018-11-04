@@ -300,7 +300,6 @@ class SimpleToEventStream(Stream, CreateDocs):
 
     def start_doc(self, x):
         new_start_doc = super().start_doc(x)
-        print(list(v.start_uid for k, v in self.translation_nodes.items()))
         new_start_doc.update(
             dict(
                 parent_uids=[

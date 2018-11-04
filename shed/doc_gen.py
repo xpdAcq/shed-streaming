@@ -8,7 +8,6 @@ DTYPE_MAP = {np.ndarray: "array", int: "number", float: "number"}
 
 
 def get_dtype(xx):
-    print(type(xx))
     return DTYPE_MAP.get(type(xx), type(xx).__name__)
 
 
