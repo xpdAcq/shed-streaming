@@ -3,13 +3,13 @@ import time
 
 import networkx as nx
 import numpy as np
-from streamz_ext.core import Stream
-from streamz_ext.parallel import ParallelStream
+from rapidz.core import Stream
+from rapidz.parallel import ParallelStream
 
 from .simple_parallel import SimpleToEventStream, SimpleFromEventStream
 from .simple import _hash_or_uid
 
-from zstreamz.core import args_kwargs
+from rapidz.core import args_kwargs
 
 ALL = "--ALL THE DOCS--"
 

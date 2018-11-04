@@ -3,11 +3,11 @@ import time
 
 import networkx as nx
 import numpy as np
-from streamz_ext.core import Stream
+from rapidz.core import Stream
 
 from .simple import SimpleToEventStream, SimpleFromEventStream, _hash_or_uid
 
-from zstreamz.core import _deref_weakref, args_kwargs
+from rapidz.core import _deref_weakref, args_kwargs
 
 ALL = "--ALL THE DOCS--"
 

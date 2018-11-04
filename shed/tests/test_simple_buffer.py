@@ -1,4 +1,4 @@
-from zstreamz.utils_test import gen_test
+from rapidz.utils_test import gen_test
 from tornado import gen
 
 import time
@@ -8,7 +8,7 @@ from shed.simple import (
     SimpleFromEventStream as FromEventStream,
     SimpleToEventStream as ToEventStream,
 )
-from streamz_ext import Stream
+from rapidz import Stream
 
 from shed.tests.utils import y, slow_inc, slow_filter0, slow_filter1
 

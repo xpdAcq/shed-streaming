@@ -1,7 +1,7 @@
 import operator as op
 
 from numpy.testing import assert_array_equal
-from streamz_ext import Stream
+from rapidz import Stream
 
 from shed.translation import FromEventStream
 

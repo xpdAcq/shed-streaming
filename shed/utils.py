@@ -1,5 +1,5 @@
 from shed.simple import SimpleToEventStream, SimpleFromEventStream
-from zstreamz import Stream
+from rapidz import Stream
 
 
 def to_event_model(data, output_info, md=None):

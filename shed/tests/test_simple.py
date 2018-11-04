@@ -13,7 +13,7 @@ from shed.simple import (
 )
 from shed.tests.utils import y
 from shed.utils import unstar
-from streamz_ext import Stream
+from rapidz import Stream
 
 
 def test_from_event_model(RE, hw):

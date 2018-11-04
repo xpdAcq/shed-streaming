@@ -7,9 +7,9 @@ from concurrent.futures import Future
 import networkx as nx
 import numpy as np
 from regolith.chained_db import ChainDB, _convert_to_dict
-from streamz_ext.clients import result_maybe
-from streamz_ext.core import Stream, buffer, zip as szip, move_to_first
-from streamz_ext.parallel import ParallelStream
+from rapidz.clients import result_maybe
+from rapidz.core import Stream, buffer, zip as szip, move_to_first
+from rapidz.parallel import ParallelStream
 
 from shed.simple import walk_to_translation, SimpleFromEventStream
 from shed.doc_gen import CreateDocs, get_dtype

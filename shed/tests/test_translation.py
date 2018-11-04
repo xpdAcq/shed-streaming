@@ -5,7 +5,7 @@ import uuid
 import numpy as np
 from bluesky.plans import scan
 
-from streamz_ext import Stream
+from rapidz import Stream
 
 from shed.translation import FromEventStream, ToEventStream
 from shed.simple import walk_to_translation, _hash_or_uid

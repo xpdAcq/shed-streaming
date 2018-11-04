@@ -13,7 +13,7 @@ from shed.tests.utils import y, slow_inc, slow_mul
 from distributed.utils_test import gen_cluster  # flake8: noqa
 import pytest
 from tornado import gen
-from zstreamz import Stream
+from rapidz import Stream
 
 
 @pytest.mark.gen_test
