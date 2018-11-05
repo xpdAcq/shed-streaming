@@ -31,7 +31,8 @@ run:
     default: {conda: xonsh}
   rapidz:
     default: {conda: rapidz}
-    bleeding: {pip: 'git+https://github.com/xpdAcq/rapidz.git'}
+  distributed:
+    default: {conda: distributed}
 test:
   pytest:
     default:
