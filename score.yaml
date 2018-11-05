@@ -55,6 +55,8 @@ test:
     default: {conda: xpdsim}
   ophyd:
     default: {conda: ophyd}
+  pytest-tornado:
+    default: {conda: pytest-tornado}
 docs:
   doctr:
     default: {conda: doctr}
