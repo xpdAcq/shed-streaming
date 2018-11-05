@@ -1,0 +1,14 @@
+**Added:** None
+
+**Changed:**
+
+* Get ``ChainDB`` from xonsh
+* Use common ``DocGen`` for document generation
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None
