@@ -36,7 +36,7 @@ run:
 test:
   pytest:
     default:
-      conda: pytest
+      conda: pytest <=3
   flake8:
     default:
       conda: flake8
