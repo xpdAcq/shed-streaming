@@ -4,6 +4,7 @@
 
 * Get ``ChainDB`` from xonsh
 * Use common ``DocGen`` for document generation
+* Exchanged ``zstreamz`` dep for ``rapidz``
 
 **Deprecated:** None
 
