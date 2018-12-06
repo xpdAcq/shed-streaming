@@ -22,7 +22,6 @@ addons:
     - mongodb-org-server
 
 python:
-  - 3.5
   - 3.6
 before_install:
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
@@ -54,6 +53,7 @@ install:
   # of every test file
   # make sure the sqlite file exists to avoid race conditions
   - git clean -xfd
+  - conda list
 
 script:
   - set -e
