@@ -302,11 +302,15 @@ class SimpleToEventStream(Stream, CreateDocs):
         new_start_doc = super().start_doc(x)
         new_start_doc.update(
             dict(
-                parent_uids=list(set([
-                    v.start_uid
-                    for k, v in self.translation_nodes.items()
-                    if v.start_uid is not None
-                ])),
+                parent_uids=list(
+                    set(
+                        [
+                            v.start_uid
+                            for k, v in self.translation_nodes.items()
+                            if v.start_uid is not None
+                        ]
+                    )
+                ),
                 parent_node_map={
                     v.uid: v.start_uid
                     for k, v in self.translation_nodes.items()
