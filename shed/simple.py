@@ -1,16 +1,12 @@
 """Translation nodes"""
-import time
 import uuid
-from collections import MutableMapping
 from collections import deque
 
 import networkx as nx
 import numpy as np
+from rapidz.core import Stream, zip as szip, move_to_first
 from shed.doc_gen import CreateDocs
 from xonsh.lib.collections import ChainDB, _convert_to_dict
-from rapidz.clients import result_maybe
-from rapidz.core import Stream, buffer, zip as szip, move_to_first
-from rapidz.parallel import ParallelStream
 
 ALL = "--ALL THE DOCS--"
 

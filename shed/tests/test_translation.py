@@ -1,15 +1,14 @@
-import networkx as nx
 import operator as op
 import time
 import uuid
+
+import networkx as nx
 import numpy as np
 from bluesky.plans import scan
-
 from rapidz import Stream
-
-from shed.translation import FromEventStream, ToEventStream
 from shed.simple import walk_to_translation, _hash_or_uid
-from shed.utils import to_event_model, unstar
+from shed.translation import FromEventStream, ToEventStream
+from shed.utils import unstar
 
 
 def test_from_event_model(RE, hw):

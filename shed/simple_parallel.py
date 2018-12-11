@@ -1,17 +1,15 @@
-import time
 import uuid
 from collections import MutableMapping
-from collections import deque
-from concurrent.futures import Future
+
+import uuid
+from collections import MutableMapping
 
 import networkx as nx
-import numpy as np
 from rapidz.clients import result_maybe
-from rapidz.core import Stream, buffer, zip as szip, move_to_first
+from rapidz.core import move_to_first
 from rapidz.parallel import ParallelStream
-
-from shed.simple import walk_to_translation, SimpleFromEventStream
 from shed.doc_gen import CreateDocs, get_dtype
+from shed.simple import walk_to_translation, SimpleFromEventStream
 
 
 @ParallelStream.register_api()

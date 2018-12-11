@@ -1,9 +1,8 @@
 import importlib
-from pprint import pprint
+from collections import MutableMapping
 
 import networkx as nx
 from shed.translation import ToEventStream
-from collections import MutableMapping
 
 
 def replay(db, hdr, export=False):
