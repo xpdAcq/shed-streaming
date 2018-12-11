@@ -4,6 +4,7 @@ import uuid
 
 import networkx as nx
 import numpy as np
+import pytest
 from bluesky.plans import scan
 from shed.simple import (
     SimpleFromEventStream as FromEventStream,
@@ -338,3 +339,19 @@ def test_parent_nodes():
         print(g11.start_uid)
 
     assert len(l1[0][1]["parent_node_map"]) == 2
+
+
+@pytest.mark.xfail(raises=RuntimeError)
+def test_no_parent_nodes():
+    # build the graph
+    g1 = FromEventStream(
+        "event",
+        ("data", "det_image"),
+        stream_name="g1",
+        asynchronous=True,
+    )
+    g11 = FromEventStream(
+        "event", ("data", "det_image"), stream_name="g11", asynchronous=True
+    )
+    g2 = g1.zip(g11).starmap(op.mul, stream_name="mul")
+    g = g2.SimpleToEventStream(("img2",))
