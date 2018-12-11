@@ -121,7 +121,8 @@ def insert_imgs(RE, reg, n, shape, save_dir=tempfile.mkdtemp(), **kwargs):
     return uid
 
 
-# TODO: convert this to use a bs scan
+# TODO: convert this to use a bs scan. Might not be able to do this unless
+#  we integrate RE with the test event loop
 def y(n):
     suid = str(uuid.uuid4())
     yield ("start", {"uid": suid, "time": time.time()})
