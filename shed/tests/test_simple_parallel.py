@@ -3,9 +3,7 @@ import time
 from distributed.utils_test import gen_cluster  # flake8: noqa
 from rapidz import Stream
 from rapidz.utils_test import gen_test
-from shed import (
-    SimpleFromEventStream as FromEventStream,
-)
+from shed import SimpleFromEventStream as FromEventStream
 from shed.tests.utils import y, slow_inc, slow_filter0, slow_filter1
 from tornado import gen
 
