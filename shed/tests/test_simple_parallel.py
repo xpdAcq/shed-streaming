@@ -1,19 +1,13 @@
-from rapidz.utils_test import gen_test
-from tornado import gen
-
 import time
 
-from shed.simple_parallel import SimpleFromEventStream
-from shed.simple import (
-    SimpleFromEventStream as FromEventStream,
-    SimpleToEventStream as ToEventStream,
-)
-from rapidz import Stream
-
-from shed.tests.utils import y, slow_inc, slow_filter0, slow_filter1
-
-
 from distributed.utils_test import gen_cluster  # flake8: noqa
+from rapidz import Stream
+from rapidz.utils_test import gen_test
+from shed import (
+    SimpleFromEventStream as FromEventStream,
+)
+from shed.tests.utils import y, slow_inc, slow_filter0, slow_filter1
+from tornado import gen
 
 
 @gen_test(20)

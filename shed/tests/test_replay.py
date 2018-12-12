@@ -1,18 +1,12 @@
 import operator as op
-import time
-import uuid
 
 import networkx as nx
 import numpy as np
-
-from shed.replay import replay
-from shed import FromEventStream, ToEventStream
-
-from shed.tests.utils import y, slow_inc, slow_mul
-from distributed.utils_test import gen_cluster  # flake8: noqa
 import pytest
+from shed import FromEventStream
+from shed.replay import replay
+from shed.tests.utils import y
 from tornado import gen
-from rapidz import Stream
 
 
 @pytest.mark.gen_test
@@ -177,7 +171,9 @@ def test_replay_numpy(db):
     for nd1, nd2 in zip(l0, l2):
         assert nd1[0] == nd2[0]
         if nd1[0] == "event":
-            assert np.exp(nd1[1]["data"]["det_image"]) == nd2[1]["data"]["img2"]
+            assert (
+                np.exp(nd1[1]["data"]["det_image"]) == nd2[1]["data"]["img2"]
+            )
     for nd1, nd2 in zip(l1, l2):
         assert nd1[0] == nd2[0]
         if nd1[0] == "event":
@@ -198,10 +194,7 @@ def test_replay_parallel_numpy(db):
     g11 = FromEventStream(
         "event", ("data", "det_image"), stream_name="g11", asynchronous=True
     )
-    g2 = (
-        g1.scatter(backend="thread")
-        .map(np.exp, stream_name="mul")
-    )
+    g2 = g1.scatter(backend="thread").map(np.exp, stream_name="mul")
     g = g2.ToEventStream(("img2",))
     graph = g.graph
     dbf = g.buffer(10).gather().DBFriendly()
@@ -249,7 +242,9 @@ def test_replay_parallel_numpy(db):
     for nd1, nd2 in zip(l0, l2):
         assert nd1[0] == nd2[0]
         if nd1[0] == "event":
-            assert np.exp(nd1[1]["data"]["det_image"]) == nd2[1]["data"]["img2"]
+            assert (
+                np.exp(nd1[1]["data"]["det_image"]) == nd2[1]["data"]["img2"]
+            )
     for nd1, nd2 in zip(l1, l2):
         assert nd1[0] == nd2[0]
         if nd1[0] == "event":

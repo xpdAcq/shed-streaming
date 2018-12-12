@@ -1,9 +1,6 @@
 import uuid
 from collections import MutableMapping
 
-import uuid
-from collections import MutableMapping
-
 import networkx as nx
 from rapidz.clients import result_maybe
 from rapidz.core import move_to_first

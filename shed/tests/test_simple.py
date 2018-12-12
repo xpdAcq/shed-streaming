@@ -345,13 +345,10 @@ def test_parent_nodes():
 def test_no_parent_nodes():
     # build the graph
     g1 = FromEventStream(
-        "event",
-        ("data", "det_image"),
-        stream_name="g1",
-        asynchronous=True,
+        "event", ("data", "det_image"), stream_name="g1", asynchronous=True
     )
     g11 = FromEventStream(
         "event", ("data", "det_image"), stream_name="g11", asynchronous=True
     )
     g2 = g1.zip(g11).starmap(op.mul, stream_name="mul")
-    g = g2.SimpleToEventStream(("img2",))
+    g2.SimpleToEventStream(("img2",))
