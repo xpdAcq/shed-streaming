@@ -1,9 +1,9 @@
-import inspect
 import time
 
 import networkx as nx
 import numpy as np
-from streamz_ext.core import Stream
+from rapidz.core import Stream
+from rapidz.core import _deref_weakref, args_kwargs
 
 from .simple import SimpleToEventStream, SimpleFromEventStream, _hash_or_uid
 
@@ -12,6 +12,7 @@ ALL = "--ALL THE DOCS--"
 DTYPE_MAP = {np.ndarray: "array", int: "number", float: "number"}
 
 
+@args_kwargs
 @Stream.register_api()
 class FromEventStream(SimpleFromEventStream):
     """Extracts data from the event stream, and passes it downstream.
@@ -70,6 +71,7 @@ class FromEventStream(SimpleFromEventStream):
         event_stream_name=ALL,
         stream_name=None,
         principle=False,
+        **kwargs
     ):
         super().__init__(
             doc_type=doc_type,
@@ -78,6 +80,7 @@ class FromEventStream(SimpleFromEventStream):
             stream_name=stream_name,
             principle=principle,
             event_stream_name=event_stream_name,
+            **kwargs
         )
         self.run_start_uid = None
         self.times = {}
@@ -91,6 +94,7 @@ class FromEventStream(SimpleFromEventStream):
         return super().update(x, who=None)
 
 
+@args_kwargs
 @Stream.register_api()
 class ToEventStream(SimpleToEventStream):
     """Converts data into a event stream, and passes it downstream.
@@ -132,23 +136,35 @@ class ToEventStream(SimpleToEventStream):
     ('stop',...)
     """
 
-    def create_start(self, x):
-        name, new_start_doc = super().create_start(x)
-        new_start_doc.update(graph=self.graph)
-        return "start", new_start_doc
+    def __init__(self, upstream, data_keys=None, stream_name=None, **kwargs):
+        super().__init__(
+            upstream=upstream,
+            data_keys=data_keys,
+            stream_name=stream_name,
+            **kwargs
+        )
+        self.times = {}
 
-    def create_stop(self, x):
-        new_stop = super()._create_stop(x)
+    def emit(self, x, asynchronous=False):
+        name, doc = x
+        if name == "start":
+            self.times = {time.time(): self.start_uid}
+        self.times[time.time()] = self.start_uid
+        super().emit(x, asynchronous=asynchronous)
+
+    def start_doc(self, x):
+        new_start_doc = super().start_doc(x)
+        new_start_doc.update(graph=self.graph)
+        return new_start_doc
+
+    def stop(self, x):
+        new_stop = super().stop(x)
         times = {}
         for k, node in self.translation_nodes.items():
             for t, uid in node.times.items():
                 times[t] = {"node": node.uid, "uid": uid}
         new_stop.update(times=times)
-        self.stop = ("stop", new_stop)
-        if not self.futures or all(not v for v in self.futures.values()):
-            self.emit(self.stop)
-            self.stop = None
-        return "stop", new_stop
+        return new_stop
 
 
 @Stream.register_api()
@@ -168,6 +184,21 @@ class DBFriendly(Stream):
         return self.emit((name, doc))
 
 
+def _is_stream(x):
+    return isinstance(x, Stream)
+
+
+def _deref_func(x):
+    if isinstance(x, np.ufunc):
+        mod = "numpy"
+    else:
+        mod = x.__module__
+    return {"name": x.__name__, "mod": mod}
+
+
+deref_dict = {_is_stream: _hash_or_uid, callable: _deref_func}
+
+
 def db_friendly_node(node):
     """Extract data to make node db friendly"""
     if isinstance(node, dict):
@@ -175,43 +206,40 @@ def db_friendly_node(node):
     d = dict(node.__dict__)
     d["stream_name"] = d["name"]
     d2 = {"name": node.__class__.__name__, "mod": node.__module__}
-    for f_name in ["func", "predicate"]:
-        if f_name in d:
-            # carve out for numpy ufuncs which don't have modules
-            if isinstance(d[f_name], np.ufunc):
-                mod = "numpy"
-            else:
-                mod = d[f_name].__module__
-            d2[f_name] = {"name": d[f_name].__name__, "mod": mod}
-            d[f_name] = {"name": d[f_name].__name__, "mod": mod}
+    aa = []
+    kk = {}
 
-    for k in ["upstreams", "downstreams"]:
-        ups = []
-        for up in d[k]:
-            if up is not None:
-                ups.append(_hash_or_uid(up))
-        d2[k] = ups
-        d[k] = ups
-    if len(d["upstreams"]) == 1:
-        d2["upstream"] = d2["upstreams"][0]
-        d["upstream"] = d["upstreams"][0]
+    for a in tuple([_deref_weakref(a) for a in node._init_args]):
+        # Somethings are not storable (nodes, funcs, etc.) so we must
+        # deref them so we can store them
+        stored = False
+        for k, v in deref_dict.items():
+            # If we have a tool for storing things store it
 
-    sig = inspect.signature(node.__init__)
-    params = sig.parameters
-    constructed_args = []
-    d2["arg_keys"] = []
-    for p in params:
-        d2["arg_keys"].append(p)
-        q = params[p]
-        # Exclude self
-        if str(p) != "self":
-            if q.kind == q.POSITIONAL_OR_KEYWORD and p in d:
-                constructed_args.append(d[p])
-            elif q.default is not q.empty:
-                constructed_args.append(q.default)
-            if q.kind == q.VAR_POSITIONAL:
-                constructed_args.extend(d[p])
-    constructed_args.extend(d.get("args", ()))
-    d2["args"] = constructed_args
-    d2["kwargs"] = d.get("kwargs", {})
+            if k(a):
+                aa.append(v(a))
+                stored = True
+                break
+        # If none of our tools worked, store it natively
+        if not stored:
+            aa.append(a)
+
+    for i, a in {
+        k: _deref_weakref(v) for k, v in node._init_kwargs.items()
+    }.items():
+        # Somethings are not storable (nodes, funcs, etc.) so we must
+        # deref them so we can store them
+        stored = False
+        for k, v in deref_dict.items():
+            # If we have a tool for storing things store it
+            if k(a):
+                kk[i] = v(a)
+                stored = True
+                break
+        # If none of our tools worked, store it natively
+        if not stored:
+            kk[i] = a
+
+    d2["args"] = tuple(aa)
+    d2["kwargs"] = kk
     return d2

@@ -1,4 +1,5 @@
 import importlib
+from collections import MutableMapping
 
 import networkx as nx
 from shed.translation import ToEventStream
@@ -31,16 +32,12 @@ def replay(db, hdr, export=False):
 
     for node_uid in hdr["start"]["parent_node_map"]:
         parent_nodes[node_uid] = loaded_graph.node[node_uid]["stream"]
-    yield loaded_graph
+
     vs = sorted([(t, v) for t, v in times.items()], key=lambda x: x[0])
     vs = [v for t, v in vs]
 
     # push the data through the pipeline
-    for v in vs:
-        # TODO: fill the event from the databroker
-        # print(parent_nodes[v['node']], data[v['uid']])
-        parent_nodes[v["node"]].update(data[v["uid"]])
-    yield "Done"
+    return loaded_graph, parent_nodes, data, vs
 
 
 def rebuild_node(node_dict, graph):
@@ -48,16 +45,25 @@ def rebuild_node(node_dict, graph):
     node = getattr(importlib.import_module(d["mod"]), d["name"])
     d.pop("name")
     d.pop("mod")
-    for f_name in ["func", "predicate"]:
-        if f_name in d:
-            idx = d["args"].index(d[f_name])
-            d[f_name] = getattr(
-                importlib.import_module(d[f_name]["mod"]), d[f_name]["name"]
-            )
-            d["args"][idx] = d[f_name]
-    for upstream in d["upstreams"]:
-        if upstream in d["args"]:
-            d["args"][d["args"].index(upstream)] = graph.node[upstream][
-                "stream"
-            ]
-    return node(*d["args"], **d["kwargs"])
+
+    aa = []
+    for a in d["args"]:
+        if isinstance(a, MutableMapping) and a.get("name") and a.get("mod"):
+            aa.append(getattr(importlib.import_module(a["mod"]), a["name"]))
+        elif a in graph.node:
+            aa.append(graph.node[a]["stream"])
+        else:
+            aa.append(a)
+    d["args"] = aa
+
+    kk = {}
+    for k, a in d["kwargs"].items():
+        if a in graph.node:
+            kk[k] = graph.node[a]["stream"]
+        elif isinstance(a, MutableMapping) and a.get("name") and a.get("mod"):
+            kk[k] = getattr(importlib.import_module(a["mod"]), a["name"])
+        else:
+            kk[k] = a
+    d["kwargs"] = kk
+    n = node(*d["args"], **d["kwargs"])
+    return n
