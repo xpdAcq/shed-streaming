@@ -4,7 +4,7 @@ Tutorials
 These area tutorials designed to better understand what pySHED is, and what it
 attempts to resolve.
 Before beginning, we'll assume that you have the ``shed`` and
-`streams <http://www.github.com/mrocklin/streams>`_ libraries installed.
+`rapidz <http://www.github.com/xpdAcq/rapidz>`_ libraries installed.
 
 Tutorial 1 : Simple Streams
 ---------------------------
@@ -12,7 +12,7 @@ First, we begin with a quick review of simple streams. Let's say we
 had a stream of incoming data, and needed to increment by one, and print
 the result. The definition is as simple as the following::
 
-    import streams.core as sc
+    import rapidz.core as sc
     def myadder(x):
         return x + 1
 
@@ -32,7 +32,7 @@ second argument.
 
 If this makes sense, then we're ready to understand event streams. If it
 doesn't, then it is suggested you read the documentation and exmaples
-for the `streams <http://www.github.com/mrocklin/streams>`_ library.
+for the `rapidz <http://www.github.com/xpdAcq/rapidz>`_ library.
 
 Tutorial 2 : A simple Event Stream
 ----------------------------------
@@ -42,59 +42,68 @@ series of documents, beginning from a start document, descriptor, event
 documents and stop documents. Please refer to the NSLS-II documentation for
 more details.
 
-SHED's streaming method handles event streams. To better understand the general
-idea, let's begin with a simple event stream. Before we begin, let's focus on
-the data itself. Let's say you had a detector called *detector1* which returned
-a 100 by 100 array of integer values. Let's simulate this detector with random
-values for two instances, ``data1`` and ``data2``::
+SHED handles the translations between the event model, raw data, and back. 
+To better understand the general
+idea, let's begin with a simple event stream. 
+We'll use the ``bluesky.run_engine.RunEngine`` and ``ophyd.sim.hw`` to mimic
+an experiment run at a beamline.
 
-    import numpy as np
-    data1 = np.random.random((100, 100)).astype(int)
-    data2 = np.random.random((100, 100)).astype(int)
+Here is an example pipeline which multiplies the output of a detector by 5 and 
+then performs a running sum of the results.
+The results are then repackaged into the event model and printed via 
+``pprint``. Finally we run a count scan with the ``ab_det``::
+    
+    from rapidz import Stream
+    from shed.simple import SimpleFromEventStream, SimpleToEventStream
+    from bluesky import RunEngine
+    import bluesky.plans as bp
+    from ophyd.sim import hw
+    import operator as op
+    from pprint import pprint
+    
+    # make some simulated devices
+    hw = hw()
+    RE = RunEngine()
+    
+    # where we'll input data
+    raw_source = Stream()
+    
+    # extract from the events the values associated with 'data' and 'det_a'
+    # (principle=True means that we listen to this node for when to issue
+    # start and stop documents, all SHED pipelines must have at least one
+    # principle node)
+    raw_output = SimpleFromEventStream('event', ('data', 'det_a'), raw_source,
+                                       principle=True)
+    # multiply by 5 and performa a cumulative sum
+    pipeline = raw_output.map(op.mul, 5).accumulate(op.add)
 
-Let's say this was captured at a beamline where some extra metadata was stored
-during the capture of this data, with fields ``name`` being *Alex* and
-``sample`` being *FeO*. In general, this metadata can be defined arbitrarily
-and is not essential to the data capture, but helps describe it in many cases.
-We can define a quick generator to generate some of this data as follows::
+    # repackage the data in the event model under the name 'result'
+    res = SimpleToEventStream(pipeline, ('result', ))
 
-    import time
-    from uuid import uuid4
-    def gen_imgs(data, **md):
-        run_start = str(uuid4())
-        yield 'start', dict(uid=run_start, time=time.time(), **md)
-        des_uid = str(uuid4())
-        yield 'descriptor', dict(run_start=run_start, data_keys={
-            'data': dict(
-                source='testing', dtype='array')}, time=time.time(), uid=des_uid)
-        for i, datum in enumerate(data):
-            yield 'event', dict(descriptor=des_uid,
-                                uid=str(uuid4()),
-                                time=time.time(),
-                                data={'data': datum},
-                                timestamps={'data': time.time()},
-                                filled={'data': True},
-                                seq_num=i)
-        yield 'stop', dict(run_start=run_start,
-                           uid=str(uuid4()),
-                           time=time.time())
+    # print out the documents as they come out
+    res.sink(pprint)
 
-    event_stream = gen_imgs([data1, data2], name="Alex", sample="FeO")
+    # have the RunEngine send data into the pipeline
+    RE.subscribe(lambda *x: raw_source.emit(x))
+    
+    # Run the scan
+    RE(bp.count([hw.ab_det], 5))
 
-The details are tedious. What is important to keep in mind is that this is
-generating a list of documents as such::
 
-    ('start', some_start_doc),
-    ('descriptor', some_descriptor_doc),
-    ('event', some_event_doc),
-    ('event', another_event_doc),
-    ('stop', some_stop_doc)
+We can also subscribe ``BestEffortCallback`` into the pipeline for live
+visualization::
 
-where ``some_start_doc``, etc are placeholders for the contents of each
-document. To verify this, you can print the stream with::
+    bec = BestEffortCallback()
+    # starsink because we need to splay out the data as args
+    res.starsink(bec)
 
-    for namedocpair in event_stream:
-        print(namedocpair)
+We can also extract data from other documents, for instance from the start
+document::
+
+    from_start = SimpleFromEventStream('start', ('my_number', ) raw_source)
+    from_start.sink(print)
+    RE(bp.count([hw.ab_det], 5), my_number=3)
+
 
 Just remember to regenerate the generator again before using it (for more
 details, see python's documentation on generators). There we have it. This can
