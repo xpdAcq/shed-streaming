@@ -1,0 +1,14 @@
+**Added:**
+
+* ``examples/best_effort.py`` as an example of using SHED with
+  ``BestEffortCallback``.
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None
