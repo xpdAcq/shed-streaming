@@ -4,7 +4,9 @@ from collections import MutableMapping
 
 import numpy as np
 
-DTYPE_MAP = {np.ndarray: "array", int: "number", float: "number"}
+DTYPE_MAP = {np.ndarray: "array", int: "number", float: "number",
+             np.float: "number", np.float32: "number",
+             np.float64: "number"}
 
 
 def get_dtype(xx):
