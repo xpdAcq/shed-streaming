@@ -49,8 +49,8 @@ test:
   pytest-env:
     default:
       conda: pytest-env
-  nose:
-    default: {conda: nose}
+#  nose:
+#    default: {conda: nose}
   xpdsim:
     default: {conda: xpdsim}
   ophyd:
