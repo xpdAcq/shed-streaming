@@ -46,7 +46,7 @@ before_install:
 
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
-  - conda install python=$TRAVIS_PYTHON_VERSION orch<3
+  - conda install python=$TRAVIS_PYTHON_VERSION orch=2
   - orch score.yaml
   # Need to clean the python build directory (and other cruft) or pytest is
   # going to find the build directory and get confused why there are two sets
