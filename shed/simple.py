@@ -237,6 +237,8 @@ class SimpleToEventStream(Stream, CreateDocs):
         move_to_first(self)
 
         self.start_document = None
+        self.incoming_start_uid = None
+        self.incoming_stop_uid = None
 
         self.state = "stopped"
         self.subs = []
@@ -268,16 +270,26 @@ class SimpleToEventStream(Stream, CreateDocs):
             p.subs.append(self)
 
     def emit_start(self, x):
-        # Emergency stop
+        # if we have seen this start document already do nothing, we have
+        # multiple parents so we may get a start doc multiple times
+        if x[1]['uid'] == self.incoming_start_uid:
+            return
+        # Emergency stop if we get a new start document and no stop has been
+        # issued
         if self.state != "stopped":
             self.emit_stop(x)
+        self.incoming_start_uid = x[1]['uid']
         start = self.create_doc("start", x)
-        self.emit(start)
+        # emit starts to subs first in case we create an event from the start
         [s.emit_start(x) for s in self.subs]
+        self.emit(start)
         self.state = "started"
         self.start_document = None
 
     def emit_stop(self, x):
+        if x[1]['uid'] == self.incoming_stop_uid:
+            return
+        self.incoming_stop_uid = x[1]['uid']
         stop = self.create_doc("stop", x)
         ret = self.emit(stop)
         [s.emit_stop(x) for s in self.subs]

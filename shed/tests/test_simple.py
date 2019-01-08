@@ -5,7 +5,7 @@ import uuid
 import networkx as nx
 import numpy as np
 import pytest
-from bluesky.plans import scan
+from bluesky.plans import scan, count
 from shed.simple import (
     SimpleFromEventStream as FromEventStream,
     SimpleToEventStream as ToEventStream,
@@ -352,3 +352,27 @@ def test_no_parent_nodes():
     )
     g2 = g1.zip(g11).starmap(op.mul, stream_name="mul")
     g2.SimpleToEventStream(("img2",))
+
+
+def test_multi_path_principle(hw, RE):
+    source = Stream()
+    fes1 = FromEventStream('start', ('number', ), source, principle=True)
+    fes2 = FromEventStream('event', ('data', 'motor'), source, principle=True)
+
+    out1 = fes1.map(op.add, 1)
+    out2 = fes2.combine_latest(out1, emit_on=0).starmap(op.mul)
+
+    a = ToEventStream(out1, ('out1', ))
+    b = ToEventStream(out2, ('out2',))
+
+    la = a.sink_to_list()
+    lb = b.sink_to_list()
+
+    RE.subscribe(lambda *x: source.emit(x))
+
+    for i in range(1, 3):
+        RE(count([hw.motor], md={'number': 5}))
+
+        for l in [la, lb]:
+            assert [z[0] for z in l] == ["start", "descriptor", "event", "stop"] * i
+
