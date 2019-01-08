@@ -213,6 +213,22 @@ def test_align():
     assert sl[0][1].get("b") == {"hi": "world", "hi2": "world"}
 
 
+def test_align_res_dat(RE, hw):
+    a = Stream()
+    b = FromEventStream('event', ('data', 'motor'), a, principle=True).map(op.add, 1)
+    c = ToEventStream(b, ('out', ))
+    z = a.AlignEventStreams(c)
+    sl = z.sink_to_list()
+
+    RE.subscribe(lambda *x: a.emit(x))
+
+    RE(scan([hw.img], hw.motor, 0, 10, 10))
+
+    for n, d in sl:
+        if n == 'event':
+            assert d['data']['out'] == d['data']['motor'] + 1
+
+
 def test_to_event_model_dict(RE, hw):
     source = Stream()
     t = FromEventStream("event", ("data",), source, principle=True)

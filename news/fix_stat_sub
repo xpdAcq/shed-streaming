@@ -9,5 +9,6 @@
 **Fixed:**
 
 * Multiple principle nodes are now properly handled
+* ``AlignEventStreams`` now works with resource and datum docs
 
 **Security:** None

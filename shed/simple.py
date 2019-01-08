@@ -365,6 +365,9 @@ class AlignEventStreams(szip):
 
     def update(self, x, who=None):
         name, doc = x
-        self.buffers = self.true_buffers[name]
-        self.literals = self.true_literals[name]
-        super().update((name, doc), who)
+        # don't buffer resource and datum, as those are weird and not zippable
+        # maybe at some point emit those without zip
+        if name in self.true_buffers:
+            self.buffers = self.true_buffers[name]
+            self.literals = self.true_literals[name]
+            super().update((name, doc), who)
