@@ -84,11 +84,11 @@
 <li class="toctree-l2 current"><a class="reference internal" href="shed.html#subpackages">Subpackages</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">shed.tests package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#shed-tests-conftest-module">shed.tests.conftest module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-shed.tests.conftest">shed.tests.conftest module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#shed-tests-test-against-runengine-module">shed.tests.test_against_runengine module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#shed-tests-test-streams-module">shed.tests.test_streams module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#shed-tests-utils-module">shed.tests.utils module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#module-contents">Module contents</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-shed.tests.utils">shed.tests.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-shed.tests">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -96,7 +96,7 @@
 <li class="toctree-l2"><a class="reference internal" href="shed.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shed.html#shed-event-streams-module">shed.event_streams module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shed.html#shed-unused-streams-module">shed.unused_streams module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="shed.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shed.html#module-shed">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
@@ -171,8 +171,38 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="shed-tests-conftest-module">
-<h2>shed.tests.conftest module<a class="headerlink" href="#shed-tests-conftest-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-shed.tests.conftest">
+<span id="shed-tests-conftest-module"></span><h2>shed.tests.conftest module<a class="headerlink" href="#module-shed.tests.conftest" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="shed.tests.conftest.db">
+<code class="descclassname">shed.tests.conftest.</code><code class="descname">db</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.conftest.exp_db">
+<code class="descclassname">shed.tests.conftest.</code><code class="descname">exp_db</code><span class="sig-paren">(</span><em>db</em>, <em>tmp_dir</em>, <em>img_size</em>, <em>fresh_RE</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#exp_db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.exp_db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.conftest.fresh_RE">
+<code class="descclassname">shed.tests.conftest.</code><code class="descname">fresh_RE</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#fresh_RE"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.fresh_RE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.conftest.img_size">
+<code class="descclassname">shed.tests.conftest.</code><code class="descname">img_size</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#img_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.img_size" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.conftest.start_uid1">
+<code class="descclassname">shed.tests.conftest.</code><code class="descname">start_uid1</code><span class="sig-paren">(</span><em>exp_db</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#start_uid1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.start_uid1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.conftest.tmp_dir">
+<code class="descclassname">shed.tests.conftest.</code><code class="descname">tmp_dir</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/conftest.html#tmp_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.conftest.tmp_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 <div class="section" id="shed-tests-test-against-runengine-module">
 <h2>shed.tests.test_against_runengine module<a class="headerlink" href="#shed-tests-test-against-runengine-module" title="Permalink to this headline">¶</a></h2>
@@ -180,11 +210,57 @@
 <div class="section" id="shed-tests-test-streams-module">
 <h2>shed.tests.test_streams module<a class="headerlink" href="#shed-tests-test-streams-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="shed-tests-utils-module">
-<h2>shed.tests.utils module<a class="headerlink" href="#shed-tests-utils-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-shed.tests.utils">
+<span id="shed-tests-utils-module"></span><h2>shed.tests.utils module<a class="headerlink" href="#module-shed.tests.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="shed.tests.utils.insert_imgs">
+<code class="descclassname">shed.tests.utils.</code><code class="descname">insert_imgs</code><span class="sig-paren">(</span><em>RE</em>, <em>reg</em>, <em>n</em>, <em>shape</em>, <em>save_dir='/tmp/tmp670tt97c'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/utils.html#insert_imgs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.utils.insert_imgs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert images into mds and fs for testing</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>RE</strong> (<em>bluesky.run_engine.RunEngine instance</em>)</li>
+<li><strong>reg</strong> (<em>Registry instance</em>)</li>
+<li><strong>n</strong> (<em>int</em>) – Number of images to take</li>
+<li><strong>shape</strong> (<em>tuple of ints</em>) – The shape of the resulting images</li>
+<li><strong>save_dir</strong></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.utils.slow_filter0">
+<code class="descclassname">shed.tests.utils.</code><code class="descname">slow_filter0</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/utils.html#slow_filter0"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.utils.slow_filter0" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.utils.slow_filter1">
+<code class="descclassname">shed.tests.utils.</code><code class="descname">slow_filter1</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/utils.html#slow_filter1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.utils.slow_filter1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.utils.slow_inc">
+<code class="descclassname">shed.tests.utils.</code><code class="descname">slow_inc</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/utils.html#slow_inc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.utils.slow_inc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.utils.slow_mul">
+<code class="descclassname">shed.tests.utils.</code><code class="descname">slow_mul</code><span class="sig-paren">(</span><em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/utils.html#slow_mul"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.utils.slow_mul" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="shed.tests.utils.y">
+<code class="descclassname">shed.tests.utils.</code><code class="descname">y</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shed/tests/utils.html#y"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shed.tests.utils.y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
-<div class="section" id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-shed.tests">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-shed.tests" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -233,6 +309,7 @@
         <script type="text/javascript" src="_static/jquery.js"></script>
         <script type="text/javascript" src="_static/underscore.js"></script>
         <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
     
 
   
