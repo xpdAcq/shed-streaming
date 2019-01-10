@@ -11,7 +11,7 @@ build:
       conda: setuptools
   python:
     default:
-      conda: python
+      conda: python==$TRAVIS_PYTHON_VERSION
 run:
   bluesky:
     default: {conda: bluesky}
