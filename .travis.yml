@@ -30,7 +30,7 @@ before_install:
   - export PATH=~/mc/bin:$PATH
   - conda config --set always_yes yes --set changeps1 no --set quiet true
   - conda config --add channels conda-forge
-  - conda install conda=4.5.11 --yes
+  - conda update conda --yes
   - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"
   - "export DISPLAY=:99.0"
   - export MDS_HOST=localhost

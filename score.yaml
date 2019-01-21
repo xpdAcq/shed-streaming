@@ -46,11 +46,11 @@ test:
   coverage:
     default:
       conda: coverage
-#  pytest-env:
-#    default:
-#      conda: pytest-env
-#  nose:
-#    default: {conda: nose}
+  pytest-env:
+    default:
+      conda: pytest-env
+  nose:
+    default: {conda: nose}
   xpdsim:
     default: {conda: xpdsim}
   ophyd:
