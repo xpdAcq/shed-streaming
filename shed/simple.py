@@ -47,16 +47,16 @@ def walk_to_translation(node, graph, prior_node=None):
             graph.add_edge(t, tt)
             if isinstance(node, SimpleFromEventStream):
                 return
-            # else:
-            #     for downstream in node.downstreams:
-            #         ttt = _hash_or_uid(downstream)
-            #         if (
-            #             isinstance(downstream, SimpleToEventStream)
-            #             and ttt not in graph
-            #         ):
-            #             graph.add_node(ttt, stream=downstream)
-            #             graph.add_edge(t, ttt)
-            #             return
+            else:
+                for downstream in node.downstreams:
+                    ttt = _hash_or_uid(downstream)
+                    if (
+                        isinstance(downstream, SimpleToEventStream)
+                        and ttt not in graph
+                    ):
+                        graph.add_node(ttt, stream=downstream)
+                        graph.add_edge(t, ttt)
+                        return
 
     for node2 in node.upstreams:
         # Stop at translation node
@@ -257,7 +257,7 @@ class SimpleToEventStream(Stream, CreateDocs):
             if isinstance(
                 n["stream"], (
                 SimpleFromEventStream,
-                # SimpleToEventStream
+                SimpleToEventStream
             )
             )
             and n["stream"] != self
@@ -266,7 +266,7 @@ class SimpleToEventStream(Stream, CreateDocs):
             n
             for k, n in self.translation_nodes.items()
             if getattr(n, "principle", False)
-            # or isinstance(n, SimpleToEventStream)
+            or isinstance(n, SimpleToEventStream)
         ]
         if not self.principle_nodes:
             pprint({k: v for k, v in self.graph.nodes.items()})
