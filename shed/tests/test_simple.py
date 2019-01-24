@@ -392,9 +392,11 @@ def test_multi_path_principle(hw, RE):
         RE(count([hw.motor], md={"number": 5}))
 
         for l in [la, lb]:
-            assert [z[0] for z in l] == [
+            o1 = [z[0] for z in l]
+            o2 = [
                 "start",
                 "descriptor",
                 "event",
                 "stop",
             ] * i
+            assert o1 == o2

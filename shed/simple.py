@@ -284,15 +284,20 @@ class SimpleToEventStream(Stream, CreateDocs):
         # if we have seen this start document already do nothing, we have
         # multiple parents so we may get a start doc multiple times
 
-        self.incoming_start_uid.append(x[1]['uid'])
-        if len(self.incoming_start_uid) > 1:
-            # Keep a cache so we can count the number of principle nodes
-            # which have fired.
-            # When they have all fired reset.
-            # XXX: all principle nodes must fire!
-            if len(self.incoming_start_uid) == len(self.principle_nodes):
-                self.incoming_start_uid = []
+
+        name, doc = x
+        if doc['uid'] in self.incoming_start_uid:
             return
+        else:
+            self.incoming_start_uid.append(doc['uid'])
+        # if len(self.incoming_start_uid) > 1:
+        #     # Keep a cache so we can count the number of principle nodes
+        #     # which have fired.
+        #     # When they have all fired reset.
+        #     # XXX: all principle nodes must fire!
+        #     if len(self.incoming_start_uid) == len(self.principle_nodes):
+        #         self.incoming_start_uid = []
+        #     return
         # Emergency stop if we get a new start document and no stop has been
         # issued
         if self.state != "stopped":
@@ -305,15 +310,20 @@ class SimpleToEventStream(Stream, CreateDocs):
         self.start_document = None
 
     def emit_stop(self, x):
-        self.incoming_stop_uid.append(x[1]['uid'])
-        # Keep a cache so we can count the number of principle nodes
-        # which have fired.
-        # When they have all fired reset.
-        # XXX: all principle nodes must fire!
-        if len(self.incoming_stop_uid) > 1:
-            if len(self.incoming_stop_uid) == len(self.principle_nodes):
-                self.incoming_stop_uid = []
+        name, doc = x
+        if doc['uid'] in self.incoming_stop_uid:
             return
+        else:
+            self.incoming_stop_uid.append(doc['uid'])
+        # self.incoming_stop_uid.append(x[1]['uid'])
+        # # Keep a cache so we can count the number of principle nodes
+        # # which have fired.
+        # # When they have all fired reset.
+        # # XXX: all principle nodes must fire!
+        # if len(self.incoming_stop_uid) > 1:
+        #     if len(self.incoming_stop_uid) == len(self.principle_nodes):
+        #         self.incoming_stop_uid = []
+        #     return
         stop = self.create_doc("stop", x)
         ret = self.emit(stop)
         [s.emit_stop(x) for s in self.subs]
