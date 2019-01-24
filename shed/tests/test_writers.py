@@ -6,25 +6,26 @@ from rapidz import Stream
 from shed.translation import FromEventStream
 
 from shed.writers import NpyWriter, Store
+import bluesky.plans as bp
+from numpy.testing import assert_allclose
+from xpdan.vend.callbacks.core import Retrieve
 
 
-def test_storage(exp_db, tmp_dir):
-    s = Store(external_writers={"out": NpyWriter(exp_db.reg, root=tmp_dir)})
+def test_storage(RE, hw, db, tmpdir):
     source = Stream()
-    (
-        FromEventStream("event", ("data", "pe1_image"), source, principle=True)
-        .map(op.mul, 2)
-        .ToEventStream(("out",))
-        .starmap(s)
-        .DBFriendly()
-        .starsink(exp_db.insert)
-    )
-    for n, d in exp_db[-1].documents(fill=True):
-        source.emit((n, d))
+    z = source.Store(str(tmpdir), NpyWriter)
+    lz = z.sink_to_list()
+    z.starsink(db.insert)
 
-    for a, b in zip(
-        exp_db[-2].events(fill=True), exp_db[-1].events(fill=True)
-    ):
-        aa = a["data"]["pe1_image"]
-        bb = b["data"]["out"]
-        assert_array_equal(aa * 2, bb)
+    L = []
+    RE.subscribe(lambda *x: source.emit(x))
+    RE.subscribe(lambda *x: L.append(x))
+    RE(bp.count([hw.direct_img]))
+
+    rt = Retrieve(handler_reg=db.reg.handler_reg)
+    for i, nd in enumerate(db[-1].documents()):
+        n2, d2 = rt(*nd)
+        print(n2)
+        if n2 == 'event':
+            print(d2['data']['img'])
+            assert d2['data']['img'].shape == (10, 10)
