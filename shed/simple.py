@@ -121,7 +121,7 @@ class SimpleFromEventStream(Stream):
         event_stream_name=ALL,
         stream_name=None,
         principle=False,
-        **kwargs
+        **kwargs,
     ):
         asynchronous = None
         if "asynchronous" in kwargs:
@@ -265,20 +265,28 @@ class SimpleToEventStream(Stream, CreateDocs):
             or isinstance(n, SimpleToEventStream)
         ]
         if not self.principle_nodes:
-            raise RuntimeError("No Principle Nodes Detected")
+            raise RuntimeError(
+                f"No Principle Nodes Detected for node "
+                f"{data_keys}, "
+                f"{[k.data_address for k in self.translation_nodes.values()]}"
+            )
         for p in self.principle_nodes:
             p.subs.append(self)
 
     def emit_start(self, x):
         # if we have seen this start document already do nothing, we have
         # multiple parents so we may get a start doc multiple times
-        if x[1]["uid"] == self.incoming_start_uid:
+        name, doc = x
+        if doc["uid"] is self.incoming_start_uid:
             return
+        else:
+            self.incoming_start_uid = doc["uid"]
+            # Prime stop document
+            self.incoming_stop_uid = None
         # Emergency stop if we get a new start document and no stop has been
         # issued
         if self.state != "stopped":
             self.emit_stop(x)
-        self.incoming_start_uid = x[1]["uid"]
         start = self.create_doc("start", x)
         # emit starts to subs first in case we create an event from the start
         [s.emit_start(x) for s in self.subs]
@@ -287,9 +295,13 @@ class SimpleToEventStream(Stream, CreateDocs):
         self.start_document = None
 
     def emit_stop(self, x):
-        if x[1]["uid"] == self.incoming_stop_uid:
+        name, doc = x
+        if doc["uid"] is self.incoming_stop_uid:
             return
-        self.incoming_stop_uid = x[1]["uid"]
+        else:
+            self.incoming_stop_uid = doc["uid"]
+            # Prime for next run
+            self.incoming_start_uid = None
         stop = self.create_doc("stop", x)
         ret = self.emit(stop)
         [s.emit_stop(x) for s in self.subs]
