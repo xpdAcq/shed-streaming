@@ -57,9 +57,6 @@ test:
     default: {conda: ophyd}
   pytest-tornado:
     default: {conda: pytest-tornado}
-  xpdAn:
-    default: {conda: xpdan}
-    bleeding: {orch: 'https://github.com/xpdAcq/xpdAn.git'}
 docs:
   doctr:
     default: {conda: doctr}
