@@ -1,13 +1,6 @@
-import operator as op
-
-from numpy.testing import assert_array_equal
-from rapidz import Stream
-
-from shed.translation import FromEventStream
-
-from shed.writers import NpyWriter, Store
 import bluesky.plans as bp
-from numpy.testing import assert_allclose
+from rapidz import Stream
+from shed.writers import NpyWriter
 from xpdan.vend.callbacks.core import Retrieve
 
 
