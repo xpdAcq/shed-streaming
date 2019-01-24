@@ -54,8 +54,8 @@ class Store(Stream):
                 ret.append(self.emit((n, d)))
             return ret
         elif name == 'stop':
-            # clean up our cache
-            self.init_writers.pop(doc['run_start'])
+            # clean up our cache (allow multi stops if needed)
+            self.init_writers.pop(doc['run_start'], None)
 
         return self.emit((name, doc))
 
