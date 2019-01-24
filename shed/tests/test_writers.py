@@ -128,9 +128,9 @@ def test_storage(RE, hw, db, tmpdir):
     for i, nd in enumerate(db[-1].documents()):
         n2, d2 = rt(*nd)
         print(n2)
-        if n2 == 'event':
-            print(d2['data']['img'])
-            assert d2['data']['img'].shape == (10, 10)
+        if n2 == "event":
+            print(d2["data"]["img"])
+            assert d2["data"]["img"].shape == (10, 10)
 
 
 def test_double_storage(RE, hw, db, tmpdir):
@@ -154,6 +154,6 @@ def test_double_storage(RE, hw, db, tmpdir):
         for i, nd in enumerate(db[ii].documents()):
             n2, d2 = rt(*nd)
             print(n2)
-            if n2 == 'event':
-                print(d2['data']['img'])
-                assert d2['data']['img'].shape == (10, 10)
+            if n2 == "event":
+                print(d2["data"]["img"])
+                assert d2["data"]["img"].shape == (10, 10)
