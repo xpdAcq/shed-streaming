@@ -393,10 +393,32 @@ def test_multi_path_principle(hw, RE):
 
         for l in [la, lb]:
             o1 = [z[0] for z in l]
-            o2 = [
-                "start",
-                "descriptor",
-                "event",
-                "stop",
-            ] * i
+            o2 = ["start", "descriptor", "event", "stop"] * i
+            assert o1 == o2
+
+
+def test_same_hdr_many_times(hw, RE):
+    source = Stream()
+    fes1 = FromEventStream("start", ("number",), source, principle=True)
+    fes2 = FromEventStream("event", ("data", "motor"), source, principle=True)
+
+    out1 = fes1.map(op.add, 1)
+    out2 = fes2.combine_latest(out1, emit_on=0).starmap(op.mul)
+
+    a = ToEventStream(out1, ("out1",))
+    b = ToEventStream(out2, ("out2",))
+
+    la = a.sink_to_list()
+    lb = b.sink_to_list()
+
+    L = []
+    RE.subscribe(lambda *x: L.append(x))
+    RE(count([hw.motor], md={"number": 5}))
+
+    for i in range(1, 3):
+        for ll in L:
+            source.emit(ll)
+        for l in [la, lb]:
+            o1 = [z[0] for z in l]
+            o2 = ["start", "descriptor", "event", "stop"] * i
             assert o1 == o2

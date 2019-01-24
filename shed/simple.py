@@ -1,7 +1,6 @@
 """Translation nodes"""
 import uuid
 from collections import deque
-from pprint import pprint
 
 import networkx as nx
 import numpy as np
@@ -122,7 +121,7 @@ class SimpleFromEventStream(Stream):
         event_stream_name=ALL,
         stream_name=None,
         principle=False,
-        **kwargs
+        **kwargs,
     ):
         asynchronous = None
         if "asynchronous" in kwargs:
@@ -255,10 +254,7 @@ class SimpleToEventStream(Stream, CreateDocs):
             k: n["stream"]
             for k, n in self.graph.node.items()
             if isinstance(
-                n["stream"], (
-                SimpleFromEventStream,
-                SimpleToEventStream
-            )
+                n["stream"], (SimpleFromEventStream, SimpleToEventStream)
             )
             and n["stream"] != self
         }
@@ -269,35 +265,24 @@ class SimpleToEventStream(Stream, CreateDocs):
             or isinstance(n, SimpleToEventStream)
         ]
         if not self.principle_nodes:
-            pprint({k: v for k, v in self.graph.nodes.items()})
-            for k, n in self.translation_nodes.items():
-                print(getattr(n, "principle", False))
-                print(n.data_address)
-                print(n.name)
-            raise RuntimeError(f"No Principle Nodes Detected for node "
-                               f"{data_keys}, "
-                               f"{[k.data_address for k in self.translation_nodes.values()]}")
+            raise RuntimeError(
+                f"No Principle Nodes Detected for node "
+                f"{data_keys}, "
+                f"{[k.data_address for k in self.translation_nodes.values()]}"
+            )
         for p in self.principle_nodes:
             p.subs.append(self)
 
     def emit_start(self, x):
         # if we have seen this start document already do nothing, we have
         # multiple parents so we may get a start doc multiple times
-
-
         name, doc = x
-        if doc['uid'] is self.incoming_start_uid:
+        if doc["uid"] is self.incoming_start_uid:
             return
         else:
-            self.incoming_start_uid = doc['uid']
-        # if len(self.incoming_start_uid) > 1:
-        #     # Keep a cache so we can count the number of principle nodes
-        #     # which have fired.
-        #     # When they have all fired reset.
-        #     # XXX: all principle nodes must fire!
-        #     if len(self.incoming_start_uid) == len(self.principle_nodes):
-        #         self.incoming_start_uid = []
-        #     return
+            self.incoming_start_uid = doc["uid"]
+            # Prime stop document
+            self.incoming_stop_uid = None
         # Emergency stop if we get a new start document and no stop has been
         # issued
         if self.state != "stopped":
@@ -311,19 +296,12 @@ class SimpleToEventStream(Stream, CreateDocs):
 
     def emit_stop(self, x):
         name, doc = x
-        if doc['uid'] is self.incoming_stop_uid:
+        if doc["uid"] is self.incoming_stop_uid:
             return
         else:
-            self.incoming_stop_uid = doc['uid']
-        # self.incoming_stop_uid.append(x[1]['uid'])
-        # # Keep a cache so we can count the number of principle nodes
-        # # which have fired.
-        # # When they have all fired reset.
-        # # XXX: all principle nodes must fire!
-        # if len(self.incoming_stop_uid) > 1:
-        #     if len(self.incoming_stop_uid) == len(self.principle_nodes):
-        #         self.incoming_stop_uid = []
-        #     return
+            self.incoming_stop_uid = doc["uid"]
+            # Prime for next run
+            self.incoming_start_uid = None
         stop = self.create_doc("stop", x)
         ret = self.emit(stop)
         [s.emit_stop(x) for s in self.subs]
