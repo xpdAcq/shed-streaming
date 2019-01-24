@@ -238,8 +238,8 @@ class SimpleToEventStream(Stream, CreateDocs):
         move_to_first(self)
 
         self.start_document = None
-        self.incoming_start_uid = []
-        self.incoming_stop_uid = []
+        self.incoming_start_uid = None
+        self.incoming_stop_uid = None
 
         self.state = "stopped"
         self.subs = []
@@ -286,10 +286,10 @@ class SimpleToEventStream(Stream, CreateDocs):
 
 
         name, doc = x
-        if doc['uid'] in self.incoming_start_uid:
+        if doc['uid'] is self.incoming_start_uid:
             return
         else:
-            self.incoming_start_uid.append(doc['uid'])
+            self.incoming_start_uid = doc['uid']
         # if len(self.incoming_start_uid) > 1:
         #     # Keep a cache so we can count the number of principle nodes
         #     # which have fired.
@@ -311,10 +311,10 @@ class SimpleToEventStream(Stream, CreateDocs):
 
     def emit_stop(self, x):
         name, doc = x
-        if doc['uid'] in self.incoming_stop_uid:
+        if doc['uid'] is self.incoming_stop_uid:
             return
         else:
-            self.incoming_stop_uid.append(doc['uid'])
+            self.incoming_stop_uid = doc['uid']
         # self.incoming_stop_uid.append(x[1]['uid'])
         # # Keep a cache so we can count the number of principle nodes
         # # which have fired.
