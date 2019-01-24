@@ -35,6 +35,13 @@ class Retrieve(CallbackBase):
         self.root_map = root_map
         self.handler_reg = handler_reg
 
+    def __call__(self, name, doc):
+        "Dispatch to methods expecting particular doc types."
+        ret = getattr(self, name)(doc)
+        if ret is None:
+            return name, doc
+        return name, ret
+
     def start(self, doc):
         self.resources = {}
         self.handlers = {}
