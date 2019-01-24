@@ -25,37 +25,43 @@ class Store(Stream):
         doc = dict(doc)
 
         if name == "start":
-            self.init_writers[doc['uid']] = self.writer(
+            self.init_writers[doc["uid"]] = self.writer(
                 self.root, doc, self.resource_kwargs
             )
-        if name == 'descriptor':
-            self.descriptors[doc['uid']] = doc
-            self.not_issued_descriptors.add(doc['uid'])
+        if name == "descriptor":
+            self.descriptors[doc["uid"]] = doc
+            self.not_issued_descriptors.add(doc["uid"])
             return
 
         elif name == "event":
             ret = []
-            writer = self.init_writers[self.descriptors[doc['descriptor']]['run_start']]
+            writer = self.init_writers[
+                self.descriptors[doc["descriptor"]]["run_start"]
+            ]
             for n, d in writer.write(doc):
                 # If this is an event and we haven't done this descriptor yet
-                if n == 'event' and doc['descriptor'] in self.not_issued_descriptors:
+                if (
+                    n == "event"
+                    and doc["descriptor"] in self.not_issued_descriptors
+                ):
 
                     # For each of the filled keys let us know that it is backed
                     # by FILESTORE
-                    descriptor = self.descriptors[doc['descriptor']]
-                    for k, v in doc['filled'].items():
+                    descriptor = self.descriptors[doc["descriptor"]]
+                    for k, v in doc["filled"].items():
                         if not v:
-                            descriptor['data_keys'][k].update(
-                                external='FILESTORE:')
-                    ret.append(self.emit(('descriptor', descriptor)))
+                            descriptor["data_keys"][k].update(
+                                external="FILESTORE:"
+                            )
+                    ret.append(self.emit(("descriptor", descriptor)))
 
                     # We're done with that descriptor now
-                    self.not_issued_descriptors.remove(doc['descriptor'])
+                    self.not_issued_descriptors.remove(doc["descriptor"])
                 ret.append(self.emit((n, d)))
             return ret
-        elif name == 'stop':
+        elif name == "stop":
             # clean up our cache (allow multi stops if needed)
-            self.init_writers.pop(doc['run_start'], None)
+            self.init_writers.pop(doc["run_start"], None)
 
         return self.emit((name, doc))
 
@@ -88,9 +94,9 @@ class NpyWriter:
                 yield "resource", resource
                 datum = compose_datum(datum_kwargs=self.datum_kwargs)
                 yield "datum", datum
-                event['data'][k] = datum["datum_id"]
-                event['filled'][k] = False
+                event["data"][k] = datum["datum_id"]
+                event["filled"][k] = False
             # Don't write a file just for a single number!
             elif isinstance(v, np.ndarray) and v.shape == ():
-                event['data'][k] = sanitize_np(v)
+                event["data"][k] = sanitize_np(v)
         yield "event", event
