@@ -4,6 +4,38 @@ SHED Change Log
 
 .. current developments
 
+v0.5.0
+====================
+
+**Added:**
+
+* ``examples/best_effort.py`` as an example of using SHED with
+  ``BestEffortCallback``.
+* ``ToEventStream`` can now take no ``data_keys``. This assumes that the
+  incoming data will be a dict and that the keys of the dict are the data keys.
+
+**Changed:**
+
+* Get ``ChainDB`` from xonsh
+* Use common ``DocGen`` for document generation
+* Exchanged ``zstreamz`` dep for ``rapidz``
+
+**Removed:**
+
+* Removed ``event_streams`` and ``databroker_utils`` and associated tests
+
+**Fixed:**
+
+* Run package level imports so that ``ToEventStream`` and others default to 
+  serial
+* A ``SimpleToEventStream`` node can now have multple principle nodes
+* The same header can be run into a pipeline multiple times
+* Multiple principle nodes are now properly handled
+* ``AlignEventStreams`` now works with resource and datum docs
+* File writers work properly
+
+
+
 v0.4.1
 ====================
 
