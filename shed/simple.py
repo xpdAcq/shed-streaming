@@ -117,6 +117,7 @@ class SimpleFromEventStream(Stream):
         self,
         doc_type,
         data_address,
+        # TODO: make upstream required!
         upstream=None,
         event_stream_name=ALL,
         stream_name=None,

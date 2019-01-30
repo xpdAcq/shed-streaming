@@ -6,12 +6,12 @@ import networkx as nx
 import numpy as np
 import pytest
 from bluesky.plans import scan, count
-from shed.simple import (
+from shed import (
     SimpleFromEventStream as FromEventStream,
     SimpleToEventStream as ToEventStream,
     walk_to_translation,
-    _hash_or_uid,
 )
+from shed.simple import _hash_or_uid
 from shed.tests.utils import y
 from shed.utils import unstar
 from rapidz import Stream
