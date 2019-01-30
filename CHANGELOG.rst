@@ -4,6 +4,15 @@ SHED Change Log
 
 .. current developments
 
+v0.5.1
+====================
+
+**Fixed:**
+
+* Protect Parallel nodes behind a ``try except``
+
+
+
 v0.5.0
 ====================
 
