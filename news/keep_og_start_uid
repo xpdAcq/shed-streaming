@@ -1,0 +1,13 @@
+**Added:** None
+
+**Changed:**
+
+* ``AllignEventStreams`` keeps track of the first map's start uid (for file saving)
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None
