@@ -32,7 +32,7 @@ run:
   rapidz:
     default: {conda: rapidz}
   distributed:
-    default: {conda: distributed}
+    default: {conda: distributed=1.25.2}
 test:
   pytest:
     default:
