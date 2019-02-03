@@ -194,7 +194,7 @@ def test_align():
     for n, d, dd in zip(
         ["start", "descriptor", "event", "stop"],
         [
-            {"a": "hi", "b": {"hi": "world"}},
+            {"a": "hi", "b": {"hi": "world"}, 'uid': 'hi'},
             {"bla": "foo"},
             {"data": "now"},
             {"stop": "doc"},
