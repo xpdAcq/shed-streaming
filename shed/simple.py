@@ -374,8 +374,8 @@ class AlignEventStreams(szip):
         x = [k for l in x for k in l]
         names = x[::2]
         docs = x[1::2]
-        if names[0] == 'start':
-            docs[0].update(original_start_uid=docs[0]['uid'])
+        if names[0] == "start":
+            docs[0].update(original_start_uid=docs[0]["uid"])
         super()._emit((names[0], _convert_to_dict(ChainDB(*docs))))
 
     def update(self, x, who=None):
