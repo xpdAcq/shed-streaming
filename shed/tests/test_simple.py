@@ -170,7 +170,7 @@ def test_to_event_model(RE, hw):
     t = FromEventStream("event", ("data", "motor"), source, principle=True)
     assert t.principle
 
-    n = ToEventStream(t, ("ct",))
+    n = ToEventStream(t, ("ct",), data_key_md={"ct": {"units": 'arb'}})
     tt = t.sink_to_list()
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
@@ -183,6 +183,7 @@ def test_to_event_model(RE, hw):
     assert tt
     assert set(p) == {"start", "stop", "event", "descriptor"}
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert d[1]["data_keys"]["ct"]["units"] == 'arb'
     assert d[-1]["run_start"]
 
 

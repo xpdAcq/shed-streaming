@@ -14,7 +14,10 @@ def get_dtype(xx):
 
 
 class CreateDocs(object):
-    def __init__(self, data_keys, **kwargs):
+    def __init__(self, data_keys, data_key_md=None, **kwargs):
+        if data_key_md is None:
+            data_key_md = {}
+        self.data_key_md = data_key_md
         self.descriptor_uid = None
         self.md = kwargs
         self.data_keys = data_keys
@@ -62,6 +65,7 @@ class CreateDocs(object):
                     # XXX: how to deal with this when xx is a future?
                     "dtype": get_dtype(xx),
                     "shape": getattr(xx, "shape", []),
+                    **self.data_key_md.get(k, {})
                 }
                 for k, xx in zip(self.data_keys, tx)
             },

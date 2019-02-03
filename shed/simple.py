@@ -228,12 +228,14 @@ class SimpleToEventStream(Stream, CreateDocs):
     ('stop',...)
     """
 
-    def __init__(self, upstream, data_keys=None, stream_name=None, **kwargs):
+    def __init__(self, upstream, data_keys=None, stream_name=None,
+                 data_key_md=None,
+                 **kwargs):
         if stream_name is None:
             stream_name = str(data_keys)
 
         Stream.__init__(self, upstream, stream_name=stream_name)
-        CreateDocs.__init__(self, data_keys, **kwargs)
+        CreateDocs.__init__(self, data_keys, data_key_md=data_key_md, **kwargs)
 
         move_to_first(self)
 
