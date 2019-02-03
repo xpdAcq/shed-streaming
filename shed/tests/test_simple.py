@@ -170,7 +170,7 @@ def test_to_event_model(RE, hw):
     t = FromEventStream("event", ("data", "motor"), source, principle=True)
     assert t.principle
 
-    n = ToEventStream(t, ("ct",), data_key_md={"ct": {"units": 'arb'}})
+    n = ToEventStream(t, ("ct",), data_key_md={"ct": {"units": "arb"}})
     tt = t.sink_to_list()
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
@@ -183,7 +183,7 @@ def test_to_event_model(RE, hw):
     assert tt
     assert set(p) == {"start", "stop", "event", "descriptor"}
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert d[1]["data_keys"]["ct"]["units"] == 'arb'
+    assert d[1]["data_keys"]["ct"]["units"] == "arb"
     assert d[-1]["run_start"]
 
 
@@ -195,7 +195,7 @@ def test_align():
     for n, d, dd in zip(
         ["start", "descriptor", "event", "stop"],
         [
-            {"a": "hi", "b": {"hi": "world"}, "uid": "hi", 'time': 123},
+            {"a": "hi", "b": {"hi": "world"}, "uid": "hi", "time": 123},
             {"bla": "foo"},
             {"data": "now"},
             {"stop": "doc"},
@@ -233,32 +233,34 @@ def test_align_interrupted(RE, hw):
     for nd in L:
         name, doc = nd
         # cause an exception
-        if name == 'event':
-            doc['data']['img'] = 'hi'
+        if name == "event":
+            doc["data"]["img"] = "hi"
         try:
             a.emit((name, doc))
         except TypeError:
             pass
-    assert {'start', 'stop'} == set(list(zip(*sl))[0])
+    assert {"start", "stop"} == set(list(zip(*sl))[0])
     # check that buffers are not cleared, yet
-    assert any(
-        [b for n, tb in z.true_buffers.items() for u, b in tb.items()])
+    assert any([b for n, tb in z.true_buffers.items() for u, b in tb.items()])
     sl.clear()
     # If there are elements in the buffer they need to be cleared when all
     # start docs come in.
     for nd in L:
         name, doc = nd
         # cause an exception
-        if name == 'event':
-            doc['data']['img'] = 1
+        if name == "event":
+            doc["data"]["img"] = 1
         a.emit((name, doc))
-        if name == 'start':
+        if name == "start":
             # now buffers should be clear
-            assert not any([b for n, tb in z.true_buffers.items() for u, b in tb.items()])
-    assert {'start', 'descriptor', 'event', 'stop'} == set(list(zip(*sl))[0])
+            assert not any(
+                [b for n, tb in z.true_buffers.items() for u, b in tb.items()]
+            )
+    assert {"start", "descriptor", "event", "stop"} == set(list(zip(*sl))[0])
     # now buffers should be clear (as all docs were emitted)
     assert not any(
-        [b for n, tb in z.true_buffers.items() for u, b in tb.items()])
+        [b for n, tb in z.true_buffers.items() for u, b in tb.items()]
+    )
 
 
 def test_align_res_dat(RE, hw):
@@ -279,6 +281,7 @@ def test_align_res_dat(RE, hw):
             assert d["original_start_uid"] == osu[0]
         if n == "event":
             assert d["data"]["out"] == d["data"]["motor"] + 1
+
 
 def test_to_event_model_dict(RE, hw):
     source = Stream()

@@ -228,9 +228,14 @@ class SimpleToEventStream(Stream, CreateDocs):
     ('stop',...)
     """
 
-    def __init__(self, upstream, data_keys=None, stream_name=None,
-                 data_key_md=None,
-                 **kwargs):
+    def __init__(
+        self,
+        upstream,
+        data_keys=None,
+        stream_name=None,
+        data_key_md=None,
+        **kwargs,
+    ):
         if stream_name is None:
             stream_name = str(data_keys)
 
@@ -377,8 +382,10 @@ class AlignEventStreams(szip):
         names = x[::2]
         docs = x[1::2]
         if names[0] == "start":
-            docs[0].update(original_start_uid=docs[0]["uid"],
-                           original_time=docs[0]['time'])
+            docs[0].update(
+                original_start_uid=docs[0]["uid"],
+                original_time=docs[0]["time"],
+            )
         return super()._emit((names[0], _convert_to_dict(ChainDB(*docs))))
 
     def update(self, x, who=None):
@@ -392,7 +399,7 @@ class AlignEventStreams(szip):
             # if we have a list that means we returned something, meaning
             # the buffers were full of starts, which means we can clear the
             # rest of the buffers
-            if ret == [] and name == 'start':
+            if ret == [] and name == "start":
                 for name, tb in self.true_buffers.items():
                     for upstream, b in tb.items():
                         b.clear()
