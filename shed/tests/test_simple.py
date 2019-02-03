@@ -14,7 +14,7 @@ from shed import (
 from shed.simple import _hash_or_uid
 from shed.tests.utils import y
 from shed.utils import unstar
-from rapidz import Stream
+from rapidz import Stream, move_to_first
 
 
 def test_from_event_model(RE, hw):
@@ -214,6 +214,48 @@ def test_align():
     assert sl[0][1].get("b") == {"hi": "world", "hi2": "world"}
 
 
+def test_align_interrupted(RE, hw):
+    a = Stream()
+    b = FromEventStream("event", ("data", "img"), a, principle=True).map(
+        op.add, 1
+    )
+    b.sink(print)
+    c = ToEventStream(b, ("out",))
+    z = move_to_first(a.AlignEventStreams(c))
+    sl = z.sink_to_list()
+
+    L = []
+
+    RE.subscribe(lambda *x: L.append(x))
+
+    osu = RE(count([hw.img]))
+
+    for nd in L:
+        name, doc = nd
+        # cause an exception
+        if name == 'event':
+            doc['data']['img'] = 'hi'
+        try:
+            a.emit((name, doc))
+        except TypeError:
+            pass
+    assert {'start', 'stop'} == set(list(zip(*sl))[0])
+    sl.clear()
+    # If there are elements in the buffer they need to be cleared when all
+    # start docs come in.
+    for nd in L:
+        name, doc = nd
+        # cause an exception
+        if name == 'event':
+            doc['data']['img'] = 1
+        a.emit((name, doc))
+        if name == 'start':
+            assert not any([b for n, tb in z.true_buffers.items() for u, b in tb.items()])
+
+
+
+
+
 def test_align_res_dat(RE, hw):
     a = Stream()
     b = FromEventStream("event", ("data", "motor"), a, principle=True).map(
@@ -232,7 +274,6 @@ def test_align_res_dat(RE, hw):
             assert d["original_start_uid"] == osu[0]
         if n == "event":
             assert d["data"]["out"] == d["data"]["motor"] + 1
-
 
 def test_to_event_model_dict(RE, hw):
     source = Stream()
