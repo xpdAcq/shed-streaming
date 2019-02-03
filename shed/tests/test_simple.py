@@ -14,7 +14,7 @@ from shed import (
 from shed.simple import _hash_or_uid
 from shed.tests.utils import y
 from shed.utils import unstar
-from rapidz import Stream
+from rapidz import Stream, move_to_first
 
 
 def test_from_event_model(RE, hw):
@@ -170,7 +170,7 @@ def test_to_event_model(RE, hw):
     t = FromEventStream("event", ("data", "motor"), source, principle=True)
     assert t.principle
 
-    n = ToEventStream(t, ("ct",), data_key_md={"ct": {"units": 'arb'}})
+    n = ToEventStream(t, ("ct",), data_key_md={"ct": {"units": "arb"}})
     tt = t.sink_to_list()
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
@@ -183,7 +183,7 @@ def test_to_event_model(RE, hw):
     assert tt
     assert set(p) == {"start", "stop", "event", "descriptor"}
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert d[1]["data_keys"]["ct"]["units"] == 'arb'
+    assert d[1]["data_keys"]["ct"]["units"] == "arb"
     assert d[-1]["run_start"]
 
 
@@ -195,7 +195,7 @@ def test_align():
     for n, d, dd in zip(
         ["start", "descriptor", "event", "stop"],
         [
-            {"a": "hi", "b": {"hi": "world"}, "uid": "hi"},
+            {"a": "hi", "b": {"hi": "world"}, "uid": "hi", "time": 123},
             {"bla": "foo"},
             {"data": "now"},
             {"stop": "doc"},
@@ -212,6 +212,55 @@ def test_align():
 
     assert len(sl) == 4
     assert sl[0][1].get("b") == {"hi": "world", "hi2": "world"}
+
+
+def test_align_interrupted(RE, hw):
+    a = Stream()
+    b = FromEventStream("event", ("data", "img"), a, principle=True).map(
+        op.add, 1
+    )
+    b.sink(print)
+    c = ToEventStream(b, ("out",))
+    z = move_to_first(a.AlignEventStreams(c))
+    sl = z.sink_to_list()
+
+    L = []
+
+    RE.subscribe(lambda *x: L.append(x))
+
+    RE(count([hw.img]))
+
+    for nd in L:
+        name, doc = nd
+        # cause an exception
+        if name == "event":
+            doc["data"]["img"] = "hi"
+        try:
+            a.emit((name, doc))
+        except TypeError:
+            pass
+    assert {"start", "stop"} == set(list(zip(*sl))[0])
+    # check that buffers are not cleared, yet
+    assert any([b for n, tb in z.true_buffers.items() for u, b in tb.items()])
+    sl.clear()
+    # If there are elements in the buffer they need to be cleared when all
+    # start docs come in.
+    for nd in L:
+        name, doc = nd
+        # cause an exception
+        if name == "event":
+            doc["data"]["img"] = 1
+        a.emit((name, doc))
+        if name == "start":
+            # now buffers should be clear
+            assert not any(
+                [b for n, tb in z.true_buffers.items() for u, b in tb.items()]
+            )
+    assert {"start", "descriptor", "event", "stop"} == set(list(zip(*sl))[0])
+    # now buffers should be clear (as all docs were emitted)
+    assert not any(
+        [b for n, tb in z.true_buffers.items() for u, b in tb.items()]
+    )
 
 
 def test_align_res_dat(RE, hw):
