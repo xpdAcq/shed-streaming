@@ -4,6 +4,19 @@ SHED Change Log
 
 .. current developments
 
+v0.6.0
+====================
+
+**Added:**
+
+* descriptor data_keys metadata can be added
+
+**Changed:**
+
+* ``AllignEventStreams`` keeps track of the first map's start uid (for file saving)
+
+
+
 v0.5.1
 ====================
 
