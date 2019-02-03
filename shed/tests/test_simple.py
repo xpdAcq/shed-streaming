@@ -10,7 +10,6 @@ from shed import (
     SimpleFromEventStream as FromEventStream,
     SimpleToEventStream as ToEventStream,
     walk_to_translation,
-    AlignEventStreams,
 )
 from shed.simple import _hash_or_uid
 from shed.tests.utils import y
