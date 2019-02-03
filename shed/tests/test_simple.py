@@ -228,7 +228,7 @@ def test_align_interrupted(RE, hw):
 
     RE.subscribe(lambda *x: L.append(x))
 
-    osu = RE(count([hw.img]))
+    RE(count([hw.img]))
 
     for nd in L:
         name, doc = nd
@@ -240,6 +240,9 @@ def test_align_interrupted(RE, hw):
         except TypeError:
             pass
     assert {'start', 'stop'} == set(list(zip(*sl))[0])
+    # check that buffers are not cleared, yet
+    assert any(
+        [b for n, tb in z.true_buffers.items() for u, b in tb.items()])
     sl.clear()
     # If there are elements in the buffer they need to be cleared when all
     # start docs come in.
@@ -250,10 +253,12 @@ def test_align_interrupted(RE, hw):
             doc['data']['img'] = 1
         a.emit((name, doc))
         if name == 'start':
+            # now buffers should be clear
             assert not any([b for n, tb in z.true_buffers.items() for u, b in tb.items()])
-
-
-
+    assert {'start', 'descriptor', 'event', 'stop'} == set(list(zip(*sl))[0])
+    # now buffers should be clear (as all docs were emitted)
+    assert not any(
+        [b for n, tb in z.true_buffers.items() for u, b in tb.items()])
 
 
 def test_align_res_dat(RE, hw):
