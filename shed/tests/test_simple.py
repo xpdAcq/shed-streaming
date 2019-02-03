@@ -194,7 +194,7 @@ def test_align():
     for n, d, dd in zip(
         ["start", "descriptor", "event", "stop"],
         [
-            {"a": "hi", "b": {"hi": "world"}},
+            {"a": "hi", "b": {"hi": "world"}, "uid": "hi"},
             {"bla": "foo"},
             {"data": "now"},
             {"stop": "doc"},
@@ -224,9 +224,11 @@ def test_align_res_dat(RE, hw):
 
     RE.subscribe(lambda *x: a.emit(x))
 
-    RE(scan([hw.img], hw.motor, 0, 10, 10))
+    osu = RE(scan([hw.img], hw.motor, 0, 10, 10))
 
     for n, d in sl:
+        if n == "start":
+            assert d["original_start_uid"] == osu[0]
         if n == "event":
             assert d["data"]["out"] == d["data"]["motor"] + 1
 
