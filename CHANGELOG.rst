@@ -4,6 +4,16 @@ SHED Change Log
 
 .. current developments
 
+v0.6.1
+====================
+
+**Fixed:**
+
+* Flush ``AlignEventStream` which makes certain that even in the event of error
+  we have fresh ``AlignEventStream`` buffers
+
+
+
 v0.6.0
 ====================
 
