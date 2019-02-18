@@ -356,9 +356,12 @@ class AlignEventStreams(szip):
     upstream takes precedence where merging is not possible, this requires
     the two streams to be of equal length."""
 
-    def __init__(self, *upstreams, stream_name=None, **kwargs):
+    def __init__(self, *upstreams, event_stream_name=ALL,
+                 stream_name=None, **kwargs):
         szip.__init__(self, *upstreams, stream_name=stream_name)
         doc_names = ["start", "descriptor", "event", "stop"]
+        self.event_stream_name = event_stream_name
+        self.descriptor_uids = []
         self.true_buffers = {
             k: {
                 upstream: deque()
@@ -390,6 +393,18 @@ class AlignEventStreams(szip):
 
     def update(self, x, who=None):
         name, doc = x
+        if name == 'start':
+            self.descriptor_uids = []
+        if name == 'descriptor':
+            # if we want the descriptor continue, else bounce out
+            if (self.event_stream_name == ALL or
+                self.event_stream_name == doc.get("name", "primary")):
+                self.descriptor_uids.append(doc['uid'])
+            else:
+                return []
+        # If this isn't the event we're looking for then do nothing!
+        if name == "event" and doc["descriptor"] not in self.descriptor_uids:
+            return []
         # don't buffer resource and datum, as those are weird and not zippable
         # maybe at some point emit those without zip
         if name in self.true_buffers:
