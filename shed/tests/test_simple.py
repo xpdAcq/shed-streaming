@@ -198,14 +198,14 @@ def test_align():
         ["start", "descriptor", "event", "stop"],
         [
             {"a": "hi", "b": {"hi": "world"}, "uid": "hi", "time": 123},
-            {"bla": "foo",'uid': 'abc'},
-            {"data": "now", 'descriptor': 'abc'},
+            {"bla": "foo", "uid": "abc"},
+            {"data": "now", "descriptor": "abc"},
             {"stop": "doc"},
         ],
         [
             {"a": "hi2", "b": {"hi2": "world"}},
-            {"bla": "foo", 'uid': '123'},
-            {"data": "now", 'descriptor': '123'},
+            {"bla": "foo", "uid": "123"},
+            {"data": "now", "descriptor": "123"},
             {"stop": "doc"},
         ],
     ):
@@ -287,13 +287,16 @@ def test_align_res_dat(RE, hw):
 
 def test_align_multi_stream(RE, hw):
     a = Stream()
-    b = FromEventStream("event", ("data", "motor"), a, principle=True,
-                        event_stream_name='primary').map(
-        op.add, 1
-    )
+    b = FromEventStream(
+        "event",
+        ("data", "motor"),
+        a,
+        principle=True,
+        event_stream_name="primary",
+    ).map(op.add, 1)
     c = ToEventStream(b, ("out",))
     c.sink(print)
-    z = a.AlignEventStreams(c, event_stream_name='primary')
+    z = a.AlignEventStreams(c, event_stream_name="primary")
     sl = z.sink_to_list()
 
     RE.subscribe(lambda *x: a.emit(x))
@@ -306,13 +309,12 @@ def test_align_multi_stream(RE, hw):
         """
         yield from checkpoint()
         yield from abs_set(motor, step, wait=True)
-        yield from trigger_and_read(list(detectors) + [motor],
-                                            name='dark')
+        yield from trigger_and_read(list(detectors) + [motor], name="dark")
         return (yield from trigger_and_read(list(detectors) + [motor]))
 
     osu = RE(scan([hw.img], hw.motor, 0, 10, 10, per_step=one_1d_step))
 
-    assert len(sl) == 10+3
+    assert len(sl) == 10 + 3
 
     for n, d in sl:
         if n == "start":
