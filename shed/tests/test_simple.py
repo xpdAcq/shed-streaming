@@ -5,6 +5,7 @@ import uuid
 import networkx as nx
 import numpy as np
 import pytest
+from bluesky.plan_stubs import checkpoint, abs_set, trigger_and_read
 from bluesky.plans import scan, count
 from shed import (
     SimpleFromEventStream as FromEventStream,
@@ -192,18 +193,19 @@ def test_align():
     b = Stream()
     z = a.AlignEventStreams(b)
     sl = z.sink_to_list()
+    # TODO: use real run engine here
     for n, d, dd in zip(
         ["start", "descriptor", "event", "stop"],
         [
             {"a": "hi", "b": {"hi": "world"}, "uid": "hi", "time": 123},
-            {"bla": "foo"},
-            {"data": "now"},
+            {"bla": "foo", "uid": "abc"},
+            {"data": "now", "descriptor": "abc"},
             {"stop": "doc"},
         ],
         [
             {"a": "hi2", "b": {"hi2": "world"}},
-            {"bla": "foo"},
-            {"data": "now"},
+            {"bla": "foo", "uid": "123"},
+            {"data": "now", "descriptor": "123"},
             {"stop": "doc"},
         ],
     ):
@@ -280,6 +282,45 @@ def test_align_res_dat(RE, hw):
         if n == "start":
             assert d["original_start_uid"] == osu[0]
         if n == "event":
+            assert d["data"]["out"] == d["data"]["motor"] + 1
+
+
+def test_align_multi_stream(RE, hw):
+    a = Stream()
+    b = FromEventStream(
+        "event",
+        ("data", "motor"),
+        a,
+        principle=True,
+        event_stream_name="primary",
+    ).map(op.add, 1)
+    c = ToEventStream(b, ("out",))
+    c.sink(print)
+    z = a.AlignEventStreams(c, event_stream_name="primary")
+    sl = z.sink_to_list()
+
+    RE.subscribe(lambda *x: a.emit(x))
+
+    def one_1d_step(detectors, motor, step):
+        """
+        Inner loop of a 1D step scan
+
+        This is the default function for ``per_step`` param in 1D plans.
+        """
+        yield from checkpoint()
+        yield from abs_set(motor, step, wait=True)
+        yield from trigger_and_read(list(detectors) + [motor], name="dark")
+        return (yield from trigger_and_read(list(detectors) + [motor]))
+
+    osu = RE(scan([hw.img], hw.motor, 0, 10, 10, per_step=one_1d_step))
+
+    assert len(sl) == 10 + 3
+
+    for n, d in sl:
+        if n == "start":
+            assert d["original_start_uid"] == osu[0]
+        if n == "event":
+            print(d)
             assert d["data"]["out"] == d["data"]["motor"] + 1
 
 
