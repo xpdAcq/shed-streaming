@@ -4,6 +4,15 @@ SHED Change Log
 
 .. current developments
 
+v0.6.2
+====================
+
+**Changed:**
+
+* ``AlignEventStream`` now supports stream specific joins
+
+
+
 v0.6.1
 ====================
 
