@@ -295,7 +295,28 @@ class SimpleToEventStream(Stream, CreateDocs):
         # issued
         if self.state != "stopped":
             self.emit_stop(x)
+        old_md = dict(self.md)
+
+        self.md.update(
+            dict(
+                parent_uids=list(
+                    set(
+                        [
+                            v.start_uid
+                            for k, v in self.translation_nodes.items()
+                            if v.start_uid is not None
+                        ]
+                    )
+                ),
+                parent_node_map={
+                    v.uid: v.start_uid
+                    for k, v in self.translation_nodes.items()
+                    if v.start_uid is not None
+                },
+            )
+        )
         start = self.create_doc("start", x)
+        self.md = old_md
         # emit starts to subs first in case we create an event from the start
         [s.emit_start(x) for s in self.subs]
         self.emit(start)
@@ -325,29 +346,6 @@ class SimpleToEventStream(Stream, CreateDocs):
         rl.append(self.emit(self.create_doc("event", x)))
 
         return rl
-
-    def start_doc(self, x):
-        new_start_doc = super().start_doc(x)
-        new_start_doc.update(
-            dict(
-                parent_uids=list(
-                    set(
-                        [
-                            v.start_uid
-                            for k, v in self.translation_nodes.items()
-                            if v.start_uid is not None
-                        ]
-                    )
-                ),
-                parent_node_map={
-                    v.uid: v.start_uid
-                    for k, v in self.translation_nodes.items()
-                    if v.start_uid is not None
-                },
-            )
-        )
-        self.start_document = ("start", new_start_doc)
-        return new_start_doc
 
 
 @Stream.register_api()
