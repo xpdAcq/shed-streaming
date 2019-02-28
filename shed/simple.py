@@ -64,127 +64,7 @@ def walk_to_translation(node, graph, prior_node=None):
 
 
 @Stream.register_api()
-class SimpleFromEventStream(Stream):
-    """Extracts data from the event stream, and passes it downstream.
-
-    Parameters
-    ----------
-
-    doc_type : {'start', 'descriptor', 'event', 'stop'}
-        The type of document to extract data from
-    data_address : tuple
-        A tuple of successive keys walking through the document considered,
-        if the tuple is empty all the data from that document is returned as
-        a dict
-    upstream : Stream instance or None, optional
-        The upstream node to receive streams from, defaults to None
-    event_stream_name : str, optional
-        Filter by en event stream name (see :
-        http://nsls-ii.github.io/databroker/api.html?highlight=stream_name#data)
-    stream_name : str, optional
-        Name for this stream node
-    principle : bool, optional
-        If True then when this node receives a stop document then all
-        downstream ToEventStream nodes will issue a stop document.
-        Defaults to False. Note that one principle node is required for proper
-        pipeline operation.
-
-    Notes
-    -----
-    The result emitted from this stream no longer follows the document model.
-
-    This node also keeps track of when and which data came through the node.
-
-
-    Examples
-    -------------
-    import uuid
-    from shed.event_streams import EventStream
-    from shed.translation import FromEventStream
-
-    s = EventStream()
-    s2 = FromEventStream(s, 'event', ('data', 'det_image'))
-    s3 = s2.map(print)
-    s.emit(('start', {'uid' : str(uuid.uuid4())}))
-    s.emit(('descriptor', {'uid' : str(uuid.uuid4())}))
-    s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
-    s.emit(('stop', {'uid' : str(uuid.uuid4())}))
-    prints:
-    1
-    """
-
-    def __init__(
-        self,
-        doc_type,
-        data_address,
-        # TODO: make upstream required!
-        upstream=None,
-        event_stream_name=ALL,
-        stream_name=None,
-        principle=False,
-        **kwargs,
-    ):
-        asynchronous = None
-        if "asynchronous" in kwargs:
-            asynchronous = kwargs.pop("asynchronous")
-        Stream.__init__(
-            self, upstream, stream_name=stream_name, asynchronous=asynchronous
-        )
-        self.principle = principle
-        self.doc_type = doc_type
-        if isinstance(data_address, str):
-            data_address = tuple([data_address])
-        self.data_address = data_address
-        self.event_stream_name = event_stream_name
-        self.uid = str(uuid.uuid4())
-        self.descriptor_uids = []
-        self.subs = []
-        self.start_uid = None
-
-    def update(self, x, who=None):
-        name, doc = x
-        if name == "start":
-            self.start_uid = doc["uid"]
-            # Sideband start document in
-            [s.emit_start(x) for s in self.subs]
-        if name == "descriptor" and (
-            self.event_stream_name == ALL
-            or self.event_stream_name == doc.get("name", "primary")
-        ):
-            self.descriptor_uids.append(doc["uid"])
-        if name == "stop":
-            # Trigger the downstream nodes to make a stop but they can emit
-            # on their own time
-            self.descriptor_uids = []
-            [s.emit_stop(x) for s in self.subs]
-        inner = doc.copy()
-        if name == self.doc_type and (
-            (
-                name == "descriptor"
-                and (self.event_stream_name == doc.get("name", ALL))
-            )
-            or (
-                name == "event" and (doc["descriptor"] in self.descriptor_uids)
-            )
-            or name in ["start", "stop"]
-        ):
-
-            # If we have an empty address get everything
-            if self.data_address != ():
-                for da in self.data_address:
-                    # If it's a tuple we want multiple things at once
-                    if isinstance(da, tuple):
-                        inner = tuple(inner[daa] for daa in da)
-                    else:
-                        if da in inner:
-                            inner = inner[da]
-                        else:
-                            return
-            return self.emit(inner)
-
-
-@Stream.register_api()
-class SimpleToEventStream(Stream, CreateDocs):
+class simple_to_event_stream(Stream, CreateDocs):
     """Converts data into a event stream, and passes it downstream.
 
     Parameters
@@ -244,7 +124,6 @@ class SimpleToEventStream(Stream, CreateDocs):
 
         move_to_first(self)
 
-        self.start_document = None
         self.incoming_start_uid = None
         self.incoming_stop_uid = None
 
@@ -295,6 +174,8 @@ class SimpleToEventStream(Stream, CreateDocs):
         # issued
         if self.state != "stopped":
             self.emit_stop(x)
+        # This is a bit of jank to make certain we don't override the
+        # user metadata with pipeline metadata
         old_md = dict(self.md)
 
         self.md.update(
@@ -317,11 +198,11 @@ class SimpleToEventStream(Stream, CreateDocs):
         )
         start = self.create_doc("start", x)
         self.md = old_md
+
         # emit starts to subs first in case we create an event from the start
         [s.emit_start(x) for s in self.subs]
         self.emit(start)
         self.state = "started"
-        self.start_document = None
 
     def emit_stop(self, x):
         name, doc = x
@@ -340,6 +221,9 @@ class SimpleToEventStream(Stream, CreateDocs):
     def update(self, x, who=None):
         rl = []
         # If we have a start document ready to go, release it.
+        if self.state == "stopped":
+            raise RuntimeError("Can't emit events from a stopped state "
+                               "it seems that a start was not emitted")
         if self.state == "started":
             rl.append(self.emit(self.create_doc("descriptor", x)))
             self.state = "described"
@@ -349,7 +233,197 @@ class SimpleToEventStream(Stream, CreateDocs):
 
 
 @Stream.register_api()
-class AlignEventStreams(szip):
+class SimpleToEventStream(simple_to_event_stream):
+    pass
+
+
+@Stream.register_api()
+class simple_from_event_stream(Stream):
+    """Extracts data from the event stream, and passes it downstream.
+
+        Parameters
+        ----------
+
+        doc_type : {'start', 'descriptor', 'event', 'stop'}
+            The type of document to extract data from
+        data_address : tuple
+            A tuple of successive keys walking through the document considered,
+            if the tuple is empty all the data from that document is returned as
+            a dict
+        upstream : Stream instance or None, optional
+            The upstream node to receive streams from, defaults to None
+        event_stream_name : str, optional
+            Filter by en event stream name (see :
+            http://nsls-ii.github.io/databroker/api.html?highlight=stream_name#data)
+        stream_name : str, optional
+            Name for this stream node
+        principle : bool, optional
+            If True then when this node receives a stop document then all
+            downstream ToEventStream nodes will issue a stop document.
+            Defaults to False. Note that one principle node is required for proper
+            pipeline operation.
+
+        Notes
+        -----
+        The result emitted from this stream no longer follows the document model.
+
+        This node also keeps track of when and which data came through the node.
+
+
+        Examples
+        -------------
+        import uuid
+        from shed.event_streams import EventStream
+        from shed.translation import FromEventStream
+
+        s = EventStream()
+        s2 = FromEventStream(s, 'event', ('data', 'det_image'))
+        s3 = s2.map(print)
+        s.emit(('start', {'uid' : str(uuid.uuid4())}))
+        s.emit(('descriptor', {'uid' : str(uuid.uuid4())}))
+        s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
+        s.emit(('stop', {'uid' : str(uuid.uuid4())}))
+        prints:
+        1
+        """
+
+    def __init__(
+            self,
+            upstream,
+            doc_type,
+            data_address,
+            event_stream_name=ALL,
+            stream_name=None,
+            principle=False,
+            **kwargs,
+    ):
+        asynchronous = None
+        if "asynchronous" in kwargs:
+            asynchronous = kwargs.pop("asynchronous")
+        Stream.__init__(
+            self, upstream, stream_name=stream_name, asynchronous=asynchronous
+        )
+        self.principle = principle
+        self.doc_type = doc_type
+        if isinstance(data_address, str):
+            data_address = tuple([data_address])
+        self.data_address = data_address
+        self.event_stream_name = event_stream_name
+        self.uid = str(uuid.uuid4())
+        self.descriptor_uids = []
+        self.subs = []
+        self.start_uid = None
+
+    def update(self, x, who=None):
+        name, doc = x
+        if name == "start":
+            self.start_uid = doc["uid"]
+            # Sideband start document in
+            [s.emit_start(x) for s in self.subs]
+        if name == "descriptor" and (
+                self.event_stream_name == ALL
+                or self.event_stream_name == doc.get("name", "primary")
+        ):
+            self.descriptor_uids.append(doc["uid"])
+        if name == "stop":
+            # Trigger the downstream nodes to make a stop but they can emit
+            # on their own time
+            self.descriptor_uids = []
+            [s.emit_stop(x) for s in self.subs]
+        inner = doc.copy()
+        if name == self.doc_type and (
+                (
+                        name == "descriptor"
+                        and (self.event_stream_name == doc.get("name", ALL))
+                )
+                or (
+                        name == "event" and (
+                        doc["descriptor"] in self.descriptor_uids)
+                )
+                or name in ["start", "stop"]
+        ):
+
+            # If we have an empty address get everything
+            if self.data_address != ():
+                for da in self.data_address:
+                    # If it's a tuple we want multiple things at once
+                    if isinstance(da, tuple):
+                        inner = tuple(inner[daa] for daa in da)
+                    else:
+                        if da in inner:
+                            inner = inner[da]
+                        else:
+                            return
+            return self.emit(inner)
+
+
+class SimpleFromEventStream(simple_from_event_stream):
+    """Extracts data from the event stream, and passes it downstream.
+
+    Parameters
+    ----------
+
+    doc_type : {'start', 'descriptor', 'event', 'stop'}
+        The type of document to extract data from
+    data_address : tuple
+        A tuple of successive keys walking through the document considered,
+        if the tuple is empty all the data from that document is returned as
+        a dict
+    upstream : Stream instance or None, optional
+        The upstream node to receive streams from, defaults to None
+    event_stream_name : str, optional
+        Filter by en event stream name (see :
+        http://nsls-ii.github.io/databroker/api.html?highlight=stream_name#data)
+    stream_name : str, optional
+        Name for this stream node
+    principle : bool, optional
+        If True then when this node receives a stop document then all
+        downstream ToEventStream nodes will issue a stop document.
+        Defaults to False. Note that one principle node is required for proper
+        pipeline operation.
+
+    Notes
+    -----
+    The result emitted from this stream no longer follows the document model.
+
+    This node also keeps track of when and which data came through the node.
+
+
+    Examples
+    -------------
+    import uuid
+    from shed.event_streams import EventStream
+    from shed.translation import FromEventStream
+
+    s = EventStream()
+    s2 = FromEventStream(s, 'event', ('data', 'det_image'))
+    s3 = s2.map(print)
+    s.emit(('start', {'uid' : str(uuid.uuid4())}))
+    s.emit(('descriptor', {'uid' : str(uuid.uuid4())}))
+    s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
+    s.emit(('stop', {'uid' : str(uuid.uuid4())}))
+    prints:
+    1
+    """
+
+    def __init__(
+        self,
+        doc_type,
+        data_address,
+        upstream=None,
+        event_stream_name=ALL,
+        stream_name=None,
+        principle=False,
+        **kwargs,
+    ):
+      simple_from_event_stream.__init__(self, upstream=upstream, doc_type=doc_type,
+                                        data_address=data_address,
+                                        event_stream_name=event_stream_name,
+                                        stream_name=stream_name,
+                                        principle=principle, **kwargs)
+
+@Stream.register_api()
+class align_event_streams(szip):
     """Zips and aligns multiple streams of documents, note that the last
     upstream takes precedence where merging is not possible, this requires
     the two streams to be of equal length."""
@@ -420,3 +494,8 @@ class AlignEventStreams(szip):
                     for upstream, b in tb.items():
                         b.clear()
             return ret
+
+
+@Stream.register_api()
+class AlignEventStreams(align_event_streams):
+    pass

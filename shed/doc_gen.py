@@ -1,9 +1,7 @@
 import time
-import uuid
 from collections import MutableMapping
 
 import numpy as np
-
 from event_model import compose_run
 
 DTYPE_MAP = {
@@ -39,7 +37,6 @@ class CreateDocs(object):
         self.evp_fac = None
 
     def start_doc(self, x):
-        # TODO: need to match md with pipeline data
         bundle = compose_run(metadata=self.md)
         new_start_doc, self.desc_fac, self.resc_fac, self.stop_factory = bundle
         self.start_uid = new_start_doc["uid"]
@@ -91,18 +88,19 @@ class CreateDocs(object):
             tx = tuple([x])
         else:
             tx = x
-        new_event = self.ev_fac(
+
+        return self.ev_fac(
             timestamps={k: time.time() for k in self.data_keys},
             filled={k: True for k in self.data_keys},
             data={k: v for k, v in zip(self.data_keys, tx)},
+            validate=False
         )
-        return new_event
 
     def stop(self, x):
-        new_stop = self.stop_factory()
-        return new_stop
+        return self.stop_factory()
 
     def create_doc(self, name, x):
+        # This is because ``start`` is a valid method for ``Stream``
         if name == "start":
             _name = "start_doc"
         else:
