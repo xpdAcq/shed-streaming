@@ -250,8 +250,8 @@ class simple_from_event_stream(Stream):
             The type of document to extract data from
         data_address : tuple
             A tuple of successive keys walking through the document considered,
-            if the tuple is empty all the data from that document is returned as
-            a dict
+            if the tuple is empty all the data from that document is returned
+            as a dict
         upstream : Stream instance or None, optional
             The upstream node to receive streams from, defaults to None
         event_stream_name : str, optional
@@ -262,14 +262,16 @@ class simple_from_event_stream(Stream):
         principle : bool, optional
             If True then when this node receives a stop document then all
             downstream ToEventStream nodes will issue a stop document.
-            Defaults to False. Note that one principle node is required for proper
-            pipeline operation.
+            Defaults to False. Note that one principle node is required for
+            proper pipeline operation.
 
         Notes
         -----
-        The result emitted from this stream no longer follows the document model.
+        The result emitted from this stream no longer follows the document
+        model.
 
-        This node also keeps track of when and which data came through the node.
+        This node also keeps track of when and which data came through the
+        node.
 
 
         Examples
@@ -283,7 +285,8 @@ class simple_from_event_stream(Stream):
         s3 = s2.map(print)
         s.emit(('start', {'uid' : str(uuid.uuid4())}))
         s.emit(('descriptor', {'uid' : str(uuid.uuid4())}))
-        s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
+        s.emit(('event', {'uid' : str(uuid.uuid4()),
+                          'data': {'det_image' : 1}}))
         s.emit(('stop', {'uid' : str(uuid.uuid4())}))
         prints:
         1
