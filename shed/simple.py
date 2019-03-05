@@ -222,8 +222,10 @@ class simple_to_event_stream(Stream, CreateDocs):
         rl = []
         # If we have a start document ready to go, release it.
         if self.state == "stopped":
-            raise RuntimeError("Can't emit events from a stopped state "
-                               "it seems that a start was not emitted")
+            raise RuntimeError(
+                "Can't emit events from a stopped state "
+                "it seems that a start was not emitted"
+            )
         if self.state == "started":
             rl.append(self.emit(self.create_doc("descriptor", x)))
             self.state = "described"
@@ -288,14 +290,14 @@ class simple_from_event_stream(Stream):
         """
 
     def __init__(
-            self,
-            upstream,
-            doc_type,
-            data_address,
-            event_stream_name=ALL,
-            stream_name=None,
-            principle=False,
-            **kwargs,
+        self,
+        upstream,
+        doc_type,
+        data_address,
+        event_stream_name=ALL,
+        stream_name=None,
+        principle=False,
+        **kwargs,
     ):
         asynchronous = None
         if "asynchronous" in kwargs:
@@ -321,8 +323,8 @@ class simple_from_event_stream(Stream):
             # Sideband start document in
             [s.emit_start(x) for s in self.subs]
         if name == "descriptor" and (
-                self.event_stream_name == ALL
-                or self.event_stream_name == doc.get("name", "primary")
+            self.event_stream_name == ALL
+            or self.event_stream_name == doc.get("name", "primary")
         ):
             self.descriptor_uids.append(doc["uid"])
         if name == "stop":
@@ -332,15 +334,14 @@ class simple_from_event_stream(Stream):
             [s.emit_stop(x) for s in self.subs]
         inner = doc.copy()
         if name == self.doc_type and (
-                (
-                        name == "descriptor"
-                        and (self.event_stream_name == doc.get("name", ALL))
-                )
-                or (
-                        name == "event" and (
-                        doc["descriptor"] in self.descriptor_uids)
-                )
-                or name in ["start", "stop"]
+            (
+                name == "descriptor"
+                and (self.event_stream_name == doc.get("name", ALL))
+            )
+            or (
+                name == "event" and (doc["descriptor"] in self.descriptor_uids)
+            )
+            or name in ["start", "stop"]
         ):
 
             # If we have an empty address get everything
@@ -416,11 +417,17 @@ class SimpleFromEventStream(simple_from_event_stream):
         principle=False,
         **kwargs,
     ):
-      simple_from_event_stream.__init__(self, upstream=upstream, doc_type=doc_type,
-                                        data_address=data_address,
-                                        event_stream_name=event_stream_name,
-                                        stream_name=stream_name,
-                                        principle=principle, **kwargs)
+        simple_from_event_stream.__init__(
+            self,
+            upstream=upstream,
+            doc_type=doc_type,
+            data_address=data_address,
+            event_stream_name=event_stream_name,
+            stream_name=stream_name,
+            principle=principle,
+            **kwargs,
+        )
+
 
 @Stream.register_api()
 class align_event_streams(szip):

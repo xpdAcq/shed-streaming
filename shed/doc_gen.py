@@ -23,7 +23,7 @@ class CreateDocs(object):
         if data_key_md is None:
             data_key_md = {}
         if isinstance(data_keys, str):
-            data_keys = (data_keys, )
+            data_keys = (data_keys,)
         self.data_key_md = data_key_md
         self.descriptor_uid = None
         self.md = kwargs
@@ -75,7 +75,7 @@ class CreateDocs(object):
             },
             hints={"analyzer": {"fields": sorted(list(self.data_keys))}},
             object_keys={k: [k] for k in self.data_keys},
-            validate=False
+            validate=False,
         )
         return new_descriptor
 
@@ -93,7 +93,7 @@ class CreateDocs(object):
             timestamps={k: time.time() for k in self.data_keys},
             filled={k: True for k in self.data_keys},
             data={k: v for k, v in zip(self.data_keys, tx)},
-            validate=False
+            validate=False,
         )
 
     def stop(self, x):

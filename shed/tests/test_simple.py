@@ -35,8 +35,9 @@ def test_from_event_model(RE, hw):
 
 def test_from_event_model_stream_syntax(RE, hw):
     source = Stream()
-    t = source.simple_from_event_stream("event", ("data", "motor"),
-                                        principle=True)
+    t = source.simple_from_event_stream(
+        "event", ("data", "motor"), principle=True
+    )
     L = t.sink_to_list()
 
     RE.subscribe(unstar(source.emit))
@@ -280,6 +281,7 @@ def test_align_stream_syntax():
 
     assert len(sl) == 4
     assert sl[0][1].get("b") == {"hi": "world", "hi2": "world"}
+
 
 def test_align_interrupted(RE, hw):
     a = Stream()
