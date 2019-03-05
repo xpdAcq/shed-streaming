@@ -33,6 +33,36 @@ def test_from_event_model(RE, hw):
         assert i == ll
 
 
+def test_from_event_model_single(RE, hw):
+    source = Stream()
+    t = FromEventStream("event", "data", source, principle=True)
+    L = t.sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert len(L) == 10
+    for i, ll in enumerate(L):
+        assert i == ll['motor']
+
+
+def test_from_event_model_all(RE, hw):
+    source = Stream()
+    t = FromEventStream("event", (), source, principle=True)
+    L = t.sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert len(L) == 10
+    for i, ll in enumerate(L):
+        assert i == ll['data']['motor']
+
+
 def test_from_event_model_stream_syntax(RE, hw):
     source = Stream()
     t = source.simple_from_event_stream(
