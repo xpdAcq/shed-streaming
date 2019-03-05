@@ -45,13 +45,14 @@ def test_from_event_model_single(RE, hw):
 
     assert len(L) == 10
     for i, ll in enumerate(L):
-        assert i == ll['motor']
+        assert i == ll["motor"]
 
 
 def test_from_event_model_multi(RE, hw):
     source = Stream()
-    t = FromEventStream("event", ('data', ('motor', 'motor_setpoint'), ),
-                        source, principle=True)
+    t = FromEventStream(
+        "event", ("data", ("motor", "motor_setpoint")), source, principle=True
+    )
     L = t.sink_to_list()
 
     RE.subscribe(unstar(source.emit))
@@ -77,7 +78,7 @@ def test_from_event_model_all(RE, hw):
 
     assert len(L) == 10
     for i, ll in enumerate(L):
-        assert i == ll['data']['motor']
+        assert i == ll["data"]["motor"]
 
 
 def test_from_event_model_stream_syntax(RE, hw):
