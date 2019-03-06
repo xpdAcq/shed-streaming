@@ -33,6 +33,71 @@ def test_from_event_model(RE, hw):
         assert i == ll
 
 
+def test_from_event_model_single(RE, hw):
+    source = Stream()
+    t = FromEventStream("event", "data", source, principle=True)
+    L = t.sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert len(L) == 10
+    for i, ll in enumerate(L):
+        assert i == ll["motor"]
+
+
+def test_from_event_model_multi(RE, hw):
+    source = Stream()
+    t = FromEventStream(
+        "event", ("data", ("motor", "motor_setpoint")), source, principle=True
+    )
+    L = t.sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert len(L) == 10
+    for i, ll in enumerate(L):
+        assert i == ll[0]
+        assert i == ll[1]
+
+
+def test_from_event_model_all(RE, hw):
+    source = Stream()
+    t = FromEventStream("event", (), source, principle=True)
+    L = t.sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert len(L) == 10
+    for i, ll in enumerate(L):
+        assert i == ll["data"]["motor"]
+
+
+def test_from_event_model_stream_syntax(RE, hw):
+    source = Stream()
+    t = source.simple_from_event_stream(
+        "event", ("data", "motor"), principle=True
+    )
+    L = t.sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert len(L) == 10
+    for i, ll in enumerate(L):
+        assert i == ll
+
+
 def test_from_event_model_stream_name():
     def data():
         suid = str(uuid.uuid4())
@@ -188,10 +253,60 @@ def test_to_event_model(RE, hw):
     assert d[-1]["run_start"]
 
 
+def test_to_event_model_stream_syntax(RE, hw):
+    source = Stream()
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
+    assert t.principle
+
+    n = t.simple_to_event_stream(("ct",), data_key_md={"ct": {"units": "arb"}})
+    tt = t.sink_to_list()
+    p = n.pluck(0).sink_to_list()
+    d = n.pluck(1).sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert tt
+    assert set(p) == {"start", "stop", "event", "descriptor"}
+    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert d[1]["data_keys"]["ct"]["units"] == "arb"
+    assert d[-1]["run_start"]
+
+
 def test_align():
     a = Stream()
     b = Stream()
     z = a.AlignEventStreams(b)
+    sl = z.sink_to_list()
+    # TODO: use real run engine here
+    for n, d, dd in zip(
+        ["start", "descriptor", "event", "stop"],
+        [
+            {"a": "hi", "b": {"hi": "world"}, "uid": "hi", "time": 123},
+            {"bla": "foo", "uid": "abc"},
+            {"data": "now", "descriptor": "abc"},
+            {"stop": "doc"},
+        ],
+        [
+            {"a": "hi2", "b": {"hi2": "world"}},
+            {"bla": "foo", "uid": "123"},
+            {"data": "now", "descriptor": "123"},
+            {"stop": "doc"},
+        ],
+    ):
+        a.emit((n, d))
+        b.emit((n, dd))
+
+    assert len(sl) == 4
+    assert sl[0][1].get("b") == {"hi": "world", "hi2": "world"}
+
+
+def test_align_stream_syntax():
+    a = Stream()
+    b = Stream()
+    z = a.align_event_streams(b)
     sl = z.sink_to_list()
     # TODO: use real run engine here
     for n, d, dd in zip(

@@ -64,61 +64,239 @@ def walk_to_translation(node, graph, prior_node=None):
 
 
 @Stream.register_api()
-class SimpleFromEventStream(Stream):
-    """Extracts data from the event stream, and passes it downstream.
+class simple_to_event_stream(Stream, CreateDocs):
+    """Converts data into a event stream, and passes it downstream.
 
     Parameters
     ----------
-
-    doc_type : {'start', 'descriptor', 'event', 'stop'}
-        The type of document to extract data from
-    data_address : tuple
-        A tuple of successive keys walking through the document considered,
-        if the tuple is empty all the data from that document is returned as
-        a dict
-    upstream : Stream instance or None, optional
-        The upstream node to receive streams from, defaults to None
-    event_stream_name : str, optional
-        Filter by en event stream name (see :
-        http://nsls-ii.github.io/databroker/api.html?highlight=stream_name#data)
+    upstream :
+        the upstream node to receive streams from
+    data_keys: tuple, optional
+        Names of the data keys. If None assume incoming data is dict and use
+        the keys from the dict. Defauls to None
     stream_name : str, optional
         Name for this stream node
-    principle : bool, optional
-        If True then when this node receives a stop document then all
-        downstream ToEventStream nodes will issue a stop document.
-        Defaults to False. Note that one principle node is required for proper
-        pipeline operation.
 
     Notes
     -----
-    The result emitted from this stream no longer follows the document model.
-
-    This node also keeps track of when and which data came through the node.
-
+    The result emitted from this stream follows the document model.
+    This is essentially a state machine. Transitions are:
+    start -> stop
+    start -> descriptor -> event -> stop
+    Note that start -> start is not allowed, this node always issues a stop
+    document so the data input times can be stored.
 
     Examples
-    -------------
+    --------
     import uuid
     from shed.event_streams import EventStream
-    from shed.translation import FromEventStream
+    from shed.translation import FromEventStream, ToEventStream
 
     s = EventStream()
-    s2 = FromEventStream(s, 'event', ('data', 'det_image'))
-    s3 = s2.map(print)
+    s2 = FromEventStream(s, 'event', ('data', 'det_image'), principle=True)
+    s3 = ToEventStream(s2, ('det_image',))
+    s3.sink(print)
     s.emit(('start', {'uid' : str(uuid.uuid4())}))
-    s.emit(('descriptor', {'uid' : str(uuid.uuid4())}))
+    s.emit(('descriptor', {'uid' : str(uuid.uuid4()),
+                           'data_keys': {'det_image': {'units': 'arb'}}))
     s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
     s.emit(('stop', {'uid' : str(uuid.uuid4())}))
     prints:
-    1
+    ('start',...)
+    ('descriptor',...)
+    ('event',...)
+    ('stop',...)
     """
 
     def __init__(
         self,
+        upstream,
+        data_keys=None,
+        stream_name=None,
+        data_key_md=None,
+        **kwargs,
+    ):
+        if stream_name is None:
+            stream_name = str(data_keys)
+
+        Stream.__init__(self, upstream, stream_name=stream_name)
+        CreateDocs.__init__(self, data_keys, data_key_md=data_key_md, **kwargs)
+
+        move_to_first(self)
+
+        self.incoming_start_uid = None
+        self.incoming_stop_uid = None
+
+        self.state = "stopped"
+        self.subs = []
+
+        self.uid = str(uuid.uuid4())
+
+        # walk upstream to get all upstream nodes to the translation node
+        # get start_uids from the translation node
+        self.graph = nx.DiGraph()
+        walk_to_translation(self, graph=self.graph)
+
+        self.translation_nodes = {
+            k: n["stream"]
+            for k, n in self.graph.node.items()
+            if isinstance(
+                n["stream"], (SimpleFromEventStream, SimpleToEventStream)
+            )
+            and n["stream"] != self
+        }
+        self.principle_nodes = [
+            n
+            for k, n in self.translation_nodes.items()
+            if getattr(n, "principle", False)
+            or isinstance(n, SimpleToEventStream)
+        ]
+        if not self.principle_nodes:
+            raise RuntimeError(
+                f"No Principle Nodes Detected for node "
+                f"{data_keys}, "
+                f"{[k.data_address for k in self.translation_nodes.values()]}"
+            )
+        for p in self.principle_nodes:
+            p.subs.append(self)
+
+    def emit_start(self, x):
+        # if we have seen this start document already do nothing, we have
+        # multiple parents so we may get a start doc multiple times
+        name, doc = x
+        if doc["uid"] is self.incoming_start_uid:
+            return
+        else:
+            self.incoming_start_uid = doc["uid"]
+            # Prime stop document
+            self.incoming_stop_uid = None
+        # Emergency stop if we get a new start document and no stop has been
+        # issued
+        if self.state != "stopped":
+            self.emit_stop(x)
+        # This is a bit of jank to make certain we don't override the
+        # user metadata with pipeline metadata
+        old_md = dict(self.md)
+
+        self.md.update(
+            dict(
+                parent_uids=list(
+                    set(
+                        [
+                            v.start_uid
+                            for k, v in self.translation_nodes.items()
+                            if v.start_uid is not None
+                        ]
+                    )
+                ),
+                parent_node_map={
+                    v.uid: v.start_uid
+                    for k, v in self.translation_nodes.items()
+                    if v.start_uid is not None
+                },
+            )
+        )
+        start = self.create_doc("start", x)
+        self.md = old_md
+
+        # emit starts to subs first in case we create an event from the start
+        [s.emit_start(x) for s in self.subs]
+        self.emit(start)
+        self.state = "started"
+
+    def emit_stop(self, x):
+        name, doc = x
+        if doc["uid"] is self.incoming_stop_uid:
+            return
+        else:
+            self.incoming_stop_uid = doc["uid"]
+            # Prime for next run
+            self.incoming_start_uid = None
+        stop = self.create_doc("stop", x)
+        ret = self.emit(stop)
+        [s.emit_stop(x) for s in self.subs]
+        self.state = "stopped"
+        return ret
+
+    def update(self, x, who=None):
+        rl = []
+        # If we have a start document ready to go, release it.
+        if self.state == "stopped":
+            raise RuntimeError(
+                "Can't emit events from a stopped state "
+                "it seems that a start was not emitted"
+            )
+        if self.state == "started":
+            rl.append(self.emit(self.create_doc("descriptor", x)))
+            self.state = "described"
+        rl.append(self.emit(self.create_doc("event", x)))
+
+        return rl
+
+
+@Stream.register_api()
+class SimpleToEventStream(simple_to_event_stream):
+    pass
+
+
+@Stream.register_api()
+class simple_from_event_stream(Stream):
+    """Extracts data from the event stream, and passes it downstream.
+
+        Parameters
+        ----------
+
+        doc_type : {'start', 'descriptor', 'event', 'stop'}
+            The type of document to extract data from
+        data_address : tuple
+            A tuple of successive keys walking through the document considered,
+            if the tuple is empty all the data from that document is returned
+            as a dict
+        upstream : Stream instance or None, optional
+            The upstream node to receive streams from, defaults to None
+        event_stream_name : str, optional
+            Filter by en event stream name (see :
+            http://nsls-ii.github.io/databroker/api.html?highlight=stream_name#data)
+        stream_name : str, optional
+            Name for this stream node
+        principle : bool, optional
+            If True then when this node receives a stop document then all
+            downstream ToEventStream nodes will issue a stop document.
+            Defaults to False. Note that one principle node is required for
+            proper pipeline operation.
+
+        Notes
+        -----
+        The result emitted from this stream no longer follows the document
+        model.
+
+        This node also keeps track of when and which data came through the
+        node.
+
+
+        Examples
+        -------------
+        import uuid
+        from shed.event_streams import EventStream
+        from shed.translation import FromEventStream
+
+        s = EventStream()
+        s2 = FromEventStream(s, 'event', ('data', 'det_image'))
+        s3 = s2.map(print)
+        s.emit(('start', {'uid' : str(uuid.uuid4())}))
+        s.emit(('descriptor', {'uid' : str(uuid.uuid4())}))
+        s.emit(('event', {'uid' : str(uuid.uuid4()),
+                          'data': {'det_image' : 1}}))
+        s.emit(('stop', {'uid' : str(uuid.uuid4())}))
+        prints:
+        1
+        """
+
+    def __init__(
+        self,
+        upstream,
         doc_type,
         data_address,
-        # TODO: make upstream required!
-        upstream=None,
         event_stream_name=ALL,
         stream_name=None,
         principle=False,
@@ -183,175 +361,79 @@ class SimpleFromEventStream(Stream):
             return self.emit(inner)
 
 
-@Stream.register_api()
-class SimpleToEventStream(Stream, CreateDocs):
-    """Converts data into a event stream, and passes it downstream.
+class SimpleFromEventStream(simple_from_event_stream):
+    """Extracts data from the event stream, and passes it downstream.
 
     Parameters
     ----------
-    upstream :
-        the upstream node to receive streams from
-    data_keys: tuple, optional
-        Names of the data keys. If None assume incoming data is dict and use
-        the keys from the dict. Defauls to None
+
+    doc_type : {'start', 'descriptor', 'event', 'stop'}
+        The type of document to extract data from
+    data_address : tuple
+        A tuple of successive keys walking through the document considered,
+        if the tuple is empty all the data from that document is returned as
+        a dict
+    upstream : Stream instance or None, optional
+        The upstream node to receive streams from, defaults to None
+    event_stream_name : str, optional
+        Filter by en event stream name (see :
+        http://nsls-ii.github.io/databroker/api.html?highlight=stream_name#data)
     stream_name : str, optional
         Name for this stream node
+    principle : bool, optional
+        If True then when this node receives a stop document then all
+        downstream ToEventStream nodes will issue a stop document.
+        Defaults to False. Note that one principle node is required for proper
+        pipeline operation.
 
     Notes
     -----
-    The result emitted from this stream follows the document model.
-    This is essentially a state machine. Transitions are:
-    start -> stop
-    start -> descriptor -> event -> stop
-    Note that start -> start is not allowed, this node always issues a stop
-    document so the data input times can be stored.
+    The result emitted from this stream no longer follows the document model.
+
+    This node also keeps track of when and which data came through the node.
+
 
     Examples
-    --------
+    -------------
     import uuid
     from shed.event_streams import EventStream
-    from shed.translation import FromEventStream, ToEventStream
+    from shed.translation import FromEventStream
 
     s = EventStream()
-    s2 = FromEventStream(s, 'event', ('data', 'det_image'), principle=True)
-    s3 = ToEventStream(s2, ('det_image',))
-    s3.sink(print)
+    s2 = FromEventStream(s, 'event', ('data', 'det_image'))
+    s3 = s2.map(print)
     s.emit(('start', {'uid' : str(uuid.uuid4())}))
-    s.emit(('descriptor', {'uid' : str(uuid.uuid4()),
-                           'data_keys': {'det_image': {'units': 'arb'}}))
+    s.emit(('descriptor', {'uid' : str(uuid.uuid4())}))
     s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
     s.emit(('stop', {'uid' : str(uuid.uuid4())}))
     prints:
-    ('start',...)
-    ('descriptor',...)
-    ('event',...)
-    ('stop',...)
+    1
     """
 
     def __init__(
         self,
-        upstream,
-        data_keys=None,
+        doc_type,
+        data_address,
+        upstream=None,
+        event_stream_name=ALL,
         stream_name=None,
-        data_key_md=None,
+        principle=False,
         **kwargs,
     ):
-        if stream_name is None:
-            stream_name = str(data_keys)
-
-        Stream.__init__(self, upstream, stream_name=stream_name)
-        CreateDocs.__init__(self, data_keys, data_key_md=data_key_md, **kwargs)
-
-        move_to_first(self)
-
-        self.start_document = None
-        self.incoming_start_uid = None
-        self.incoming_stop_uid = None
-
-        self.state = "stopped"
-        self.subs = []
-
-        self.uid = str(uuid.uuid4())
-
-        # walk upstream to get all upstream nodes to the translation node
-        # get start_uids from the translation node
-        self.graph = nx.DiGraph()
-        walk_to_translation(self, graph=self.graph)
-
-        self.translation_nodes = {
-            k: n["stream"]
-            for k, n in self.graph.node.items()
-            if isinstance(
-                n["stream"], (SimpleFromEventStream, SimpleToEventStream)
-            )
-            and n["stream"] != self
-        }
-        self.principle_nodes = [
-            n
-            for k, n in self.translation_nodes.items()
-            if getattr(n, "principle", False)
-            or isinstance(n, SimpleToEventStream)
-        ]
-        if not self.principle_nodes:
-            raise RuntimeError(
-                f"No Principle Nodes Detected for node "
-                f"{data_keys}, "
-                f"{[k.data_address for k in self.translation_nodes.values()]}"
-            )
-        for p in self.principle_nodes:
-            p.subs.append(self)
-
-    def emit_start(self, x):
-        # if we have seen this start document already do nothing, we have
-        # multiple parents so we may get a start doc multiple times
-        name, doc = x
-        if doc["uid"] is self.incoming_start_uid:
-            return
-        else:
-            self.incoming_start_uid = doc["uid"]
-            # Prime stop document
-            self.incoming_stop_uid = None
-        # Emergency stop if we get a new start document and no stop has been
-        # issued
-        if self.state != "stopped":
-            self.emit_stop(x)
-        start = self.create_doc("start", x)
-        # emit starts to subs first in case we create an event from the start
-        [s.emit_start(x) for s in self.subs]
-        self.emit(start)
-        self.state = "started"
-        self.start_document = None
-
-    def emit_stop(self, x):
-        name, doc = x
-        if doc["uid"] is self.incoming_stop_uid:
-            return
-        else:
-            self.incoming_stop_uid = doc["uid"]
-            # Prime for next run
-            self.incoming_start_uid = None
-        stop = self.create_doc("stop", x)
-        ret = self.emit(stop)
-        [s.emit_stop(x) for s in self.subs]
-        self.state = "stopped"
-        return ret
-
-    def update(self, x, who=None):
-        rl = []
-        # If we have a start document ready to go, release it.
-        if self.state == "started":
-            rl.append(self.emit(self.create_doc("descriptor", x)))
-            self.state = "described"
-        rl.append(self.emit(self.create_doc("event", x)))
-
-        return rl
-
-    def start_doc(self, x):
-        new_start_doc = super().start_doc(x)
-        new_start_doc.update(
-            dict(
-                parent_uids=list(
-                    set(
-                        [
-                            v.start_uid
-                            for k, v in self.translation_nodes.items()
-                            if v.start_uid is not None
-                        ]
-                    )
-                ),
-                parent_node_map={
-                    v.uid: v.start_uid
-                    for k, v in self.translation_nodes.items()
-                    if v.start_uid is not None
-                },
-            )
+        simple_from_event_stream.__init__(
+            self,
+            upstream=upstream,
+            doc_type=doc_type,
+            data_address=data_address,
+            event_stream_name=event_stream_name,
+            stream_name=stream_name,
+            principle=principle,
+            **kwargs,
         )
-        self.start_document = ("start", new_start_doc)
-        return new_start_doc
 
 
 @Stream.register_api()
-class AlignEventStreams(szip):
+class align_event_streams(szip):
     """Zips and aligns multiple streams of documents, note that the last
     upstream takes precedence where merging is not possible, this requires
     the two streams to be of equal length."""
@@ -422,3 +504,8 @@ class AlignEventStreams(szip):
                     for upstream, b in tb.items():
                         b.clear()
             return ret
+
+
+@Stream.register_api()
+class AlignEventStreams(align_event_streams):
+    pass

@@ -1,12 +1,17 @@
 import time
-import uuid
 from collections import MutableMapping
 
 import numpy as np
+from event_model import compose_run
 
-DTYPE_MAP = {np.ndarray: "array", int: "number", float: "number",
-             np.float: "number", np.float32: "number",
-             np.float64: "number"}
+DTYPE_MAP = {
+    np.ndarray: "array",
+    int: "number",
+    float: "number",
+    np.float: "number",
+    np.float32: "number",
+    np.float64: "number",
+}
 
 
 def get_dtype(xx):
@@ -17,22 +22,28 @@ class CreateDocs(object):
     def __init__(self, data_keys, data_key_md=None, **kwargs):
         if data_key_md is None:
             data_key_md = {}
+        if isinstance(data_keys, str):
+            data_keys = (data_keys,)
         self.data_key_md = data_key_md
         self.descriptor_uid = None
         self.md = kwargs
         self.data_keys = data_keys
         self.start_uid = None
-        self.index_dict = dict()
+
+        self.desc_fac = None
+        self.resc_fac = None
+        self.stop_factory = None
+        self.ev_fac = None
+        self.evp_fac = None
 
     def start_doc(self, x):
-        self.start_uid = str(uuid.uuid4())
-        tt = time.time()
-        new_start_doc = dict(uid=self.start_uid, time=tt)
-        new_start_doc.update(**self.md)
-        self.index_dict = dict()
+        bundle = compose_run(metadata=self.md)
+        new_start_doc, self.desc_fac, self.resc_fac, self.stop_factory = bundle
+        self.start_uid = new_start_doc["uid"]
         return new_start_doc
 
     def descriptor(self, x):
+
         # XXX: handle multiple descriptors?
 
         # If data_keys is none then we are working with a dict
@@ -49,28 +60,22 @@ class CreateDocs(object):
             tx = tuple([x])
         else:
             tx = x
-        self.descriptor_uid = str(uuid.uuid4())
-        self.index_dict[self.descriptor_uid] = 1
 
-        new_descriptor = dict(
-            uid=self.descriptor_uid,
-            time=time.time(),
-            run_start=self.start_uid,
+        new_descriptor, self.ev_fac, self.evp_fac = self.desc_fac(
             name="primary",
-            # TODO: source should reflect graph? (maybe with a UID)
-            # TODO: submit dtype so it gets properly executed
             data_keys={
                 k: {
                     "source": "analysis",
                     # XXX: how to deal with this when xx is a future?
                     "dtype": get_dtype(xx),
                     "shape": getattr(xx, "shape", []),
-                    **self.data_key_md.get(k, {})
+                    **self.data_key_md.get(k, {}),
                 }
                 for k, xx in zip(self.data_keys, tx)
             },
             hints={"analyzer": {"fields": sorted(list(self.data_keys))}},
             object_keys={k: [k] for k in self.data_keys},
+            validate=False,
         )
         return new_descriptor
 
@@ -83,28 +88,19 @@ class CreateDocs(object):
             tx = tuple([x])
         else:
             tx = x
-        new_event = dict(
-            uid=str(uuid.uuid4()),
-            time=time.time(),
+
+        return self.ev_fac(
             timestamps={k: time.time() for k in self.data_keys},
-            descriptor=self.descriptor_uid,
             filled={k: True for k in self.data_keys},
             data={k: v for k, v in zip(self.data_keys, tx)},
-            seq_num=self.index_dict[self.descriptor_uid],
+            validate=False,
         )
-        self.index_dict[self.descriptor_uid] += 1
-        return new_event
 
     def stop(self, x):
-        new_stop = dict(
-            uid=str(uuid.uuid4()),
-            time=time.time(),
-            run_start=self.start_uid,
-            exit_status="success",
-        )
-        return new_stop
+        return self.stop_factory()
 
     def create_doc(self, name, x):
+        # This is because ``start`` is a valid method for ``Stream``
         if name == "start":
             _name = "start_doc"
         else:

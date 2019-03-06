@@ -19,6 +19,7 @@ run:
     default: {conda: databroker}
   event_model:
     default: {conda: event-model}
+    bleeding: {pip: 'git+https://github.com/nsls-ii/event-model.git'}
   matplotlib:
     default: {conda: matplotlib}
   numpy:
