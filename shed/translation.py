@@ -1,4 +1,7 @@
+import json
+import subprocess
 import time
+from pprint import pprint
 
 import networkx as nx
 import numpy as np
@@ -10,6 +13,23 @@ from .simple import SimpleToEventStream, SimpleFromEventStream, _hash_or_uid
 ALL = "--ALL THE DOCS--"
 
 DTYPE_MAP = {np.ndarray: "array", int: "number", float: "number"}
+
+
+def conda_env():
+    """Capture information about the conda environment this is being run in
+
+    Returns
+    -------
+    dict :
+        A dictionary representing the packages installed
+
+    """
+    data = subprocess.call(['conda', 'list', '--json'])
+    try:
+        j_data = json.loads(data)
+    except TypeError:
+        j_data = 'Failed to get packages'
+    return {'packages': j_data}
 
 
 @args_kwargs
@@ -136,13 +156,16 @@ class ToEventStream(SimpleToEventStream):
     ('stop',...)
     """
 
-    def __init__(self, upstream, data_keys=None, stream_name=None, **kwargs):
+    def __init__(self, upstream, data_keys=None, stream_name=None,
+                 env_capture_functions=(conda_env, ),
+                 **kwargs):
         super().__init__(
             upstream=upstream,
             data_keys=data_keys,
             stream_name=stream_name,
             **kwargs
         )
+        self.env_capture_functions = env_capture_functions
         self.times = {}
 
     def emit(self, x, asynchronous=False):
@@ -155,6 +178,10 @@ class ToEventStream(SimpleToEventStream):
     def start_doc(self, x):
         new_start_doc = super().start_doc(x)
         new_start_doc.update(graph=self.graph)
+        if self.env_capture_functions:
+            new_start_doc['env'] = {}
+            for f in self.env_capture_functions:
+                new_start_doc['env'].update(f())
         return new_start_doc
 
     def stop(self, x):
@@ -167,6 +194,7 @@ class ToEventStream(SimpleToEventStream):
         return new_stop
 
 
+# TODO: move this to a callback?
 @Stream.register_api()
 class DBFriendly(Stream):
     """Make analyzed data (and graph) DB friendly"""
@@ -176,11 +204,13 @@ class DBFriendly(Stream):
         if name == "start":
             doc = dict(doc)
             graph = doc["graph"]
+            # TODO: this might not be possible if there are cycles!!!!
             for n in nx.topological_sort(graph):
                 graph.node[n]["stream"] = db_friendly_node(
                     graph.node[n]["stream"]
                 )
             doc["graph"] = nx.node_link_data(graph)
+            pprint(doc['graph'])
         return self.emit((name, doc))
 
 
