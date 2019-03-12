@@ -400,6 +400,27 @@ def test_align_res_dat(RE, hw):
             assert d["data"]["out"] == d["data"]["motor"] + 1
 
 
+def test_align_buffering(RE, hw):
+    zz = {'data': False}
+    a = Stream()
+    b = FromEventStream("event", ("data", "motor"),
+                        a.filter(lambda x: zz['data']), principle=True).map(
+        op.add, 1
+    )
+    c = ToEventStream(b, ("out",))
+    z = move_to_first(a.AlignEventStreams(c))
+    sl = z.sink_to_list()
+
+    RE.subscribe(lambda *x: a.emit(x))
+
+    osu = RE(scan([hw.img], hw.motor, 0, 10, 10, md={'hello': 'world'}))
+    zz['data'] = True
+    sl.clear()
+    osu2 = RE(scan([hw.img], hw.motor, 0, 10, 10))
+
+    assert 'hello' not in sl[0][1]
+
+
 def test_align_multi_stream(RE, hw):
     a = Stream()
     b = FromEventStream(

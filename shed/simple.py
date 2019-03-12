@@ -305,6 +305,8 @@ class simple_from_event_stream(Stream):
         asynchronous = None
         if "asynchronous" in kwargs:
             asynchronous = kwargs.pop("asynchronous")
+        if stream_name is None:
+            stream_name = '{} {}'.format(doc_type, str(data_address))
         Stream.__init__(
             self, upstream, stream_name=stream_name, asynchronous=asynchronous
         )
@@ -477,6 +479,11 @@ class align_event_streams(szip):
     def update(self, x, who=None):
         name, doc = x
         if name == "start":
+            # If we got a new start document for that incoming stream clear
+            # all its buffers
+            for buffer in self.true_buffers.values():
+                buffer[who].clear()
+
             self.descriptor_uids = []
         if name == "descriptor":
             # if we want the descriptor continue, else bounce out
