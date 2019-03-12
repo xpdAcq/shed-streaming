@@ -3,6 +3,7 @@ from collections import MutableMapping
 
 import networkx as nx
 from rapidz import Stream
+from rapidz.graph import _clean_text, readable_graph
 from shed import SimpleFromEventStream
 from shed.translation import ToEventStream
 
@@ -19,6 +20,35 @@ from shed.translation import ToEventStream
 # (and they aren't really used in the data processing).
 
 def replay(db, hdr, export=False):
+    """Replay data analysis
+
+    Parameters
+    ----------
+    db : Broker instance
+        The databroker to pull data from
+    hdr : Header instance
+        The analyzed data header
+    export : bool
+        If True push the newly analyzed data back into the database
+
+    Returns
+    -------
+    loaded_graph : DiGraph
+        The data processing pipeline as a graph
+    parent_nodes : dict
+        The source nodes for the graph
+    data : dict
+        A map between the document uids and documents
+    vs : list
+        List of document uid in time order
+
+    Notes
+    -----
+    >>> graph, parents, data, vs = replay(db, hdr)
+    >>> for v in vs:
+    ...     parents[v["node"]].update(data[v["uid"]])
+
+    """
     data = {}
     parent_nodes = {}
     # TODO: try either raw or analysis db (or stash something to know who comes
@@ -53,7 +83,6 @@ def replay(db, hdr, export=False):
     vs = sorted([(t, v) for t, v in times.items()], key=lambda x: x[0])
     vs = [v for t, v in vs]
 
-    # push the data through the pipeline
     return loaded_graph, parent_nodes, data, vs
 
 
@@ -65,7 +94,7 @@ def rebuild_node(node_dict, graph):
 
     aa = []
     for a in d["args"]:
-        print(a)
+        # print(a)
         if isinstance(a, MutableMapping) and a.get("name") and a.get("mod"):
             aa.append(getattr(importlib.import_module(a["mod"]), a["name"]))
         elif isinstance(a, (tuple, list)):
@@ -86,10 +115,10 @@ def rebuild_node(node_dict, graph):
         # it is out of scope, make a dummy node to keep the instantiation
         # happy
         elif issubclass(node, SimpleFromEventStream) and k == 'upstream':
-            kk[k] = Stream()
+            kk[k] = Stream(stream_name='Dummy')
         else:
             kk[k] = a
     d["kwargs"] = kk
-    print(node, d["args"], d["kwargs"])
+    # print(node, d["args"], d["kwargs"])
     n = node(*d["args"], **d["kwargs"])
     return n

@@ -1,6 +1,7 @@
 """Translation nodes"""
 import uuid
 from collections import deque
+from pprint import pprint
 
 import networkx as nx
 import numpy as np
@@ -302,6 +303,8 @@ class simple_from_event_stream(Stream):
         principle=False,
         **kwargs,
     ):
+        if stream_name is None:
+            stream_name = str(data_address)
         asynchronous = None
         if "asynchronous" in kwargs:
             asynchronous = kwargs.pop("asynchronous")
