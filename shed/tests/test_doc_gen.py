@@ -5,7 +5,7 @@ def test_docs():
     cd = CreateDocs(("ct",), my_md="md")
 
     start = cd.start_doc(None)
-    for k in ["uid", "time"]:
+    for k in ["uid", "time", "scan_id"]:
         assert k in start
     assert start["my_md"] == "md"
     desc = cd.descriptor(1)
