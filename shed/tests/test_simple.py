@@ -415,10 +415,10 @@ def test_align_buffering(RE, hw):
 
     RE.subscribe(lambda *x: a.emit(x))
 
-    osu = RE(scan([hw.img], hw.motor, 0, 10, 10, md={"hello": "world"}))
+    RE(scan([hw.img], hw.motor, 0, 10, 10, md={"hello": "world"}))
     zz["data"] = True
     sl.clear()
-    osu2 = RE(scan([hw.img], hw.motor, 0, 10, 10))
+    RE(scan([hw.img], hw.motor, 0, 10, 10))
 
     assert "hello" not in sl[0][1]
 
