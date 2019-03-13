@@ -18,6 +18,9 @@ def get_dtype(xx):
     return DTYPE_MAP.get(type(xx), type(xx).__name__)
 
 
+_GLOBAL_SCAN_ID = 0
+
+
 class CreateDocs(object):
     def __init__(self, data_keys, data_key_md=None, **kwargs):
         if data_key_md is None:
@@ -37,6 +40,9 @@ class CreateDocs(object):
         self.evp_fac = None
 
     def start_doc(self, x):
+        global _GLOBAL_SCAN_ID
+        _GLOBAL_SCAN_ID += 1
+        self.md.update(scan_id=_GLOBAL_SCAN_ID)
         bundle = compose_run(metadata=self.md, validate=False)
         new_start_doc, self.desc_fac, self.resc_fac, self.stop_factory = bundle
         self.start_uid = new_start_doc["uid"]

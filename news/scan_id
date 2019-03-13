@@ -1,0 +1,13 @@
+**Added:**
+
+* Start documents now have their own ``scan_id``
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None
