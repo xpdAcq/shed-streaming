@@ -37,7 +37,7 @@ class CreateDocs(object):
         self.evp_fac = None
 
     def start_doc(self, x):
-        bundle = compose_run(metadata=self.md)
+        bundle = compose_run(metadata=self.md, validate=False)
         new_start_doc, self.desc_fac, self.resc_fac, self.stop_factory = bundle
         self.start_uid = new_start_doc["uid"]
         return new_start_doc

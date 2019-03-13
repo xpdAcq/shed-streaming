@@ -1,0 +1,17 @@
+**Added:** None
+
+**Changed:**
+
+* Don't validate start documents
+* ``SimpleFromEventModel`` nodes give themselves descriptive names if none given
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:**
+
+* ``AlignEventStream`` properly drops buffers when start docs come in on the
+  same buffer
+
+**Security:** None
