@@ -10,6 +10,7 @@ omit =
     .*version.*
     *_version.py
     *conftest.py
+    */tests/utils.py
 
 exclude_lines =
     if __name__ == '__main__':
