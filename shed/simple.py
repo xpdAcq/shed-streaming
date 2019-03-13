@@ -306,7 +306,7 @@ class simple_from_event_stream(Stream):
         if "asynchronous" in kwargs:
             asynchronous = kwargs.pop("asynchronous")
         if stream_name is None:
-            stream_name = '{} {}'.format(doc_type, str(data_address))
+            stream_name = "{} {}".format(doc_type, str(data_address))
         Stream.__init__(
             self, upstream, stream_name=stream_name, asynchronous=asynchronous
         )
