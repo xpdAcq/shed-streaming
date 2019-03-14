@@ -4,6 +4,25 @@ SHED Change Log
 
 .. current developments
 
+v0.6.3
+====================
+
+**Added:**
+
+* Start documents now have their own ``scan_id``
+
+**Changed:**
+
+* Don't validate start documents
+* ``SimpleFromEventModel`` nodes give themselves descriptive names if none given
+
+**Fixed:**
+
+* ``AlignEventStream`` properly drops buffers when start docs come in on the
+  same buffer
+
+
+
 v0.6.2
 ====================
 
