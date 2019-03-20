@@ -1,7 +1,6 @@
 """Translation nodes"""
 import uuid
 from collections import deque
-from pprint import pprint
 
 import networkx as nx
 import numpy as np

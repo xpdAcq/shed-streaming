@@ -3,7 +3,6 @@ from collections import MutableMapping
 
 import networkx as nx
 from rapidz import Stream
-from rapidz.graph import _clean_text, readable_graph
 from shed import SimpleFromEventStream
 from shed.translation import ToEventStream
 
@@ -18,6 +17,7 @@ from shed.translation import ToEventStream
 # run into issues since we don't actually track the resource and datum
 # documents in the FromEventModel nodes since they didn't exist until recently
 # (and they aren't really used in the data processing).
+
 
 def replay(db, hdr, export=False):
     """Replay data analysis
@@ -59,7 +59,12 @@ def replay(db, hdr, export=False):
     # TODO: figure out how to handle filling documents, since we don't want
     #  to fill them here but they need to be filled
     for raw_hdr in raw_hdrs:
-        data.update({d.get("uid", d.get('datum_id')): (n, d) for n, d in raw_hdr.documents()})
+        data.update(
+            {
+                d.get("uid", d.get("datum_id")): (n, d)
+                for n, d in raw_hdr.documents()
+            }
+        )
 
     # get information from old analyzed header
     times = hdr["stop"]["times"]
@@ -114,8 +119,8 @@ def rebuild_node(node_dict, graph):
         # If there is an upstream node for our FromEventStream node then
         # it is out of scope, make a dummy node to keep the instantiation
         # happy
-        elif issubclass(node, SimpleFromEventStream) and k == 'upstream':
-            kk[k] = Stream(stream_name='Dummy')
+        elif issubclass(node, SimpleFromEventStream) and k == "upstream":
+            kk[k] = Stream(stream_name="Dummy")
         else:
             kk[k] = a
     d["kwargs"] = kk

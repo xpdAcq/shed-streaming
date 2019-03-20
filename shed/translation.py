@@ -1,7 +1,6 @@
 import json
 import subprocess
 import time
-from pprint import pprint
 
 import networkx as nx
 import numpy as np
@@ -24,12 +23,12 @@ def conda_env():
         A dictionary representing the packages installed
 
     """
-    data = subprocess.call(['conda', 'list', '--json'])
+    data = subprocess.call(["conda", "list", "--json"])
     try:
         j_data = json.loads(data)
     except TypeError:
-        j_data = 'Failed to get packages'
-    return {'packages': j_data}
+        j_data = "Failed to get packages"
+    return {"packages": j_data}
 
 
 @args_kwargs
@@ -156,9 +155,14 @@ class ToEventStream(SimpleToEventStream):
     ('stop',...)
     """
 
-    def __init__(self, upstream, data_keys=None, stream_name=None,
-                 env_capture_functions=(conda_env, ),
-                 **kwargs):
+    def __init__(
+        self,
+        upstream,
+        data_keys=None,
+        stream_name=None,
+        env_capture_functions=(conda_env,),
+        **kwargs
+    ):
         super().__init__(
             upstream=upstream,
             data_keys=data_keys,
@@ -179,9 +183,9 @@ class ToEventStream(SimpleToEventStream):
         new_start_doc = super().start_doc(x)
         new_start_doc.update(graph=self.graph)
         if self.env_capture_functions:
-            new_start_doc['env'] = {}
+            new_start_doc["env"] = {}
             for f in self.env_capture_functions:
-                new_start_doc['env'].update(f())
+                new_start_doc["env"].update(f())
         return new_start_doc
 
     def stop(self, x):
