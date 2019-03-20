@@ -12,7 +12,7 @@ First, we begin with a quick review of simple streams. Let's say we
 had a stream of incoming data, and needed to increment by one, and print
 the result. The definition is as simple as the following::
 
-    import rapidz.core as sc
+    from rapidz import Stream
     def myadder(x):
         return x + 1
 
@@ -50,11 +50,13 @@ an experiment run at a beamline.
 Here is an example pipeline which multiplies the output of a detector by 5 and 
 then performs a running sum of the results.
 The results are then repackaged into the event model and printed via 
-``pprint``. Finally we run a count scan with the ``ab_det`` detector::
+``pprint``.
+Finally we run a count scan with the ``ab_det`` detector::
     
     from rapidz import Stream
     from shed.simple import SimpleFromEventStream, SimpleToEventStream
     import operator as op
+    from pprint import pprint
 
     # where we'll input data
     raw_source = Stream()
@@ -73,6 +75,7 @@ The results are then repackaged into the event model and printed via
 
     # print out the documents as they come out
     res.sink(pprint)
+
 
 Now with the pipeline setup we can connect it to the ``RunEngine`` and
 run our experiment::
@@ -118,3 +121,5 @@ Finally we can send the data to a databroker::
     # we use starsink here because we need to splay out the (name, document)
     # pair into the args
     res.starsink(db.insert)
+
+
