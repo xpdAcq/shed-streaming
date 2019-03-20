@@ -123,3 +123,84 @@ Finally we can send the data to a databroker::
     res.starsink(db.insert)
 
 
+Tutorial 3: Replay
+------------------
+To capture the provenance of the data processing we need to use the full
+translation nodes (rather than the ``Simple`` nodes).
+We can use the pipeline from above with a small modification::
+
+    from rapidz import Stream
+    from shed.translation import FromEventStream, ToEventStream
+    import operator as op
+    from databroker import Broker
+    import bluesky.plans as bp
+    from ophyd.sim import hw
+    from bluesky import RunEngine
+    from pprint import pprint
+
+    # where we'll input data
+    raw_source = Stream()
+
+    # extract from the events the values associated with 'data' and 'det_a'
+    # (principle=True means that we listen to this node for when to issue
+    # start and stop documents, all SHED pipelines must have at least one
+    # principle node)
+    raw_output = FromEventStream('event', ('data', 'det_a'), raw_source,
+                                       principle=True)
+    # multiply by 5 and performa a cumulative sum
+    pipeline = raw_output.map(op.mul, 5).accumulate(op.add)
+
+    # repackage the data in the event model under the name 'result'
+    res = ToEventStream(pipeline, ('result', ))
+
+    # print out the documents as they come out
+    res.sink(pprint)
+
+    # create a temporary database
+    db = Broker.named('temp')
+
+    # we use starsink here because we need to splay out the (name, document)
+    # pair into the args
+    res.DBFriendly().starsink(db.insert)
+
+    # make some simulated devices
+    hw = hw()
+    RE = RunEngine()
+
+    # Send raw data to the databroker as well
+    RE.subscribe(db.insert)
+    # have the RunEngine send data into the pipeline
+    RE.subscribe(lambda *x: raw_source.emit(x))
+
+    # Run the scan
+    RE(bp.count([hw.ab_det], 5))
+
+Now that we have created the pipeline, ran the experiment, and captured it into
+the databroker we can then replay the analysis::
+
+    from shed.replay import replay
+
+    # get the graph and data
+    graph, parents, data, vs = replay(db, db[-1])
+
+    # make a graph with human readable names
+    for k, v in graph.nodes.items():
+        v.update(label=_clean_text(str(v['stream'])).strip())
+    graph = readable_graph(graph)
+
+    # create a plot of the graph so we can look at it and figure out what
+    # the node names are
+    # the file will be named ``mystream.png``
+    graph.nodes['data det_a FromEventStream']['stream'].visualize()
+
+    # print the results
+    graph.nodes['result ToEventStream'].sink(pprint)
+
+    # change the multiplication factor from 5 to 10
+    graph.nodes['map; mul'].args = (10, )
+
+    # rerun the analysis and print the results
+    for v in vs:
+        dd = data[v['uid']]
+        parents[v["node"]].update(dd)
+
