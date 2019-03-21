@@ -92,7 +92,6 @@ def rebuild_node(node_dict, graph):
 
     aa = []
     for a in d["args"]:
-        # print(a)
         if isinstance(a, MutableMapping) and a.get("name") and a.get("mod"):
             aa.append(getattr(importlib.import_module(a["mod"]), a["name"]))
         elif isinstance(a, (tuple, list)):
@@ -117,6 +116,5 @@ def rebuild_node(node_dict, graph):
         else:
             kk[k] = a
     d["kwargs"] = kk
-    # print(node, d["args"], d["kwargs"])
     n = node(*d["args"], **d["kwargs"])
     return n

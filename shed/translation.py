@@ -222,7 +222,6 @@ class DBFriendly(Stream):
                     graph.node[n]["stream"]
                 )
             doc["graph"] = nx.node_link_data(graph)
-            # pprint(doc['graph'])
         return self.emit((name, doc))
 
 
