@@ -4,7 +4,6 @@ from collections import MutableMapping
 import networkx as nx
 from rapidz import Stream
 from shed import SimpleFromEventStream
-from shed.translation import ToEventStream
 
 
 # One problem we're facing is that the various pipelines handle document
