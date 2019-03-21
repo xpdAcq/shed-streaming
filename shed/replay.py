@@ -18,7 +18,7 @@ from shed import SimpleFromEventStream
 # (and they aren't really used in the data processing).
 
 
-def replay(db, hdr, export=False):
+def replay(db, hdr):
     """Replay data analysis
 
     Parameters
@@ -27,8 +27,6 @@ def replay(db, hdr, export=False):
         The databroker to pull data from
     hdr : Header instance
         The analyzed data header
-    export : bool
-        If True push the newly analyzed data back into the database
 
     Returns
     -------
@@ -109,10 +107,10 @@ def rebuild_node(node_dict, graph):
         elif isinstance(a, MutableMapping) and a.get("name") and a.get("mod"):
             kk[k] = getattr(importlib.import_module(a["mod"]), a["name"])
         # If there is an upstream node for our FromEventStream node then
-        # it is out of scope, make a dummy node to keep the instantiation
+        # it is out of scope, make a Placeholder node to keep the instantiation
         # happy
         elif issubclass(node, SimpleFromEventStream) and k == "upstream":
-            kk[k] = Stream(stream_name="Dummy")
+            kk[k] = Stream(stream_name="Placeholder")
         else:
             kk[k] = a
     d["kwargs"] = kk
