@@ -3,6 +3,7 @@ import operator as op
 import networkx as nx
 import numpy as np
 import pytest
+from rapidz import Stream
 from shed import FromEventStream
 from shed.replay import replay
 from shed.tests.utils import y
@@ -60,6 +61,59 @@ def test_replay(db):
         if nd1[0] == "event":
             assert nd1[1]["data"]["img2"] == nd2[1]["data"]["img2"]
 
+
+@pytest.mark.gen_test
+def test_replay_dummy_node(db):
+    # XXX: what to do if you have a source?
+    # build the graph
+    source = Stream()
+    g1 = FromEventStream(
+        "event",
+        ("data", "det_image"),
+        upstream=source,
+        principle=True,
+        stream_name="g1",
+        asynchronous=True,
+    )
+    g2 = g1.map(op.mul, 5, stream_name="mul")
+    g = g2.ToEventStream(("img2",))
+    graph = g.graph
+    dbf = g.DBFriendly()
+    l1 = dbf.sink_to_list()
+    dbf.starsink(db.insert)
+
+    print("start experiment")
+
+    # run the experiment
+    l0 = []
+    for yy in y(5):
+        l0.append(yy)
+        db.insert(*yy)
+        yield source.emit(yy)
+
+    print("start replay")
+
+    # generate the replay
+    lg, parents, data, vs = replay(db, db[-1])
+
+    assert set(graph.nodes) == set(lg.nodes)
+    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
+    # run the replay
+    lg.nodes[g1.uid]["stream"].sink(print)
+    for v in vs:
+        parents[v["node"]].update(data[v["uid"]])
+
+    # check that all the things are ok
+    assert len(l1) == len(l2)
+    assert len(l0) == len(l2)
+    for nd1, nd2 in zip(l0, l2):
+        assert nd1[0] == nd2[0]
+        if nd1[0] == "event":
+            assert nd1[1]["data"]["det_image"] * 5 == nd2[1]["data"]["img2"]
+    for nd1, nd2 in zip(l1, l2):
+        assert nd1[0] == nd2[0]
+        if nd1[0] == "event":
+            assert nd1[1]["data"]["img2"] == nd2[1]["data"]["img2"]
 
 @pytest.mark.gen_test
 def test_replay_parallel(db):

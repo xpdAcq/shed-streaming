@@ -76,12 +76,6 @@ def replay(db, hdr, export=False):
             loaded_graph.node[n]["stream"], loaded_graph
         )
 
-    # TODO: remove this, we have the graph we should make users use it!
-    if export:
-        for n, attrs in loaded_graph.node.items():
-            if isinstance(attrs["stream"], ToEventStream):
-                attrs["stream"].DBFriendly().starsink(db.insert)
-
     for node_uid in hdr["start"]["parent_node_map"]:
         parent_nodes[node_uid] = loaded_graph.node[node_uid]["stream"]
 
