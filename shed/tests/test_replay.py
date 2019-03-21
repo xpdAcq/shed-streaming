@@ -115,6 +115,7 @@ def test_replay_dummy_node(db):
         if nd1[0] == "event":
             assert nd1[1]["data"]["img2"] == nd2[1]["data"]["img2"]
 
+
 @pytest.mark.gen_test
 def test_replay_parallel(db):
     print("build graph")

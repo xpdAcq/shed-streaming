@@ -172,11 +172,13 @@ class ToEventStream(SimpleToEventStream):
         self.env_capture_functions = env_capture_functions
         self.times = {}
         for node, attrs in self.graph.nodes.items():
-            for arg in getattr(attrs['stream'], '_init_args', []):
-                if getattr(arg, '__name__', '') == '<lambda>':
-                    raise RuntimeError('lambda functions can not be stored '
-                                       'either eliminate the lambda or use '
-                                       '``SimpleToEventStream``')
+            for arg in getattr(attrs["stream"], "_init_args", []):
+                if getattr(arg, "__name__", "") == "<lambda>":
+                    raise RuntimeError(
+                        "lambda functions can not be stored "
+                        "either eliminate the lambda or use "
+                        "``SimpleToEventStream``"
+                    )
 
     def emit(self, x, asynchronous=False):
         name, doc = x
