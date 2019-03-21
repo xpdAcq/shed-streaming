@@ -61,7 +61,7 @@ for yy in y():
 
 print(db[-1]['stop'])
 print('replay experiment')
-rp = replay(db, db[-1], export=True)
+rp = replay(db, db[-1])
 lg = next(rp)
 ts = list(nx.topological_sort(lg))
 lg.node[ts[-1]]['stream'].sink(pprint)
