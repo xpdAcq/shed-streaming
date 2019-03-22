@@ -23,7 +23,7 @@ def conda_env():
         A dictionary representing the packages installed
 
     """
-    data = subprocess.call(["conda", "list", "--json"])
+    data = subprocess.check_output(["conda", "list", "--json"])
     try:
         j_data = json.loads(data)
     except TypeError:

@@ -84,8 +84,6 @@ run our experiment::
     from ophyd.sim import hw
     from bluesky import RunEngine
 
-    from pprint import pprint
-
     # make some simulated devices
     hw = hw()
     RE = RunEngine()
@@ -94,20 +92,26 @@ run our experiment::
     RE.subscribe(lambda *x: raw_source.emit(x))
 
     # Run the scan
-    RE(bp.count([hw.ab_det], 5))
+    RE(bp.scan([hw.ab_det], hw.motor1, 0, 4, 5))
 
 
 We can also subscribe ``BestEffortCallback`` into the pipeline for live
 visualization::
 
+    from bluesky.utils import install_qt_kicker()
+    from bluesky.callbacks.best_effort import BestEffortCallback
+    install_qt_kicker()
+
     bec = BestEffortCallback()
+    # AlignEventStream so we inherit scan details
     # starsink because we need to splay out the data as args
-    res.starsink(bec)
+    res.AlignEventStreams(raw_source).starsink(bec)
 
 We can also extract data from other documents, for instance from the start
 document::
 
-    from_start = SimpleFromEventStream('start', ('my_number', ) raw_source)
+    from_start = SimpleFromEventStream('start', ('my_number', ),
+                                       upstream=raw_source)
     from_start.sink(print)
     RE(bp.count([hw.ab_det], 5), my_number=3)
 
@@ -145,8 +149,8 @@ We can use the pipeline from above with a small modification::
     # (principle=True means that we listen to this node for when to issue
     # start and stop documents, all SHED pipelines must have at least one
     # principle node)
-    raw_output = FromEventStream('event', ('data', 'det_a'), raw_source,
-                                       principle=True)
+    raw_output = FromEventStream('event', ('data', 'det_a'),
+                                 upstream=raw_source, principle=True)
     # multiply by 5 and performa a cumulative sum
     pipeline = raw_output.map(op.mul, 5).accumulate(op.add)
 
@@ -159,6 +163,7 @@ We can use the pipeline from above with a small modification::
     # create a temporary database
     db = Broker.named('temp')
 
+    # Make certain that the data is DB friendly (serialize the graph)
     # we use starsink here because we need to splay out the (name, document)
     # pair into the args
     res.DBFriendly().starsink(db.insert)
@@ -179,6 +184,7 @@ Now that we have created the pipeline, ran the experiment, and captured it into
 the databroker we can then replay the analysis::
 
     from shed.replay import replay
+    from rapidz.graph import _clean_text, readable_graph
 
     # get the graph and data
     graph, parents, data, vs = replay(db, db[-1])
