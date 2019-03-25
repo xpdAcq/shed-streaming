@@ -102,6 +102,7 @@ def rebuild_node(node_dict, graph):
 
     kk = {}
     for k, a in d["kwargs"].items():
+        # TODO: check if hashable first
         if a in graph.node:
             kk[k] = graph.node[a]["stream"]
         elif isinstance(a, MutableMapping) and a.get("name") and a.get("mod"):
