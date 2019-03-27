@@ -37,7 +37,7 @@ def test_replay(db):
         db.insert(*yy)
         yield g1.update(yy)
 
-    assert 'env' in db[-1].start
+    assert "env" in db[-1].start
     print("start replay")
 
     # generate the replay
@@ -90,7 +90,7 @@ def test_replay_no_env(db):
         db.insert(*yy)
         yield g1.update(yy)
 
-    assert 'env' not in db[-1].start
+    assert "env" not in db[-1].start
     print("start replay")
 
     # generate the replay
@@ -114,6 +114,7 @@ def test_replay_no_env(db):
         assert nd1[0] == nd2[0]
         if nd1[0] == "event":
             assert nd1[1]["data"]["img2"] == nd2[1]["data"]["img2"]
+
 
 @pytest.mark.gen_test
 def test_replay_dummy_node(db):
