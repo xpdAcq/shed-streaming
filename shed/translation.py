@@ -23,10 +23,10 @@ def conda_env():
         A dictionary representing the packages installed
 
     """
-    data = subprocess.call(["conda", "list", "--json"])
+    data = subprocess.check_output(["conda", "list", "--json"])
     try:
         j_data = json.loads(data)
-    except TypeError:
+    except TypeError:  # pragma: noqa
         j_data = "Failed to get packages"
     return {"packages": j_data}
 

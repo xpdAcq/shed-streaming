@@ -1,5 +1,5 @@
 import importlib
-from collections import MutableMapping
+from collections import MutableMapping, Hashable
 
 import networkx as nx
 from rapidz import Stream
@@ -102,7 +102,9 @@ def rebuild_node(node_dict, graph):
 
     kk = {}
     for k, a in d["kwargs"].items():
-        if a in graph.node:
+        # We can't check if non hashables are in the graph (also I don't think
+        # we can put non hashables as nodes in the graph)
+        if isinstance(a, Hashable) and a in graph.node:
             kk[k] = graph.node[a]["stream"]
         elif isinstance(a, MutableMapping) and a.get("name") and a.get("mod"):
             kk[k] = getattr(importlib.import_module(a["mod"]), a["name"])

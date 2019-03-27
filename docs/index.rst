@@ -10,6 +10,19 @@ Streaming Heterogeneous Event Data (SHED) is a system for streaming
 data from the event model into a Streamz graph while tracking data
 provenance and workflow execution.
 
+Installation
+============
+
+``shed`` is installable via the ``conda`` package manager.
+If you don't have Anaconda (or miniconda) installed please follow the instructions
+from `Data Carpentry <https://datacarpentry.org/2016-05-29-PyCon/install.html>`_.
+
+With Anaconda or miniconda please enter into a terminal (on Windows Anaconda
+ships with a dedicated command prompt) and type
+
+``conda install shed -c conda-forge``
+
+and follow the prompts. This will install the shed software and all of its dependencies.
 
 .. toctree::
    :maxdepth: 4
