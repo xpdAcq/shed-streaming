@@ -85,6 +85,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorials</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#tutorial-1-simple-streams">Tutorial 1 : Simple Streams</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#tutorial-2-a-simple-event-stream">Tutorial 2 : A simple Event Stream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tutorial-3-replay">Tutorial 3: Replay</a></li>
 </ul>
 </li>
 </ul>
@@ -162,7 +163,7 @@ Before beginning, we’ll assume that you have the <code class="docutils literal
 <p>First, we begin with a quick review of simple streams. Let’s say we
 had a stream of incoming data, and needed to increment by one, and print
 the result. The definition is as simple as the following:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">rapidz.core</span> <span class="k">as</span> <span class="nn">sc</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">rapidz</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="k">def</span> <span class="nf">myadder</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
 
@@ -198,10 +199,12 @@ an experiment run at a beamline.</p>
 <p>Here is an example pipeline which multiplies the output of a detector by 5 and
 then performs a running sum of the results.
 The results are then repackaged into the event model and printed via
-<code class="docutils literal notranslate"><span class="pre">pprint</span></code>. Finally we run a count scan with the <code class="docutils literal notranslate"><span class="pre">ab_det</span></code> detector:</p>
+<code class="docutils literal notranslate"><span class="pre">pprint</span></code>.
+Finally we run a count scan with the <code class="docutils literal notranslate"><span class="pre">ab_det</span></code> detector:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">rapidz</span> <span class="k">import</span> <span class="n">Stream</span>
 <span class="kn">from</span> <span class="nn">shed.simple</span> <span class="k">import</span> <span class="n">SimpleFromEventStream</span><span class="p">,</span> <span class="n">SimpleToEventStream</span>
 <span class="kn">import</span> <span class="nn">operator</span> <span class="k">as</span> <span class="nn">op</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pprint</span>
 
 <span class="c1"># where we&#39;ll input data</span>
 <span class="n">raw_source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
@@ -228,8 +231,6 @@ run our experiment:</p>
 <span class="kn">from</span> <span class="nn">ophyd.sim</span> <span class="k">import</span> <span class="n">hw</span>
 <span class="kn">from</span> <span class="nn">bluesky</span> <span class="k">import</span> <span class="n">RunEngine</span>
 
-<span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pprint</span>
-
 <span class="c1"># make some simulated devices</span>
 <span class="n">hw</span> <span class="o">=</span> <span class="n">hw</span><span class="p">()</span>
 <span class="n">RE</span> <span class="o">=</span> <span class="n">RunEngine</span><span class="p">()</span>
@@ -238,19 +239,25 @@ run our experiment:</p>
 <span class="n">RE</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="k">lambda</span> <span class="o">*</span><span class="n">x</span><span class="p">:</span> <span class="n">raw_source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 
 <span class="c1"># Run the scan</span>
-<span class="n">RE</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">count</span><span class="p">([</span><span class="n">hw</span><span class="o">.</span><span class="n">ab_det</span><span class="p">],</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">RE</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">scan</span><span class="p">([</span><span class="n">hw</span><span class="o">.</span><span class="n">ab_det</span><span class="p">],</span> <span class="n">hw</span><span class="o">.</span><span class="n">motor1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>We can also subscribe <code class="docutils literal notranslate"><span class="pre">BestEffortCallback</span></code> into the pipeline for live
 visualization:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">bec</span> <span class="o">=</span> <span class="n">BestEffortCallback</span><span class="p">()</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">bluesky.utils</span> <span class="k">import</span> <span class="n">install_qt_kicker</span><span class="p">()</span>
+<span class="kn">from</span> <span class="nn">bluesky.callbacks.best_effort</span> <span class="k">import</span> <span class="n">BestEffortCallback</span>
+<span class="n">install_qt_kicker</span><span class="p">()</span>
+
+<span class="n">bec</span> <span class="o">=</span> <span class="n">BestEffortCallback</span><span class="p">()</span>
+<span class="c1"># AlignEventStream so we inherit scan details</span>
 <span class="c1"># starsink because we need to splay out the data as args</span>
-<span class="n">res</span><span class="o">.</span><span class="n">starsink</span><span class="p">(</span><span class="n">bec</span><span class="p">)</span>
+<span class="n">res</span><span class="o">.</span><span class="n">AlignEventStreams</span><span class="p">(</span><span class="n">raw_source</span><span class="p">)</span><span class="o">.</span><span class="n">starsink</span><span class="p">(</span><span class="n">bec</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>We can also extract data from other documents, for instance from the start
 document:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">from_start</span> <span class="o">=</span> <span class="n">SimpleFromEventStream</span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;my_number&#39;</span><span class="p">,</span> <span class="p">)</span> <span class="n">raw_source</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">from_start</span> <span class="o">=</span> <span class="n">SimpleFromEventStream</span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;my_number&#39;</span><span class="p">,</span> <span class="p">),</span>
+                                   <span class="n">upstream</span><span class="o">=</span><span class="n">raw_source</span><span class="p">)</span>
 <span class="n">from_start</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
 <span class="n">RE</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">count</span><span class="p">([</span><span class="n">hw</span><span class="o">.</span><span class="n">ab_det</span><span class="p">],</span> <span class="mi">5</span><span class="p">),</span> <span class="n">my_number</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 </pre></div>
@@ -264,6 +271,90 @@ document:</p>
 <span class="c1"># we use starsink here because we need to splay out the (name, document)</span>
 <span class="c1"># pair into the args</span>
 <span class="n">res</span><span class="o">.</span><span class="n">starsink</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">insert</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="tutorial-3-replay">
+<h2>Tutorial 3: Replay<a class="headerlink" href="#tutorial-3-replay" title="Permalink to this headline">¶</a></h2>
+<p>To capture the provenance of the data processing we need to use the full
+translation nodes (rather than the <code class="docutils literal notranslate"><span class="pre">Simple</span></code> nodes).
+We can use the pipeline from above with a small modification:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">rapidz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="kn">from</span> <span class="nn">shed.translation</span> <span class="k">import</span> <span class="n">FromEventStream</span><span class="p">,</span> <span class="n">ToEventStream</span>
+<span class="kn">import</span> <span class="nn">operator</span> <span class="k">as</span> <span class="nn">op</span>
+<span class="kn">from</span> <span class="nn">databroker</span> <span class="k">import</span> <span class="n">Broker</span>
+<span class="kn">import</span> <span class="nn">bluesky.plans</span> <span class="k">as</span> <span class="nn">bp</span>
+<span class="kn">from</span> <span class="nn">ophyd.sim</span> <span class="k">import</span> <span class="n">hw</span>
+<span class="kn">from</span> <span class="nn">bluesky</span> <span class="k">import</span> <span class="n">RunEngine</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pprint</span>
+
+<span class="c1"># where we&#39;ll input data</span>
+<span class="n">raw_source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+
+<span class="c1"># extract from the events the values associated with &#39;data&#39; and &#39;det_a&#39;</span>
+<span class="c1"># (principle=True means that we listen to this node for when to issue</span>
+<span class="c1"># start and stop documents, all SHED pipelines must have at least one</span>
+<span class="c1"># principle node)</span>
+<span class="n">raw_output</span> <span class="o">=</span> <span class="n">FromEventStream</span><span class="p">(</span><span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;det_a&#39;</span><span class="p">),</span>
+                             <span class="n">upstream</span><span class="o">=</span><span class="n">raw_source</span><span class="p">,</span> <span class="n">principle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1"># multiply by 5 and performa a cumulative sum</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">raw_output</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">mul</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">accumulate</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">add</span><span class="p">)</span>
+
+<span class="c1"># repackage the data in the event model under the name &#39;result&#39;</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">ToEventStream</span><span class="p">(</span><span class="n">pipeline</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;result&#39;</span><span class="p">,</span> <span class="p">))</span>
+
+<span class="c1"># print out the documents as they come out</span>
+<span class="n">res</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="n">pprint</span><span class="p">)</span>
+
+<span class="c1"># create a temporary database</span>
+<span class="n">db</span> <span class="o">=</span> <span class="n">Broker</span><span class="o">.</span><span class="n">named</span><span class="p">(</span><span class="s1">&#39;temp&#39;</span><span class="p">)</span>
+
+<span class="c1"># Make certain that the data is DB friendly (serialize the graph)</span>
+<span class="c1"># we use starsink here because we need to splay out the (name, document)</span>
+<span class="c1"># pair into the args</span>
+<span class="n">res</span><span class="o">.</span><span class="n">DBFriendly</span><span class="p">()</span><span class="o">.</span><span class="n">starsink</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">insert</span><span class="p">)</span>
+
+<span class="c1"># make some simulated devices</span>
+<span class="n">hw</span> <span class="o">=</span> <span class="n">hw</span><span class="p">()</span>
+<span class="n">RE</span> <span class="o">=</span> <span class="n">RunEngine</span><span class="p">()</span>
+
+<span class="c1"># Send raw data to the databroker as well</span>
+<span class="n">RE</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">insert</span><span class="p">)</span>
+<span class="c1"># have the RunEngine send data into the pipeline</span>
+<span class="n">RE</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="k">lambda</span> <span class="o">*</span><span class="n">x</span><span class="p">:</span> <span class="n">raw_source</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+<span class="c1"># Run the scan</span>
+<span class="n">RE</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">count</span><span class="p">([</span><span class="n">hw</span><span class="o">.</span><span class="n">ab_det</span><span class="p">],</span> <span class="mi">5</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Now that we have created the pipeline, ran the experiment, and captured it into
+the databroker we can then replay the analysis:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shed.replay</span> <span class="k">import</span> <span class="n">replay</span>
+<span class="kn">from</span> <span class="nn">rapidz.graph</span> <span class="k">import</span> <span class="n">_clean_text</span><span class="p">,</span> <span class="n">readable_graph</span>
+
+<span class="c1"># get the graph and data</span>
+<span class="n">graph</span><span class="p">,</span> <span class="n">parents</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">vs</span> <span class="o">=</span> <span class="n">replay</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">db</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="c1"># make a graph with human readable names</span>
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">v</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="n">_clean_text</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+<span class="n">graph</span> <span class="o">=</span> <span class="n">readable_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+
+<span class="c1"># create a plot of the graph so we can look at it and figure out what</span>
+<span class="c1"># the node names are</span>
+<span class="c1"># the file will be named ``mystream.png``</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s1">&#39;data det_a FromEventStream&#39;</span><span class="p">][</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">visualize</span><span class="p">()</span>
+
+<span class="c1"># print the results</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s1">&#39;result ToEventStream&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="n">pprint</span><span class="p">)</span>
+
+<span class="c1"># change the multiplication factor from 5 to 10</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s1">&#39;map; mul&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="p">)</span>
+
+<span class="c1"># rerun the analysis and print the results</span>
+<span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vs</span><span class="p">:</span>
+    <span class="n">dd</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">v</span><span class="p">[</span><span class="s1">&#39;uid&#39;</span><span class="p">]]</span>
+    <span class="n">parents</span><span class="p">[</span><span class="n">v</span><span class="p">[</span><span class="s2">&quot;node&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dd</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
