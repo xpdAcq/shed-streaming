@@ -200,10 +200,10 @@ the databroker we can then replay the analysis::
     graph.nodes['data det_a FromEventStream']['stream'].visualize()
 
     # print the results
-    graph.nodes['result ToEventStream'].sink(pprint)
+    graph.nodes['result ToEventStream']['stream'].sink(pprint)
 
     # change the multiplication factor from 5 to 10
-    graph.nodes['map; mul'].args = (10, )
+    graph.nodes['map; mul']['stream'].args = (10, )
 
     # rerun the analysis and print the results
     for v in vs:
