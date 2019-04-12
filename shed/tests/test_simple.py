@@ -653,3 +653,28 @@ def test_same_hdr_many_times(hw, RE):
             o1 = [z[0] for z in l]
             o2 = ["start", "descriptor", "event", "stop"] * i
             assert o1 == o2
+
+
+def test_last_cache(RE, hw):
+    source = Stream()
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
+    assert t.principle
+
+    n = ToEventStream(t, ("ct",), data_key_md={"ct": {"units": "arb"}}).LastCache()
+    tt = t.sink_to_list()
+    names = n.pluck(0).sink_to_list()
+    docs = n.pluck(1).sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert len(docs) == 10+3+2
+    assert names[-3] is 'descriptor'
+    assert names[-2] is 'event'
+    assert tt
+    assert set(names) == {"start", "stop", "event", "descriptor"}
+    assert docs[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert docs[1]["data_keys"]["ct"]["units"] == "arb"
+    assert docs[-1]["run_start"]

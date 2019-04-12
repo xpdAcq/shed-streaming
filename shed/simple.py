@@ -4,6 +4,7 @@ from collections import deque
 
 import networkx as nx
 import numpy as np
+from event_model import DocumentRouter, compose_descriptor
 from rapidz.core import Stream, zip as szip, move_to_first
 from shed.doc_gen import CreateDocs
 from xonsh.lib.collections import ChainDB, _convert_to_dict
@@ -518,3 +519,33 @@ class align_event_streams(szip):
 @Stream.register_api()
 class AlignEventStreams(align_event_streams):
     pass
+
+
+@Stream.register_api()
+class LastCache(Stream):
+    """Cache the last event in all streams then emit them under their own
+    descriptor when the stop document comes down."""
+    def update(self, x, who=None):
+        name, doc = x
+        if name is 'start':
+            self.last_caches = {}
+        elif name is 'descriptor':
+            self.last_caches[doc['uid']] = {'name': doc['name'], 'doc': None,
+                                            'data_keys': doc['data_keys']}
+        elif name is 'event':
+            self.last_caches[doc['descriptor']]['doc'] = doc
+        elif name is 'stop':
+            for descriptor_uid, cache in self.last_caches.items():
+                # if we don't have any docs in this stream do nothing
+                if cache['doc']:
+                    descriptor, events_func, _ = compose_descriptor(
+                        start=doc['run_start'], streams={}, event_counter={},
+                        name=f'final_{cache["name"]}', validate=False,
+                        data_keys=cache['data_keys']
+                    )
+                    self.emit(('descriptor', descriptor))
+                    self.emit(('event', events_func(
+                        data=cache['doc']['data'],
+                        timestamps=cache['doc']['timestamps']
+                    )))
+        super().update(x)
