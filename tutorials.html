@@ -346,10 +346,10 @@ the databroker we can then replay the analysis:</p>
 <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s1">&#39;data det_a FromEventStream&#39;</span><span class="p">][</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">visualize</span><span class="p">()</span>
 
 <span class="c1"># print the results</span>
-<span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s1">&#39;result ToEventStream&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="n">pprint</span><span class="p">)</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s1">&#39;result ToEventStream&#39;</span><span class="p">][</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="n">pprint</span><span class="p">)</span>
 
 <span class="c1"># change the multiplication factor from 5 to 10</span>
-<span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s1">&#39;map; mul&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="p">)</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s1">&#39;map; mul&#39;</span><span class="p">][</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="p">)</span>
 
 <span class="c1"># rerun the analysis and print the results</span>
 <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vs</span><span class="p">:</span>
