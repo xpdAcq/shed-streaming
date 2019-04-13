@@ -548,4 +548,4 @@ class LastCache(Stream):
                         data=cache['doc']['data'],
                         timestamps=cache['doc']['timestamps']
                     )))
-        super().update(x)
+        self.emit(x)
