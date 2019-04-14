@@ -2,12 +2,13 @@ import inspect
 import json
 import subprocess
 import time
+from hashlib import sha256
 
 import networkx as nx
 import numpy as np
+from event_model import sanitize_doc
 from rapidz.core import Stream
 from rapidz.core import _deref_weakref, args_kwargs
-from hashlib import sha256
 
 from .simple import SimpleToEventStream, SimpleFromEventStream, _hash_or_uid
 
@@ -215,8 +216,8 @@ class ToEventStream(SimpleToEventStream):
 
 def merkle_hash(node):
     hasher = sha256()
-    dbf_node = merkle_friendly_node(node)
-    hash_string = "".join(
+    dbf_node = sanitize_doc(merkle_friendly_node(node))
+    hash_string = ",".join(
         str(dbf_node[k]) for k in ["name", "mod", "args", "kwargs"]
     )
     hasher.update(hash_string.encode("utf-8"))
@@ -372,8 +373,9 @@ def merkle_friendly_node(node):
         for k, v in merkle_deref_dict.items():
             # If we have a tool for storing things store it
 
-            if k(a) and v:
-                aa.append(v(a))
+            if k(a):
+                if v is not None:
+                    aa.append(v(a))
                 stored = True
                 break
         # If none of our tools worked, store it natively
@@ -386,14 +388,15 @@ def merkle_friendly_node(node):
         stored = False
         for k, v in merkle_deref_dict.items():
             # If we have a tool for storing things store it
-            if k(a) and v:
-                kk[i] = v(a)
+            if k(a):
+                if v is not None:
+                    kk[i] = v(a)
                 stored = True
                 break
         # If none of our tools worked, store it natively
         if not stored:
             kk[i] = a
 
-    d2["args"] = tuple(aa)
+    d2["args"] = aa
     d2["kwargs"] = kk
     return d2
