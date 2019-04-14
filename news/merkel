@@ -1,0 +1,13 @@
+**Added:**
+
+* Merkle tree like hashing capability for checking if two pipelies are the same
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None

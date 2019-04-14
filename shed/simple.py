@@ -222,6 +222,9 @@ class simple_to_event_stream(Stream, CreateDocs):
                     for k, v in self.translation_nodes.items()
                     if v.start_uid is not None
                 },
+                # keep track of this so we know which node we're sending
+                # data from (see merkle hash in DBFriendly)
+                outbound_node=self.uid,
             )
         )
         start = self.create_doc("start", x)
