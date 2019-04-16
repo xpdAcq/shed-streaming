@@ -660,7 +660,9 @@ def test_last_cache(RE, hw):
     t = FromEventStream("event", ("data", "motor"), source, principle=True)
     assert t.principle
 
-    n = ToEventStream(t, ("ct",), data_key_md={"ct": {"units": "arb"}}).LastCache()
+    n = ToEventStream(
+        t, ("ct",), data_key_md={"ct": {"units": "arb"}}
+    ).LastCache()
     tt = t.sink_to_list()
     names = n.pluck(0).sink_to_list()
     docs = n.pluck(1).sink_to_list()
@@ -670,9 +672,9 @@ def test_last_cache(RE, hw):
 
     RE(scan([hw.motor], hw.motor, 0, 9, 10))
 
-    assert len(docs) == 10+3+2
-    assert names[-3] is 'descriptor'
-    assert names[-2] is 'event'
+    assert len(docs) == 10 + 3 + 2
+    assert names[-3] == "descriptor"
+    assert names[-2] == "event"
     assert tt
     assert set(names) == {"start", "stop", "event", "descriptor"}
     assert docs[1]["hints"] == {"analyzer": {"fields": ["ct"]}}

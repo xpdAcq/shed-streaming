@@ -2,7 +2,6 @@ import inspect
 import json
 import subprocess
 import time
-import tempfile
 
 import networkx as nx
 import numpy as np

@@ -4,7 +4,7 @@ from collections import deque
 
 import networkx as nx
 import numpy as np
-from event_model import DocumentRouter, compose_descriptor
+from event_model import compose_descriptor
 from rapidz.core import Stream, zip as szip, move_to_first
 from shed.doc_gen import CreateDocs
 from xonsh.lib.collections import ChainDB, _convert_to_dict
@@ -528,18 +528,18 @@ class LastCache(Stream):
 
     def update(self, x, who=None):
         name, doc = x
-        if name is "start":
+        if name == "start":
             self.last_caches = {}
             self.start = doc
-        elif name is "descriptor":
+        elif name == "descriptor":
             self.last_caches[doc["uid"]] = {
                 "name": doc["name"],
                 "doc": None,
                 "data_keys": doc["data_keys"],
             }
-        elif name is "event":
+        elif name == "event":
             self.last_caches[doc["descriptor"]]["doc"] = doc
-        elif name is "stop":
+        elif name == "stop":
             for descriptor_uid, cache in self.last_caches.items():
                 # if we don't have any docs in this stream do nothing
                 if cache["doc"]:
