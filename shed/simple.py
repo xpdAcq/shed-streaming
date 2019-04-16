@@ -525,28 +525,40 @@ class AlignEventStreams(align_event_streams):
 class LastCache(Stream):
     """Cache the last event in all streams then emit them under their own
     descriptor when the stop document comes down."""
+
     def update(self, x, who=None):
         name, doc = x
-        if name is 'start':
+        if name is "start":
             self.last_caches = {}
             self.start = doc
-        elif name is 'descriptor':
-            self.last_caches[doc['uid']] = {'name': doc['name'], 'doc': None,
-                                            'data_keys': doc['data_keys']}
-        elif name is 'event':
-            self.last_caches[doc['descriptor']]['doc'] = doc
-        elif name is 'stop':
+        elif name is "descriptor":
+            self.last_caches[doc["uid"]] = {
+                "name": doc["name"],
+                "doc": None,
+                "data_keys": doc["data_keys"],
+            }
+        elif name is "event":
+            self.last_caches[doc["descriptor"]]["doc"] = doc
+        elif name is "stop":
             for descriptor_uid, cache in self.last_caches.items():
                 # if we don't have any docs in this stream do nothing
-                if cache['doc']:
+                if cache["doc"]:
                     descriptor, events_func, _ = compose_descriptor(
-                        start=self.start, streams={}, event_counter={},
-                        name=f'final_{cache["name"]}', validate=False,
-                        data_keys=cache['data_keys']
+                        start=self.start,
+                        streams={},
+                        event_counter={},
+                        name=f'final_{cache["name"]}',
+                        validate=False,
+                        data_keys=cache["data_keys"],
                     )
-                    self.emit(('descriptor', descriptor))
-                    self.emit(('event', events_func(
-                        data=cache['doc']['data'],
-                        timestamps=cache['doc']['timestamps']
-                    )))
+                    self.emit(("descriptor", descriptor))
+                    self.emit(
+                        (
+                            "event",
+                            events_func(
+                                data=cache["doc"]["data"],
+                                timestamps=cache["doc"]["timestamps"],
+                            ),
+                        )
+                    )
         self.emit(x)

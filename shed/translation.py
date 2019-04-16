@@ -35,6 +35,7 @@ def conda_env():
 
 env_data = conda_env()
 
+
 @args_kwargs
 @Stream.register_api()
 class FromEventStream(SimpleFromEventStream):
@@ -265,14 +266,14 @@ def db_friendly_node(node):
     # *args, remove the args which are more than that and replace with
     # node.args in case they have changed
     sig = inspect.signature(node.__init__)
-    if 'args' in sig.parameters and hasattr(node, 'args'):
-        idx = list(sig.parameters).index('args')
+    if "args" in sig.parameters and hasattr(node, "args"):
+        idx = list(sig.parameters).index("args")
         args[idx:] = node.args
 
     kwargs = node._init_kwargs
 
     # If we cache the kwargs in the node add those to the init kwargs
-    if hasattr(node, 'kwargs'):
+    if hasattr(node, "kwargs"):
         kwargs.update(**node.kwargs)
 
     # Store the args and kwargs
@@ -292,8 +293,7 @@ def db_friendly_node(node):
         if not stored:
             aa.append(a)
 
-    for i, a in {
-        k: _deref_weakref(v) for k, v in kwargs.items()}.items():
+    for i, a in {k: _deref_weakref(v) for k, v in kwargs.items()}.items():
         # Somethings are not storable (nodes, funcs, etc.) so we must
         # deref them so we can store them
         stored = False
