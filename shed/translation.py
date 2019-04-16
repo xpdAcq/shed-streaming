@@ -1,3 +1,4 @@
+import inspect
 import json
 import subprocess
 import time
@@ -29,6 +30,9 @@ def conda_env():
     except TypeError:  # pragma: noqa
         j_data = "Failed to get packages"
     return {"packages": j_data}
+
+
+env_data = conda_env()
 
 
 @args_kwargs
@@ -160,7 +164,7 @@ class ToEventStream(SimpleToEventStream):
         upstream,
         data_keys=None,
         stream_name=None,
-        env_capture_functions=(conda_env,),
+        env_capture_functions=None,
         **kwargs
     ):
         super().__init__(
@@ -169,6 +173,8 @@ class ToEventStream(SimpleToEventStream):
             stream_name=stream_name,
             **kwargs
         )
+        if env_capture_functions is None:
+            env_capture_functions = []
         self.env_capture_functions = env_capture_functions
         self.times = {}
         for node, attrs in self.graph.nodes.items():
@@ -190,8 +196,8 @@ class ToEventStream(SimpleToEventStream):
     def start_doc(self, x):
         new_start_doc = super().start_doc(x)
         new_start_doc.update(graph=self.graph)
+        new_start_doc["env"] = env_data
         if self.env_capture_functions:
-            new_start_doc["env"] = {}
             for f in self.env_capture_functions:
                 new_start_doc["env"].update(f())
         return new_start_doc
@@ -215,7 +221,8 @@ class DBFriendly(Stream):
         name, doc = x
         if name == "start":
             doc = dict(doc)
-            graph = doc["graph"]
+            # copy this so we do this each time and get updates
+            graph = doc["graph"].copy()
             # TODO: this might not be possible if there are cycles!!!!
             for n in nx.topological_sort(graph):
                 graph.node[n]["stream"] = db_friendly_node(
@@ -250,7 +257,27 @@ def db_friendly_node(node):
     aa = []
     kk = {}
 
-    for a in tuple([_deref_weakref(a) for a in node._init_args]):
+    # Assemble the args and kwargs (taking updates from runtime changes)
+
+    args = list(node._init_args)
+
+    # inspect the init for the number of args which are not
+    # *args, remove the args which are more than that and replace with
+    # node.args in case they have changed
+    sig = inspect.signature(node.__init__)
+    if "args" in sig.parameters and hasattr(node, "args"):
+        idx = list(sig.parameters).index("args")
+        args[idx:] = node.args
+
+    kwargs = node._init_kwargs
+
+    # If we cache the kwargs in the node add those to the init kwargs
+    if hasattr(node, "kwargs"):
+        kwargs.update(**node.kwargs)
+
+    # Store the args and kwargs
+
+    for a in tuple([_deref_weakref(a) for a in args]):
         # Somethings are not storable (nodes, funcs, etc.) so we must
         # deref them so we can store them
         stored = False
@@ -265,9 +292,7 @@ def db_friendly_node(node):
         if not stored:
             aa.append(a)
 
-    for i, a in {
-        k: _deref_weakref(v) for k, v in node._init_kwargs.items()
-    }.items():
+    for i, a in {k: _deref_weakref(v) for k, v in kwargs.items()}.items():
         # Somethings are not storable (nodes, funcs, etc.) so we must
         # deref them so we can store them
         stored = False
