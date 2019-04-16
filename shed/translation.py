@@ -2,6 +2,7 @@ import inspect
 import json
 import subprocess
 import time
+import tempfile
 
 import networkx as nx
 import numpy as np
@@ -25,6 +26,7 @@ def conda_env():
 
     """
     data = subprocess.check_output(["conda", "list", "--json"])
+    print(data)
     try:
         j_data = json.loads(data)
     except TypeError:  # pragma: noqa
@@ -195,8 +197,8 @@ class ToEventStream(SimpleToEventStream):
     def start_doc(self, x):
         new_start_doc = super().start_doc(x)
         new_start_doc.update(graph=self.graph)
+        new_start_doc["env"] = env_data
         if self.env_capture_functions:
-            new_start_doc["env"] = env_data
             for f in self.env_capture_functions:
                 new_start_doc["env"].update(f())
         return new_start_doc
