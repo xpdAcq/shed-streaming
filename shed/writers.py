@@ -85,7 +85,7 @@ class NpyWriter:
                 os.makedirs(os.path.dirname(fpath), exist_ok=True)
                 np.save(fpath, v)
                 resource, compose_datum, compose_datum_page = compose_resource(
-                    start=self.start['uid'],
+                    start=self.start,
                     spec=self.spec,
                     root=self.root,
                     resource_path=resource_path,

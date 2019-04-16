@@ -26,7 +26,6 @@ def conda_env():
 
     """
     data = subprocess.check_output(["conda", "list", "--json"])
-    print(data)
     try:
         j_data = json.loads(data)
     except TypeError:  # pragma: noqa
@@ -266,7 +265,7 @@ def db_friendly_node(node):
     # *args, remove the args which are more than that and replace with
     # node.args in case they have changed
     sig = inspect.signature(node.__init__)
-    if 'args' in sig.parameters:
+    if 'args' in sig.parameters and hasattr(node, 'args'):
         idx = list(sig.parameters).index('args')
         args[idx:] = node.args
 

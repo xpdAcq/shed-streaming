@@ -529,6 +529,7 @@ class LastCache(Stream):
         name, doc = x
         if name is 'start':
             self.last_caches = {}
+            self.start = doc
         elif name is 'descriptor':
             self.last_caches[doc['uid']] = {'name': doc['name'], 'doc': None,
                                             'data_keys': doc['data_keys']}
@@ -539,7 +540,7 @@ class LastCache(Stream):
                 # if we don't have any docs in this stream do nothing
                 if cache['doc']:
                     descriptor, events_func, _ = compose_descriptor(
-                        start=doc['run_start'], streams={}, event_counter={},
+                        start=self.start, streams={}, event_counter={},
                         name=f'final_{cache["name"]}', validate=False,
                         data_keys=cache['data_keys']
                     )
