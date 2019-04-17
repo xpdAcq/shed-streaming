@@ -12,7 +12,7 @@ from shed import (
     SimpleToEventStream as ToEventStream,
     walk_to_translation,
 )
-from shed.simple import _hash_or_uid
+from shed.simple import _hash_or_uid, build_upstream_node_set
 from shed.tests.utils import y
 from shed.utils import unstar
 from rapidz import Stream, move_to_first
@@ -680,3 +680,14 @@ def test_last_cache(RE, hw):
     assert docs[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
     assert docs[1]["data_keys"]["ct"]["units"] == "arb"
     assert docs[-1]["run_start"]
+
+
+def test_build_upstream_node_set():
+    source = Stream()
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
+    assert t.principle
+
+    n = ToEventStream(t, ("ct",),
+                      data_key_md={"ct": {"units": "arb"}}).LastCache()
+    s = build_upstream_node_set(n)
+    assert len(s) == 3

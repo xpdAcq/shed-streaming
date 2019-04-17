@@ -2,9 +2,11 @@ import inspect
 import json
 import subprocess
 import time
+from hashlib import sha256
 
 import networkx as nx
 import numpy as np
+from event_model import sanitize_doc
 from rapidz.core import Stream
 from rapidz.core import _deref_weakref, args_kwargs
 
@@ -94,7 +96,7 @@ class FromEventStream(SimpleFromEventStream):
         event_stream_name=ALL,
         stream_name=None,
         principle=False,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             doc_type=doc_type,
@@ -103,7 +105,7 @@ class FromEventStream(SimpleFromEventStream):
             stream_name=stream_name,
             principle=principle,
             event_stream_name=event_stream_name,
-            **kwargs
+            **kwargs,
         )
         self.run_start_uid = None
         self.times = {}
@@ -165,13 +167,13 @@ class ToEventStream(SimpleToEventStream):
         data_keys=None,
         stream_name=None,
         env_capture_functions=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             upstream=upstream,
             data_keys=data_keys,
             stream_name=stream_name,
-            **kwargs
+            **kwargs,
         )
         if env_capture_functions is None:
             env_capture_functions = []
@@ -212,6 +214,23 @@ class ToEventStream(SimpleToEventStream):
         return new_stop
 
 
+def merkle_hash(node):
+    hasher = sha256()
+    dbf_node = sanitize_doc(merkle_friendly_node(node))
+    hash_string = ",".join(
+        str(dbf_node[k]) for k in ["name", "mod", "args", "kwargs"]
+    )
+    hasher.update(hash_string.encode("utf-8"))
+    # Once we hit from event stream we don't need to go higher in the graph
+    if isinstance(node, SimpleFromEventStream):
+        return hasher.hexdigest()
+    for u in node.upstreams:
+        idx = u.downstreams.index(node)
+        u_m_hash = merkle_hash(u)
+        hasher.update(f"{idx}{u_m_hash}".encode("utf-8"))
+    return hasher.hexdigest()
+
+
 # TODO: move this to a callback?
 @Stream.register_api()
 class DBFriendly(Stream):
@@ -223,6 +242,9 @@ class DBFriendly(Stream):
             doc = dict(doc)
             # copy this so we do this each time and get updates
             graph = doc["graph"].copy()
+            doc["graph_hash"] = merkle_hash(
+                graph.nodes[doc["outbound_node"]]["stream"]
+            )
             # TODO: this might not be possible if there are cycles!!!!
             for n in nx.topological_sort(graph):
                 graph.node[n]["stream"] = db_friendly_node(
@@ -307,5 +329,74 @@ def db_friendly_node(node):
             kk[i] = a
 
     d2["args"] = tuple(aa)
+    d2["kwargs"] = kk
+    return d2
+
+
+merkle_deref_dict = {_is_stream: None, callable: _deref_func}
+
+
+def merkle_friendly_node(node):
+    """Extract data to make node db friendly"""
+    if isinstance(node, dict):
+        return node
+    d = dict(node.__dict__)
+    d["stream_name"] = d["name"]
+    d2 = {"name": node.__class__.__name__, "mod": node.__module__}
+    aa = []
+    kk = {}
+
+    # Assemble the args and kwargs (taking updates from runtime changes)
+
+    args = list(node._init_args)
+
+    # inspect the init for the number of args which are not
+    # *args, remove the args which are more than that and replace with
+    # node.args in case they have changed
+    sig = inspect.signature(node.__init__)
+    if "args" in sig.parameters and hasattr(node, 'args'):
+        idx = list(sig.parameters).index("args")
+        args[idx:] = node.args
+
+    kwargs = node._init_kwargs
+
+    # If we cache the kwargs in the node add those to the init kwargs
+    if hasattr(node, "kwargs"):
+        kwargs.update(**node.kwargs)
+
+    # Store the args and kwargs
+
+    for a in tuple([_deref_weakref(a) for a in args]):
+        # Somethings are not storable (nodes, funcs, etc.) so we must
+        # deref them so we can store them
+        stored = False
+        for k, v in merkle_deref_dict.items():
+            # If we have a tool for storing things store it
+
+            if k(a):
+                if v is not None:
+                    aa.append(v(a))
+                stored = True
+                break
+        # If none of our tools worked, store it natively
+        if not stored:
+            aa.append(a)
+
+    for i, a in {k: _deref_weakref(v) for k, v in kwargs.items()}.items():
+        # Somethings are not storable (nodes, funcs, etc.) so we must
+        # deref them so we can store them
+        stored = False
+        for k, v in merkle_deref_dict.items():
+            # If we have a tool for storing things store it
+            if k(a):
+                if v is not None:
+                    kk[i] = v(a)
+                stored = True
+                break
+        # If none of our tools worked, store it natively
+        if not stored:
+            kk[i] = a
+
+    d2["args"] = aa
     d2["kwargs"] = kk
     return d2

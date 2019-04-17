@@ -18,6 +18,33 @@ def _hash_or_uid(node):
     return getattr(node, "uid", hash(node))
 
 
+def build_upstream_node_set(node, s=None):
+    """Build a set of all the nodes in a rapidz graph
+
+    Parameters
+    ----------
+    node : Stream
+        The node to use as a starting point for building the set
+    s : set or None
+        The set to put the nodes into. If None return a new set full of nodes
+
+    Returns
+    -------
+    s : set
+        The set of nodes in the graph
+
+    """
+    if s is None:
+        s = set()
+    if node is None:
+        return
+    s.add(node)
+    if isinstance(node, SimpleFromEventStream):
+        return
+    [build_upstream_node_set(n, s) for n in node.upstreams]
+    return s
+
+
 def walk_to_translation(node, graph, prior_node=None):
     """Creates a graph that is a subset of the graph from the stream.
 
@@ -195,6 +222,9 @@ class simple_to_event_stream(Stream, CreateDocs):
                     for k, v in self.translation_nodes.items()
                     if v.start_uid is not None
                 },
+                # keep track of this so we know which node we're sending
+                # data from (see merkle hash in DBFriendly)
+                outbound_node=self.uid,
             )
         )
         start = self.create_doc("start", x)

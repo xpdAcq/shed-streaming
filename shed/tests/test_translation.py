@@ -7,7 +7,7 @@ import numpy as np
 from bluesky.plans import scan
 from rapidz import Stream
 from shed.simple import walk_to_translation, _hash_or_uid
-from shed.translation import FromEventStream, ToEventStream
+from shed.translation import FromEventStream, ToEventStream, merkle_hash
 from shed.utils import unstar
 
 
@@ -330,3 +330,79 @@ def test_no_stop(hw, RE):
         "analyzer": {"fields": ["motor", "motor_setpoint"]}
     }
     assert d[2]["data"] == {"motor_setpoint": 0, "motor": 0}
+
+
+def test_merkle_hash():
+    source = Stream()
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
+    assert t.principle
+
+    n = ToEventStream(t, ("ct",), data_key_md={"ct": {"units": "arb"}})
+    h = merkle_hash(n)
+    assert h
+
+    tt = FromEventStream("event", ("data", "motor"), source, principle=True)
+
+    nn = ToEventStream(tt, ("ct",), data_key_md={"ct": {"units": "arb"}})
+    assert h == merkle_hash(nn)
+    assert h != merkle_hash(tt)
+
+    tt = FromEventStream("event", ("data", "motor"), source, principle=True)
+
+    z = tt.map(op.add, 1)
+    zz = tt.map(op.sub, 1)
+    j = z.zip(zz)
+
+    nn = ToEventStream(j, ("ct",), data_key_md={"ct": {"units": "arb"}})
+    order_1_hash = merkle_hash(nn)
+
+    tt = FromEventStream("event", ("data", "motor"), source, principle=True)
+
+    zz = tt.map(op.sub, 1)
+    z = tt.map(op.add, 1)
+    j = z.zip(zz)
+
+    nn = ToEventStream(j, ("ct",), data_key_md={"ct": {"units": "arb"}})
+    order_2_hash = merkle_hash(nn)
+    assert order_1_hash != order_2_hash
+
+    tt = FromEventStream("event", ("data", "motor"), source, principle=True)
+
+    z = tt.map(op.add, 1)
+    zz = tt.map(op.sub, 1)
+    j = zz.zip(z)
+
+    nn = ToEventStream(j, ("ct",), data_key_md={"ct": {"units": "arb"}})
+    order_3_hash = merkle_hash(nn)
+    assert order_1_hash != order_3_hash
+
+
+def test_dbfriendly(RE, hw):
+    source = Stream()
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
+    z = t.map(op.add, 1)
+    n = ToEventStream(z, "out").DBFriendly()
+    d = n.pluck(1).sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert isinstance(d[0]["graph"], dict)
+    h1 = d[0].get("graph_hash")
+    assert h1
+
+    d.clear()
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    h2 = d[0].get("graph_hash")
+    assert h1 == h2
+    assert len(d) == 10 + 3
+
+    d.clear()
+    z.args = (2,)
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    h2 = d[0].get("graph_hash")
+    assert h1 != h2
+    assert len(d) == 10 + 3
