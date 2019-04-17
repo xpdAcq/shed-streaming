@@ -4,6 +4,37 @@ SHED Change Log
 
 .. current developments
 
+v0.7.0
+====================
+
+**Added:**
+
+* Notebook examples
+* ``shed.simple.LastCache`` a stream node type which allows for caching the last
+  event and emiting it under its own descriptor
+* Merkle tree like hashing capability for checking if two pipelies are the same
+
+**Changed:**
+
+* ``replay.rebuild_node`` creates ``Placeholder`` streams so that we can build 
+  the pipeline properly.
+* If no ``stream_name`` is provided for ``SimpleFromEventStream`` then a name 
+  is produced from the ``data_address``.
+* ``translation.FromEventStream`` now captures environment information via an 
+  iterable of funciton calls, it defaults to capturing the conda environment
+* ``translation.ToEventModel`` issues a ``RuntimeError`` if the pipeline 
+  contains a lambda function, as they are not capturable.
+
+**Removed:**
+
+* ``replay.replay`` ``export`` kwarg. We no longer auto add data to a databroker
+
+**Fixed:**
+
+* check for hashability before checking if in graph
+
+
+
 v0.6.3
 ====================
 
