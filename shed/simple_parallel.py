@@ -148,6 +148,7 @@ class SimpleToEventStream(ParallelStream, CreateDocs):
                     for k, v in self.translation_nodes.items()
                     if v.start_uid is not None
                 },
+                outbound_node=self.uid
             )
         )
         self.start_document = ("start", new_start_doc)
