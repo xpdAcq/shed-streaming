@@ -686,7 +686,6 @@ def test_build_upstream_node_set():
     source = Stream()
     t = FromEventStream("event", ("data", "motor"), source, principle=True)
     assert t.principle
-    L = t.sink_to_list()
 
     n = ToEventStream(t, ("ct",),
                       data_key_md={"ct": {"units": "arb"}}).LastCache()
