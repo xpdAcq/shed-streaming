@@ -359,7 +359,7 @@ def test_align_interrupted(RE, hw):
             pass
     assert {"start", "stop"} == set(list(zip(*sl))[0])
     # check that buffers are not cleared, yet
-    assert any([b for n, tb in z.true_buffers.items() for u, b in tb.items()])
+    # assert any([b for n, tb in z.true_buffers.items() for u, b in tb.items()])
     sl.clear()
     # If there are elements in the buffer they need to be cleared when all
     # start docs come in.
@@ -422,6 +422,33 @@ def test_align_buffering(RE, hw):
     RE(scan([hw.img], hw.motor, 0, 10, 10))
 
     assert "hello" not in sl[0][1]
+
+
+def test_align_buffering2(RE, hw):
+    a = Stream()
+    d = Stream()
+
+    b = FromEventStream(
+        "event",
+        ("data", "motor"),
+        principle=True, upstream=a
+    ).map(op.add, 1)
+    c = ToEventStream(b, ("out",))
+
+    z = c.AlignEventStreams(d)
+    names = z.pluck(0).sink_to_list()
+
+    L = []
+    RE.subscribe(lambda *x: L.append(x))
+
+    RE(scan([hw.img], hw.motor, 0, 10, 10, md={"hello": "world"}))
+    for nd in L:
+        d.emit(nd)
+    print('hi')
+    for nd in L:
+        a.emit(nd)
+
+    assert all(k in names for k in ['start', 'descriptor', 'event', 'stop'])
 
 
 def test_align_multi_stream(RE, hw):
