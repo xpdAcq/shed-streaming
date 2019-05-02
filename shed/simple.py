@@ -79,8 +79,8 @@ def walk_to_translation(node, graph, prior_node=None):
                 for downstream in node.downstreams:
                     ttt = _hash_or_uid(downstream)
                     if (
-                            isinstance(downstream, SimpleToEventStream)
-                            and ttt not in graph
+                        isinstance(downstream, SimpleToEventStream)
+                        and ttt not in graph
                     ):
                         graph.add_node(ttt, stream=downstream)
                         graph.add_edge(t, ttt)
@@ -138,12 +138,12 @@ class simple_to_event_stream(Stream, CreateDocs):
     """
 
     def __init__(
-            self,
-            upstream,
-            data_keys=None,
-            stream_name=None,
-            data_key_md=None,
-            **kwargs,
+        self,
+        upstream,
+        data_keys=None,
+        stream_name=None,
+        data_key_md=None,
+        **kwargs,
     ):
         if stream_name is None:
             stream_name = str(data_keys)
@@ -172,13 +172,13 @@ class simple_to_event_stream(Stream, CreateDocs):
             if isinstance(
                 n["stream"], (SimpleFromEventStream, SimpleToEventStream)
             )
-               and n["stream"] != self
+            and n["stream"] != self
         }
         self.principle_nodes = [
             n
             for k, n in self.translation_nodes.items()
             if getattr(n, "principle", False)
-               or isinstance(n, SimpleToEventStream)
+            or isinstance(n, SimpleToEventStream)
         ]
         if not self.principle_nodes:
             raise RuntimeError(
@@ -314,21 +314,21 @@ class simple_to_event_stream_new_api(Stream):
     ('stop',...)
     """
 
-    def __init__(
-            self,
-            descriptor_dicts,
-            stream_name=None,
-            **kwargs,
-    ):
+    def __init__(self, descriptor_dicts, stream_name=None, **kwargs):
         self.descriptor_dicts = descriptor_dicts
         self.descriptors = {}
         if stream_name is None:
-            stream_name = ''
+            stream_name = ""
             for v in descriptor_dicts.values():
-                stream_name += f"{v.get('name', 'primary')} " + ', '.join(v.get('data_keys', {}).keys())
+                stream_name += f"{v.get('name', 'primary')} " + ", ".join(
+                    v.get("data_keys", {}).keys()
+                )
 
-        Stream.__init__(self, upstreams=[k for k in descriptor_dicts.keys()],
-                        stream_name=stream_name)
+        Stream.__init__(
+            self,
+            upstreams=[k for k in descriptor_dicts.keys()],
+            stream_name=stream_name,
+        )
         self.md = kwargs
 
         move_to_first(self)
@@ -350,16 +350,20 @@ class simple_to_event_stream_new_api(Stream):
             k: n["stream"]
             for k, n in self.graph.node.items()
             if isinstance(
-                n["stream"], (simple_from_event_stream, simple_to_event_stream,
-                              simple_to_event_stream_new_api)
+                n["stream"],
+                (
+                    simple_from_event_stream,
+                    simple_to_event_stream,
+                    simple_to_event_stream_new_api,
+                ),
             )
-               and n["stream"] != self
+            and n["stream"] != self
         }
         self.principle_nodes = [
             n
             for k, n in self.translation_nodes.items()
             if getattr(n, "principle", False)
-               or isinstance(n, SimpleToEventStream)
+            or isinstance(n, SimpleToEventStream)
         ]
         if not self.principle_nodes:
             raise RuntimeError(
@@ -419,7 +423,7 @@ class simple_to_event_stream_new_api(Stream):
 
         # emit starts to subs first in case we create an event from the start
         [s.emit_start(x) for s in self.subs]
-        self.emit(('start', start))
+        self.emit(("start", start))
         self.state = "started"
 
     def emit_stop(self, x):
@@ -432,7 +436,7 @@ class simple_to_event_stream_new_api(Stream):
             self.incoming_start_uid = None
         stop = self.stop_factory()
         self.descriptors.clear()
-        ret = self.emit(('stop', stop))
+        ret = self.emit(("stop", stop))
         [s.emit_stop(x) for s in self.subs]
         self.state = "stopped"
         return ret
@@ -447,14 +451,16 @@ class simple_to_event_stream_new_api(Stream):
             )
 
         descriptor_dict = self.descriptor_dicts[who]
-        data_keys = descriptor_dict.setdefault('data_keys', {})
+        data_keys = descriptor_dict.setdefault("data_keys", {})
 
         # If there are no data_keys then we are taking in a dict and the
         # keys of the dict will be the keys for the stream
         if data_keys == {}:
             if not isinstance(x, Mapping):
-                raise TypeError(f'No data keys were provided so expected '
-                                f'Mapping, but {type(x)} found')
+                raise TypeError(
+                    f"No data keys were provided so expected "
+                    f"Mapping, but {type(x)} found"
+                )
             data_keys = {k: {} for k in x}
 
         # If the incoming data is a dict extract the data as a tuple
@@ -474,32 +480,37 @@ class simple_to_event_stream_new_api(Stream):
             # clobber the user supplied metadata and the auto generated
             # metadata via ChainDB with resolution favoring the user's input
             descriptor, self.descriptors[who], _ = self.desc_fac(
-                **_convert_to_dict(ChainDB(dict(
-                    name='primary',
-                    data_keys={
-                        k: {
-                            "source": "analysis",
-                            # XXX: how to deal with this when xx is a future?
-                            "dtype": get_dtype(xx),
-                            "shape": getattr(xx, "shape", []),
-                            **data_keys[k].get(k, {}),
-                        }
-                        for k, xx in zip(data_keys, tx)
-                    },
-                    hints={"analyzer": {"fields": sorted(list(data_keys))}},
-                    object_keys={k: [k] for k in data_keys},
+                **_convert_to_dict(
+                    ChainDB(
+                        dict(
+                            name="primary",
+                            data_keys={
+                                k: {
+                                    "source": "analysis",
+                                    "dtype": get_dtype(xx),
+                                    "shape": getattr(xx, "shape", []),
+                                    **data_keys[k].get(k, {}),
+                                }
+                                for k, xx in zip(data_keys, tx)
+                            },
+                            hints={
+                                "analyzer": {"fields": sorted(list(data_keys))}
+                            },
+                            object_keys={k: [k] for k in data_keys},
+                        ),
+                        descriptor_dict,
+                    )
                 ),
-                                           descriptor_dict)),
                 validate=False,
             )
-            rl.append(self.emit(('descriptor', descriptor)))
+            rl.append(self.emit(("descriptor", descriptor)))
             self.state = "described"
         event = self.descriptors[who](
             timestamps={k: time.time() for k in data_keys},
             data={k: v for k, v in zip(data_keys, tx)},
             validate=False,
         )
-        rl.append(self.emit(('event', event)))
+        rl.append(self.emit(("event", event)))
 
         return rl
 
@@ -563,14 +574,14 @@ class simple_from_event_stream(Stream):
         """
 
     def __init__(
-            self,
-            upstream,
-            doc_type,
-            data_address,
-            event_stream_name=ALL,
-            stream_name=None,
-            principle=False,
-            **kwargs,
+        self,
+        upstream,
+        doc_type,
+        data_address,
+        event_stream_name=ALL,
+        stream_name=None,
+        principle=False,
+        **kwargs,
     ):
         if stream_name is None:
             stream_name = str(data_address)
@@ -600,8 +611,8 @@ class simple_from_event_stream(Stream):
             # Sideband start document in
             [s.emit_start(x) for s in self.subs]
         if name == "descriptor" and (
-                self.event_stream_name == ALL
-                or self.event_stream_name == doc.get("name", "primary")
+            self.event_stream_name == ALL
+            or self.event_stream_name == doc.get("name", "primary")
         ):
             self.descriptor_uids.append(doc["uid"])
         if name == "stop":
@@ -611,15 +622,14 @@ class simple_from_event_stream(Stream):
             [s.emit_stop(x) for s in self.subs]
         inner = doc.copy()
         if name == self.doc_type and (
-                (
-                        name == "descriptor"
-                        and (self.event_stream_name == doc.get("name", ALL))
-                )
-                or (
-                        name == "event" and (
-                        doc["descriptor"] in self.descriptor_uids)
-                )
-                or name in ["start", "stop"]
+            (
+                name == "descriptor"
+                and (self.event_stream_name == doc.get("name", ALL))
+            )
+            or (
+                name == "event" and (doc["descriptor"] in self.descriptor_uids)
+            )
+            or name in ["start", "stop"]
         ):
 
             # If we have an empty address get everything
@@ -686,14 +696,14 @@ class SimpleFromEventStream(simple_from_event_stream):
     """
 
     def __init__(
-            self,
-            doc_type,
-            data_address,
-            upstream=None,
-            event_stream_name=ALL,
-            stream_name=None,
-            principle=False,
-            **kwargs,
+        self,
+        doc_type,
+        data_address,
+        upstream=None,
+        event_stream_name=ALL,
+        stream_name=None,
+        principle=False,
+        **kwargs,
     ):
         simple_from_event_stream.__init__(
             self,
@@ -714,7 +724,7 @@ class align_event_streams(szip):
     the two streams to be of equal length."""
 
     def __init__(
-            self, *upstreams, event_stream_name=ALL, stream_name=None, **kwargs
+        self, *upstreams, event_stream_name=ALL, stream_name=None, **kwargs
     ):
         szip.__init__(self, *upstreams, stream_name=stream_name)
         doc_names = ["start", "descriptor", "event", "stop"]
@@ -761,8 +771,8 @@ class align_event_streams(szip):
         if name == "descriptor":
             # if we want the descriptor continue, else bounce out
             if (
-                    self.event_stream_name == ALL
-                    or self.event_stream_name == doc.get("name", "primary")
+                self.event_stream_name == ALL
+                or self.event_stream_name == doc.get("name", "primary")
             ):
                 self.descriptor_uids.append(doc["uid"])
             else:

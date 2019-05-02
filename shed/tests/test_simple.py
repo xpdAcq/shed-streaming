@@ -11,7 +11,8 @@ from shed import (
     SimpleFromEventStream as FromEventStream,
     SimpleToEventStream as ToEventStream,
     walk_to_translation,
-    simple_to_event_stream_new_api)
+    simple_to_event_stream_new_api,
+)
 from shed.simple import _hash_or_uid, build_upstream_node_set
 from shed.tests.utils import y
 from shed.utils import unstar
@@ -282,19 +283,19 @@ def test_align():
     sl = z.sink_to_list()
     # TODO: use real run engine here
     for n, d, dd in zip(
-            ["start", "descriptor", "event", "stop"],
-            [
-                {"a": "hi", "b": {"hi": "world"}, "uid": "hi", "time": 123},
-                {"bla": "foo", "uid": "abc"},
-                {"data": "now", "descriptor": "abc"},
-                {"stop": "doc"},
-            ],
-            [
-                {"a": "hi2", "b": {"hi2": "world"}},
-                {"bla": "foo", "uid": "123"},
-                {"data": "now", "descriptor": "123"},
-                {"stop": "doc"},
-            ],
+        ["start", "descriptor", "event", "stop"],
+        [
+            {"a": "hi", "b": {"hi": "world"}, "uid": "hi", "time": 123},
+            {"bla": "foo", "uid": "abc"},
+            {"data": "now", "descriptor": "abc"},
+            {"stop": "doc"},
+        ],
+        [
+            {"a": "hi2", "b": {"hi2": "world"}},
+            {"bla": "foo", "uid": "123"},
+            {"data": "now", "descriptor": "123"},
+            {"stop": "doc"},
+        ],
     ):
         a.emit((n, d))
         b.emit((n, dd))
@@ -310,19 +311,19 @@ def test_align_stream_syntax():
     sl = z.sink_to_list()
     # TODO: use real run engine here
     for n, d, dd in zip(
-            ["start", "descriptor", "event", "stop"],
-            [
-                {"a": "hi", "b": {"hi": "world"}, "uid": "hi", "time": 123},
-                {"bla": "foo", "uid": "abc"},
-                {"data": "now", "descriptor": "abc"},
-                {"stop": "doc"},
-            ],
-            [
-                {"a": "hi2", "b": {"hi2": "world"}},
-                {"bla": "foo", "uid": "123"},
-                {"data": "now", "descriptor": "123"},
-                {"stop": "doc"},
-            ],
+        ["start", "descriptor", "event", "stop"],
+        [
+            {"a": "hi", "b": {"hi": "world"}, "uid": "hi", "time": 123},
+            {"bla": "foo", "uid": "abc"},
+            {"data": "now", "descriptor": "abc"},
+            {"stop": "doc"},
+        ],
+        [
+            {"a": "hi2", "b": {"hi2": "world"}},
+            {"bla": "foo", "uid": "123"},
+            {"data": "now", "descriptor": "123"},
+            {"stop": "doc"},
+        ],
     ):
         a.emit((n, d))
         b.emit((n, dd))
@@ -687,8 +688,9 @@ def test_build_upstream_node_set():
     t = FromEventStream("event", ("data", "motor"), source, principle=True)
     assert t.principle
 
-    n = ToEventStream(t, ("ct",),
-                      data_key_md={"ct": {"units": "arb"}}).LastCache()
+    n = ToEventStream(
+        t, ("ct",), data_key_md={"ct": {"units": "arb"}}
+    ).LastCache()
     s = build_upstream_node_set(n)
     assert len(s) == 3
 
@@ -699,7 +701,8 @@ def test_to_event_model_new_api(RE, hw):
     assert t.principle
 
     n = simple_to_event_stream_new_api(
-        {t: {'data_keys': {"ct": {"units": "arb", 'precision': 2}}}})
+        {t: {"data_keys": {"ct": {"units": "arb", "precision": 2}}}}
+    )
     tt = t.sink_to_list()
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
@@ -718,11 +721,10 @@ def test_to_event_model_new_api(RE, hw):
 
 def test_to_event_model_new_api_no_data_keys(RE, hw):
     source = Stream()
-    t = FromEventStream("event", ("data", ), source, principle=True)
+    t = FromEventStream("event", ("data",), source, principle=True)
     assert t.principle
 
-    n = simple_to_event_stream_new_api(
-        {t: {}})
+    n = simple_to_event_stream_new_api({t: {}})
     tt = t.sink_to_list()
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
@@ -734,18 +736,21 @@ def test_to_event_model_new_api_no_data_keys(RE, hw):
 
     assert tt
     assert set(p) == {"start", "stop", "event", "descriptor"}
-    assert d[1]["hints"] == {"analyzer": {"fields": ['motor', 'motor_setpoint']}}
+    assert d[1]["hints"] == {
+        "analyzer": {"fields": ["motor", "motor_setpoint"]}
+    }
     assert d[1]["data_keys"]["motor"]
     assert d[-1]["run_start"]
 
 
 def test_to_event_model_new_api_clobber(RE, hw):
     source = Stream()
-    t = FromEventStream("event", ("data", 'motor'), source, principle=True)
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
     assert t.principle
 
     n = simple_to_event_stream_new_api(
-        {t: {'data_keys': {"ct": {"units": "arb", 'dtype': 'array'}}}})
+        {t: {"data_keys": {"ct": {"units": "arb", "dtype": "array"}}}}
+    )
     tt = t.sink_to_list()
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
@@ -769,8 +774,15 @@ def test_to_event_model_new_api_multi(RE, hw):
 
     tt = t.zip(stop)
     n = simple_to_event_stream_new_api(
-        {t: {'data_keys': {"ct": {"units": "arb", 'precision': 2}}},
-         tt: {'name': 'final', 'data_keys': {"ct": {"units": "arb", 'precision': 2}}}}, hello='world')
+        {
+            t: {"data_keys": {"ct": {"units": "arb", "precision": 2}}},
+            tt: {
+                "name": "final",
+                "data_keys": {"ct": {"units": "arb", "precision": 2}},
+            },
+        },
+        hello="world",
+    )
     tt = t.sink_to_list()
     p = n.pluck(0).sink_to_list()
     d = n.pluck(1).sink_to_list()
@@ -782,8 +794,8 @@ def test_to_event_model_new_api_multi(RE, hw):
 
     assert tt
     assert set(p) == {"start", "stop", "event", "descriptor"}
-    assert d[0]['hello'] == 'world'
+    assert d[0]["hello"] == "world"
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
     assert d[1]["data_keys"]["ct"]["units"] == "arb"
-    assert d[-3]['name'] == 'final'
+    assert d[-3]["name"] == "final"
     assert d[-1]["run_start"]
