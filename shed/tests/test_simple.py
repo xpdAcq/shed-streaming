@@ -808,8 +808,6 @@ def test_to_event_model_new_api_no_principle(RE, hw):
     stop = FromEventStream("stop", (), source)
     t = FromEventStream("event", ("data", "motor"), source,
                         stream_name='hi')
-    assert t.principle
-
     tt = t.zip(stop)
     n = simple_to_event_stream_new_api(
         {
