@@ -348,6 +348,7 @@ class simple_to_event_stream_new_api(Stream):
     ('start',...)
     ('descriptor',...)
     ('event',...)
+    ...
     ('stop',...)
     """
 
