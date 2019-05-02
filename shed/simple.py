@@ -275,11 +275,13 @@ class simple_to_event_stream_new_api(Stream):
 
     Parameters
     ----------
-    upstream :
-        the upstream node to receive streams from
-    data_keys: tuple, optional
-        Names of the data keys. If None assume incoming data is dict and use
-        the keys from the dict. Defauls to None
+    descriptor_dicts: dict
+        Dictionary describing the mapping between streams and their associated
+        metadata. Top level keys are the streams to use accept data from.
+        The values for these keys are the entries of the ``descriptor``
+        document (``data_keys``, ``name``, ``configuration``, etc.
+        see _https://nsls-ii.github.io/bluesky/event_descriptors.html for more
+        details. Note that some of this data is automatically generated if
     stream_name : str, optional
         Name for this stream node
 
@@ -292,21 +294,56 @@ class simple_to_event_stream_new_api(Stream):
     Note that start -> start is not allowed, this node always issues a stop
     document so the data input times can be stored.
 
+    Additionally note that this takes advantage of Python 3.6+ order stable
+    dictionaries. Since the key order is stable the data keys can be given
+    in the same order as the elements of streams which contain multiple
+    elements, see stream a in the example.
+
     Examples
     --------
-    import uuid
-    from shed.event_streams import EventStream
-    from shed.translation import FromEventStream, ToEventStream
+    from pprint import pprint
 
-    s = EventStream()
-    s2 = FromEventStream(s, 'event', ('data', 'det_image'), principle=True)
-    s3 = ToEventStream(s2, ('det_image',))
-    s3.sink(print)
-    s.emit(('start', {'uid' : str(uuid.uuid4())}))
-    s.emit(('descriptor', {'uid' : str(uuid.uuid4()),
-                           'data_keys': {'det_image': {'units': 'arb'}}))
-    s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
-    s.emit(('stop', {'uid' : str(uuid.uuid4())}))
+    from rapidz import Stream
+    from shed import simple_from_event_stream, simple_to_event_stream_new_api
+    import operator as op
+
+    source = Stream()
+    stop = simple_from_event_stream(source, 'stop', ())
+    fes = simple_from_event_stream(source, 'event', ('data', 'motor1'),
+                                   principle=True)
+    fes2 = simple_from_event_stream(source, 'event', ('data', ),
+                                   principle=True)
+
+    a = fes.map(op.add, 2).zip(fes)
+    b = fes.combine_latest(stop, emit_on=stop).pluck(0)
+
+    node = simple_to_event_stream_new_api(
+        {
+            a: {
+                'data_keys': {'motor1_2': {}, 'motor1': {}},
+            },
+            b: {
+                'name': 'final',
+                'data_keys': {'motor1': {}},
+                'configuration': {'motor1': {'hi': 'world'}}
+            },
+            fes2: {'name': 'raw'}
+        }
+    )
+
+    node2 = simple_to_event_stream_new_api(
+        {fes2: {'name': 'primary'}}
+    )
+
+    from ophyd.sim import hw
+    hw = hw()
+    from bluesky.run_engine import RunEngine
+    RE = RunEngine()
+    import bluesky.plans as bp
+    # node2.sink(pprint)
+    node.sink(pprint)
+    RE.subscribe(lambda *x: source.emit(x))
+    RE(bp.scan([hw.motor1], hw.motor1, 0, 10, 11))
     prints:
     ('start',...)
     ('descriptor',...)
