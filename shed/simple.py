@@ -1,12 +1,13 @@
 """Translation nodes"""
+import time
 import uuid
-from collections import deque
+from collections import deque, MutableMapping, Mapping
 
 import networkx as nx
 import numpy as np
-from event_model import compose_descriptor
+from event_model import compose_descriptor, compose_run
 from rapidz.core import Stream, zip as szip, move_to_first
-from shed.doc_gen import CreateDocs
+from shed.doc_gen import CreateDocs, get_dtype
 from xonsh.lib.collections import ChainDB, _convert_to_dict
 
 ALL = "--ALL THE DOCS--"
@@ -78,8 +79,8 @@ def walk_to_translation(node, graph, prior_node=None):
                 for downstream in node.downstreams:
                     ttt = _hash_or_uid(downstream)
                     if (
-                        isinstance(downstream, SimpleToEventStream)
-                        and ttt not in graph
+                            isinstance(downstream, SimpleToEventStream)
+                            and ttt not in graph
                     ):
                         graph.add_node(ttt, stream=downstream)
                         graph.add_edge(t, ttt)
@@ -137,12 +138,12 @@ class simple_to_event_stream(Stream, CreateDocs):
     """
 
     def __init__(
-        self,
-        upstream,
-        data_keys=None,
-        stream_name=None,
-        data_key_md=None,
-        **kwargs,
+            self,
+            upstream,
+            data_keys=None,
+            stream_name=None,
+            data_key_md=None,
+            **kwargs,
     ):
         if stream_name is None:
             stream_name = str(data_keys)
@@ -171,13 +172,13 @@ class simple_to_event_stream(Stream, CreateDocs):
             if isinstance(
                 n["stream"], (SimpleFromEventStream, SimpleToEventStream)
             )
-            and n["stream"] != self
+               and n["stream"] != self
         }
         self.principle_nodes = [
             n
             for k, n in self.translation_nodes.items()
             if getattr(n, "principle", False)
-            or isinstance(n, SimpleToEventStream)
+               or isinstance(n, SimpleToEventStream)
         ]
         if not self.principle_nodes:
             raise RuntimeError(
@@ -265,6 +266,244 @@ class simple_to_event_stream(Stream, CreateDocs):
         return rl
 
 
+_GLOBAL_SCAN_ID = 0
+
+
+@Stream.register_api()
+class simple_to_event_stream_new_api(Stream):
+    """Converts data into a event stream, and passes it downstream.
+
+    Parameters
+    ----------
+    upstream :
+        the upstream node to receive streams from
+    data_keys: tuple, optional
+        Names of the data keys. If None assume incoming data is dict and use
+        the keys from the dict. Defauls to None
+    stream_name : str, optional
+        Name for this stream node
+
+    Notes
+    -----
+    The result emitted from this stream follows the document model.
+    This is essentially a state machine. Transitions are:
+    start -> stop
+    start -> descriptor -> event -> stop
+    Note that start -> start is not allowed, this node always issues a stop
+    document so the data input times can be stored.
+
+    Examples
+    --------
+    import uuid
+    from shed.event_streams import EventStream
+    from shed.translation import FromEventStream, ToEventStream
+
+    s = EventStream()
+    s2 = FromEventStream(s, 'event', ('data', 'det_image'), principle=True)
+    s3 = ToEventStream(s2, ('det_image',))
+    s3.sink(print)
+    s.emit(('start', {'uid' : str(uuid.uuid4())}))
+    s.emit(('descriptor', {'uid' : str(uuid.uuid4()),
+                           'data_keys': {'det_image': {'units': 'arb'}}))
+    s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
+    s.emit(('stop', {'uid' : str(uuid.uuid4())}))
+    prints:
+    ('start',...)
+    ('descriptor',...)
+    ('event',...)
+    ('stop',...)
+    """
+
+    def __init__(
+            self,
+            descriptor_dicts,
+            stream_name=None,
+            **kwargs,
+    ):
+        self.descriptor_dicts = descriptor_dicts
+        self.descriptors = {}
+        if stream_name is None:
+            stream_name = ''
+            for v in descriptor_dicts.values():
+                stream_name += f"{v.get('name', 'primary')} " + ', '.join(v.get('data_keys', {}).keys())
+
+        Stream.__init__(self, upstreams=[k for k in descriptor_dicts.keys()],
+                        stream_name=stream_name)
+        self.md = kwargs
+
+        move_to_first(self)
+
+        self.incoming_start_uid = None
+        self.incoming_stop_uid = None
+
+        self.state = "stopped"
+        self.subs = []
+
+        self.uid = str(uuid.uuid4())
+
+        # walk upstream to get all upstream nodes to the translation node
+        # get start_uids from the translation node
+        self.graph = nx.DiGraph()
+        walk_to_translation(self, graph=self.graph)
+
+        self.translation_nodes = {
+            k: n["stream"]
+            for k, n in self.graph.node.items()
+            if isinstance(
+                n["stream"], (simple_from_event_stream, simple_to_event_stream,
+                              simple_to_event_stream_new_api)
+            )
+               and n["stream"] != self
+        }
+        self.principle_nodes = [
+            n
+            for k, n in self.translation_nodes.items()
+            if getattr(n, "principle", False)
+               or isinstance(n, SimpleToEventStream)
+        ]
+        if not self.principle_nodes:
+            raise RuntimeError(
+                f"No Principle Nodes Detected for node "
+                f"{stream_name}, "
+                f"{[k.data_address for k in self.translation_nodes.values()]}"
+            )
+        for p in self.principle_nodes:
+            p.subs.append(self)
+
+    def emit_start(self, x):
+        # if we have seen this start document already do nothing, we have
+        # multiple parents so we may get a start doc multiple times
+        name, doc = x
+        if doc["uid"] is self.incoming_start_uid:
+            return
+        else:
+            self.incoming_start_uid = doc["uid"]
+            # Prime stop document
+            self.incoming_stop_uid = None
+        # Emergency stop if we get a new start document and no stop has been
+        # issued
+        if self.state != "stopped":
+            self.emit_stop(x)
+        # This is a bit of jank to make certain we don't override the
+        # user metadata with pipeline metadata
+        old_md = dict(self.md)
+
+        self.md.update(
+            dict(
+                parent_uids=list(
+                    set(
+                        [
+                            v.start_uid
+                            for k, v in self.translation_nodes.items()
+                            if v.start_uid is not None
+                        ]
+                    )
+                ),
+                parent_node_map={
+                    v.uid: v.start_uid
+                    for k, v in self.translation_nodes.items()
+                    if v.start_uid is not None
+                },
+                # keep track of this so we know which node we're sending
+                # data from (see merkle hash in DBFriendly)
+                outbound_node=self.uid,
+            )
+        )
+        global _GLOBAL_SCAN_ID
+        _GLOBAL_SCAN_ID += 1
+        self.md.update(scan_id=_GLOBAL_SCAN_ID)
+        bundle = compose_run(metadata=self.md, validate=False)
+        start, self.desc_fac, self.resc_fac, self.stop_factory = bundle
+        self.start_uid = start["uid"]
+        self.md = old_md
+
+        # emit starts to subs first in case we create an event from the start
+        [s.emit_start(x) for s in self.subs]
+        self.emit(('start', start))
+        self.state = "started"
+
+    def emit_stop(self, x):
+        name, doc = x
+        if doc["uid"] is self.incoming_stop_uid:
+            return
+        else:
+            self.incoming_stop_uid = doc["uid"]
+            # Prime for next run
+            self.incoming_start_uid = None
+        stop = self.stop_factory()
+        self.descriptors.clear()
+        ret = self.emit(('stop', stop))
+        [s.emit_stop(x) for s in self.subs]
+        self.state = "stopped"
+        return ret
+
+    def update(self, x, who=None):
+        rl = []
+        # If we have a start document ready to go, release it.
+        if self.state == "stopped":
+            raise RuntimeError(
+                "Can't emit events from a stopped state "
+                "it seems that a start was not emitted"
+            )
+
+        descriptor_dict = self.descriptor_dicts[who]
+        data_keys = descriptor_dict.setdefault('data_keys', {})
+
+        # If there are no data_keys then we are taking in a dict and the
+        # keys of the dict will be the keys for the stream
+        if data_keys == {}:
+            if not isinstance(x, Mapping):
+                raise TypeError(f'No data keys were provided so expected '
+                                f'Mapping, but {type(x)} found')
+            data_keys = {k: {} for k in x}
+
+        # If the incoming data is a dict extract the data as a tuple
+        if isinstance(x, Mapping):
+            x = tuple([x[k] for k in data_keys.keys()])
+        # normalize the data to a tuple
+        if not isinstance(x, tuple):
+            tx = tuple([x])
+        # XXX: need to do something where the data is a tuple!
+        elif len(data_keys) == 1:
+            tx = tuple([x])
+        else:
+            tx = x
+
+        # If we haven't issued a descriptor yet make one
+        if who not in self.descriptors:
+            # clobber the user supplied metadata and the auto generated
+            # metadata via ChainDB with resolution favoring the user's input
+            descriptor, self.descriptors[who], _ = self.desc_fac(
+                **_convert_to_dict(ChainDB(dict(
+                    name='primary',
+                    data_keys={
+                        k: {
+                            "source": "analysis",
+                            # XXX: how to deal with this when xx is a future?
+                            "dtype": get_dtype(xx),
+                            "shape": getattr(xx, "shape", []),
+                            **data_keys[k].get(k, {}),
+                        }
+                        for k, xx in zip(data_keys, tx)
+                    },
+                    hints={"analyzer": {"fields": sorted(list(data_keys))}},
+                    object_keys={k: [k] for k in data_keys},
+                ),
+                                           descriptor_dict)),
+                validate=False,
+            )
+            rl.append(self.emit(('descriptor', descriptor)))
+            self.state = "described"
+        event = self.descriptors[who](
+            timestamps={k: time.time() for k in data_keys},
+            data={k: v for k, v in zip(data_keys, tx)},
+            validate=False,
+        )
+        rl.append(self.emit(('event', event)))
+
+        return rl
+
+
 @Stream.register_api()
 class SimpleToEventStream(simple_to_event_stream):
     pass
@@ -324,14 +563,14 @@ class simple_from_event_stream(Stream):
         """
 
     def __init__(
-        self,
-        upstream,
-        doc_type,
-        data_address,
-        event_stream_name=ALL,
-        stream_name=None,
-        principle=False,
-        **kwargs,
+            self,
+            upstream,
+            doc_type,
+            data_address,
+            event_stream_name=ALL,
+            stream_name=None,
+            principle=False,
+            **kwargs,
     ):
         if stream_name is None:
             stream_name = str(data_address)
@@ -361,8 +600,8 @@ class simple_from_event_stream(Stream):
             # Sideband start document in
             [s.emit_start(x) for s in self.subs]
         if name == "descriptor" and (
-            self.event_stream_name == ALL
-            or self.event_stream_name == doc.get("name", "primary")
+                self.event_stream_name == ALL
+                or self.event_stream_name == doc.get("name", "primary")
         ):
             self.descriptor_uids.append(doc["uid"])
         if name == "stop":
@@ -372,14 +611,15 @@ class simple_from_event_stream(Stream):
             [s.emit_stop(x) for s in self.subs]
         inner = doc.copy()
         if name == self.doc_type and (
-            (
-                name == "descriptor"
-                and (self.event_stream_name == doc.get("name", ALL))
-            )
-            or (
-                name == "event" and (doc["descriptor"] in self.descriptor_uids)
-            )
-            or name in ["start", "stop"]
+                (
+                        name == "descriptor"
+                        and (self.event_stream_name == doc.get("name", ALL))
+                )
+                or (
+                        name == "event" and (
+                        doc["descriptor"] in self.descriptor_uids)
+                )
+                or name in ["start", "stop"]
         ):
 
             # If we have an empty address get everything
@@ -446,14 +686,14 @@ class SimpleFromEventStream(simple_from_event_stream):
     """
 
     def __init__(
-        self,
-        doc_type,
-        data_address,
-        upstream=None,
-        event_stream_name=ALL,
-        stream_name=None,
-        principle=False,
-        **kwargs,
+            self,
+            doc_type,
+            data_address,
+            upstream=None,
+            event_stream_name=ALL,
+            stream_name=None,
+            principle=False,
+            **kwargs,
     ):
         simple_from_event_stream.__init__(
             self,
@@ -474,7 +714,7 @@ class align_event_streams(szip):
     the two streams to be of equal length."""
 
     def __init__(
-        self, *upstreams, event_stream_name=ALL, stream_name=None, **kwargs
+            self, *upstreams, event_stream_name=ALL, stream_name=None, **kwargs
     ):
         szip.__init__(self, *upstreams, stream_name=stream_name)
         doc_names = ["start", "descriptor", "event", "stop"]
@@ -521,8 +761,8 @@ class align_event_streams(szip):
         if name == "descriptor":
             # if we want the descriptor continue, else bounce out
             if (
-                self.event_stream_name == ALL
-                or self.event_stream_name == doc.get("name", "primary")
+                    self.event_stream_name == ALL
+                    or self.event_stream_name == doc.get("name", "primary")
             ):
                 self.descriptor_uids.append(doc["uid"])
             else:
