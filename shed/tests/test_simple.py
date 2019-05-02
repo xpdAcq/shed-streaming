@@ -769,8 +769,9 @@ def test_to_event_model_new_api_clobber(RE, hw):
 def test_to_event_model_new_api_multi(RE, hw):
     source = Stream()
     stop = FromEventStream("stop", (), source)
-    t = FromEventStream("event", ("data", "motor"), source, principle=True,
-                        stream_name='hi')
+    t = FromEventStream(
+        "event", ("data", "motor"), source, principle=True, stream_name="hi"
+    )
     assert t.principle
 
     tt = t.zip(stop)
@@ -806,8 +807,7 @@ def test_to_event_model_new_api_multi(RE, hw):
 def test_to_event_model_new_api_no_principle(RE, hw):
     source = Stream()
     stop = FromEventStream("stop", (), source)
-    t = FromEventStream("event", ("data", "motor"), source,
-                        stream_name='hi')
+    t = FromEventStream("event", ("data", "motor"), source, stream_name="hi")
     tt = t.zip(stop)
     n = simple_to_event_stream_new_api(
         {
@@ -844,7 +844,11 @@ def test_to_event_model_new_api_multi_parent(RE, hw):
     assert t.principle
 
     n = simple_to_event_stream_new_api(
-        {t.zip(t2).pluck(0): {"data_keys": {"ct": {"units": "arb", "precision": 2}}}}
+        {
+            t.zip(t2).pluck(0): {
+                "data_keys": {"ct": {"units": "arb", "precision": 2}}
+            }
+        }
     )
     tt = t.sink_to_list()
     p = n.pluck(0).sink_to_list()
@@ -875,7 +879,7 @@ def test_to_event_model_new_api_e_stop(RE, hw):
     d = n.pluck(1).sink_to_list()
 
     def f(*x):
-        if x[0] == 'stop':
+        if x[0] == "stop":
             return
         source.emit(x)
 
@@ -883,7 +887,7 @@ def test_to_event_model_new_api_e_stop(RE, hw):
 
     RE(scan([hw.motor], hw.motor, 0, 9, 10))
 
-    rs = d[0]['uid']
+    rs = d[0]["uid"]
     assert tt
     assert set(p) == {"start", "event", "descriptor"}
     assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
@@ -891,5 +895,5 @@ def test_to_event_model_new_api_e_stop(RE, hw):
     ll = len(d)
 
     RE(scan([hw.motor], hw.motor, 0, 9, 10))
-    assert d[ll]['run_start'] == rs
+    assert d[ll]["run_start"] == rs
     assert set(p) == {"start", "stop", "event", "descriptor"}
