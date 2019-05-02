@@ -1,7 +1,7 @@
 """Translation nodes"""
 import time
 import uuid
-from collections import deque, MutableMapping, Mapping
+from collections import deque, Mapping
 
 import networkx as nx
 import numpy as np
