@@ -444,7 +444,7 @@ class simple_to_event_stream_new_api(Stream):
     def update(self, x, who=None):
         rl = []
         # If we have a start document ready to go, release it.
-        if self.state == "stopped":
+        if self.state == "stopped":  # pragma: no coverage
             raise RuntimeError(
                 "Can't emit events from a stopped state "
                 "it seems that a start was not emitted"
@@ -456,7 +456,7 @@ class simple_to_event_stream_new_api(Stream):
         # If there are no data_keys then we are taking in a dict and the
         # keys of the dict will be the keys for the stream
         if data_keys == {}:
-            if not isinstance(x, Mapping):
+            if not isinstance(x, Mapping):  # pragma: no coverage
                 raise TypeError(
                     f"No data keys were provided so expected "
                     f"Mapping, but {type(x)} found"
