@@ -429,9 +429,7 @@ def test_align_buffering2(RE, hw):
     d = Stream()
 
     b = FromEventStream(
-        "event",
-        ("data", "motor"),
-        principle=True, upstream=a
+        "event", ("data", "motor"), principle=True, upstream=a
     ).map(op.add, 1)
     c = ToEventStream(b, ("out",))
 
@@ -444,11 +442,11 @@ def test_align_buffering2(RE, hw):
     RE(scan([hw.img], hw.motor, 0, 10, 10, md={"hello": "world"}))
     for nd in L:
         d.emit(nd)
-    print('hi')
+    print("hi")
     for nd in L:
         a.emit(nd)
 
-    assert all(k in names for k in ['start', 'descriptor', 'event', 'stop'])
+    assert all(k in names for k in ["start", "descriptor", "event", "stop"])
 
 
 def test_align_multi_stream(RE, hw):
