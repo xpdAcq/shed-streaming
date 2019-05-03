@@ -809,7 +809,7 @@ def test_to_event_model_new_api_no_principle(RE, hw):
     stop = FromEventStream("stop", (), source)
     t = FromEventStream("event", ("data", "motor"), source, stream_name="hi")
     tt = t.zip(stop)
-    n = simple_to_event_stream_new_api(
+    simple_to_event_stream_new_api(
         {
             t: {"data_keys": {"ct": {"units": "arb", "precision": 2}}},
             tt: {
