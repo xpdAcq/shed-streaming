@@ -359,7 +359,6 @@ def test_align_interrupted(RE, hw):
             pass
     assert {"start", "stop"} == set(list(zip(*sl))[0])
     # check that buffers are not cleared, yet
-    # assert any([b for n, tb in z.true_buffers.items() for u, b in tb.items()])
     sl.clear()
     # If there are elements in the buffer they need to be cleared when all
     # start docs come in.
