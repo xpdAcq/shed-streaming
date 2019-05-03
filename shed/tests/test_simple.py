@@ -11,6 +11,7 @@ from shed import (
     SimpleFromEventStream as FromEventStream,
     SimpleToEventStream as ToEventStream,
     walk_to_translation,
+    simple_to_event_stream_new_api,
 )
 from shed.simple import _hash_or_uid, build_upstream_node_set
 from shed.tests.utils import y
@@ -687,7 +688,196 @@ def test_build_upstream_node_set():
     t = FromEventStream("event", ("data", "motor"), source, principle=True)
     assert t.principle
 
-    n = ToEventStream(t, ("ct",),
-                      data_key_md={"ct": {"units": "arb"}}).LastCache()
+    n = ToEventStream(
+        t, ("ct",), data_key_md={"ct": {"units": "arb"}}
+    ).LastCache()
     s = build_upstream_node_set(n)
     assert len(s) == 3
+
+
+def test_to_event_model_new_api(RE, hw):
+    source = Stream()
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
+    assert t.principle
+
+    n = simple_to_event_stream_new_api(
+        {t: {"data_keys": {"ct": {"units": "arb", "precision": 2}}}}
+    )
+    tt = t.sink_to_list()
+    p = n.pluck(0).sink_to_list()
+    d = n.pluck(1).sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert tt
+    assert set(p) == {"start", "stop", "event", "descriptor"}
+    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert d[1]["data_keys"]["ct"]["units"] == "arb"
+    assert d[-1]["run_start"]
+
+
+def test_to_event_model_new_api_no_data_keys(RE, hw):
+    source = Stream()
+    t = FromEventStream("event", ("data",), source, principle=True)
+    assert t.principle
+
+    n = simple_to_event_stream_new_api({t: {}})
+    tt = t.sink_to_list()
+    p = n.pluck(0).sink_to_list()
+    d = n.pluck(1).sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert tt
+    assert set(p) == {"start", "stop", "event", "descriptor"}
+    assert d[1]["hints"] == {
+        "analyzer": {"fields": ["motor", "motor_setpoint"]}
+    }
+    assert d[1]["data_keys"]["motor"]
+    assert d[-1]["run_start"]
+
+
+def test_to_event_model_new_api_clobber(RE, hw):
+    source = Stream()
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
+    assert t.principle
+
+    n = simple_to_event_stream_new_api(
+        {t: {"data_keys": {"ct": {"units": "arb", "dtype": "array"}}}}
+    )
+    tt = t.sink_to_list()
+    p = n.pluck(0).sink_to_list()
+    d = n.pluck(1).sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert tt
+    assert set(p) == {"start", "stop", "event", "descriptor"}
+    assert d[1]["data_keys"]["ct"]["dtype"] == "array"
+    assert d[-1]["run_start"]
+
+
+def test_to_event_model_new_api_multi(RE, hw):
+    source = Stream()
+    stop = FromEventStream("stop", (), source)
+    t = FromEventStream(
+        "event", ("data", "motor"), source, principle=True, stream_name="hi"
+    )
+    assert t.principle
+
+    tt = t.zip(stop)
+    n = simple_to_event_stream_new_api(
+        {
+            t: {"data_keys": {"ct": {"units": "arb", "precision": 2}}},
+            tt: {
+                "name": "final",
+                "data_keys": {"ct": {"units": "arb", "precision": 2}},
+            },
+        },
+        hello="world",
+    )
+    tt = t.sink_to_list()
+    p = n.pluck(0).sink_to_list()
+    d = n.pluck(1).sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert tt
+    assert set(p) == {"start", "stop", "event", "descriptor"}
+    assert d[0]["hello"] == "world"
+    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert d[1]["data_keys"]["ct"]["units"] == "arb"
+    assert d[-3]["name"] == "final"
+    assert d[-1]["run_start"]
+
+
+@pytest.mark.xfail(raises=RuntimeError)
+def test_to_event_model_new_api_no_principle(RE, hw):
+    source = Stream()
+    stop = FromEventStream("stop", (), source)
+    t = FromEventStream("event", ("data", "motor"), source, stream_name="hi")
+    tt = t.zip(stop)
+    simple_to_event_stream_new_api(
+        {
+            t: {"data_keys": {"ct": {"units": "arb", "precision": 2}}},
+            tt: {
+                "name": "final",
+                "data_keys": {"ct": {"units": "arb", "precision": 2}},
+            },
+        },
+        hello="world",
+    )
+
+
+def test_to_event_model_new_api_multi_parent(RE, hw):
+    source = Stream()
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
+    t2 = FromEventStream("event", ("data", "motor"), source, principle=True)
+    assert t.principle
+
+    n = simple_to_event_stream_new_api(
+        {
+            t.zip(t2).pluck(0): {
+                "data_keys": {"ct": {"units": "arb", "precision": 2}}
+            }
+        }
+    )
+    tt = t.sink_to_list()
+    p = n.pluck(0).sink_to_list()
+    d = n.pluck(1).sink_to_list()
+
+    RE.subscribe(unstar(source.emit))
+    RE.subscribe(print)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    assert tt
+    assert set(p) == {"start", "stop", "event", "descriptor"}
+    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert d[1]["data_keys"]["ct"]["units"] == "arb"
+    assert d[-1]["run_start"]
+
+
+def test_to_event_model_new_api_e_stop(RE, hw):
+    source = Stream()
+    t = FromEventStream("event", ("data", "motor"), source, principle=True)
+    assert t.principle
+
+    n = simple_to_event_stream_new_api(
+        {t: {"data_keys": {"ct": {"units": "arb", "precision": 2}}}}
+    )
+    tt = t.sink_to_list()
+    p = n.pluck(0).sink_to_list()
+    d = n.pluck(1).sink_to_list()
+
+    def f(*x):
+        if x[0] == "stop":
+            return
+        source.emit(x)
+
+    RE.subscribe(f)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+
+    rs = d[0]["uid"]
+    assert tt
+    assert set(p) == {"start", "event", "descriptor"}
+    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
+    assert d[1]["data_keys"]["ct"]["units"] == "arb"
+    ll = len(d)
+
+    RE(scan([hw.motor], hw.motor, 0, 9, 10))
+    assert d[ll]["run_start"] == rs
+    assert set(p) == {"start", "stop", "event", "descriptor"}

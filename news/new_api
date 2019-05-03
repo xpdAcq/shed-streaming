@@ -1,0 +1,14 @@
+**Added:**
+
+* ``shed.simple.simple_to_event_stream_new_api`` which has a new API for
+  describing the data which is going to be converted to the event model
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None
