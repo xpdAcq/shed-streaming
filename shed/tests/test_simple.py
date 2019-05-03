@@ -819,22 +819,6 @@ def test_to_event_model_new_api_no_principle(RE, hw):
         },
         hello="world",
     )
-    tt = t.sink_to_list()
-    p = n.pluck(0).sink_to_list()
-    d = n.pluck(1).sink_to_list()
-
-    RE.subscribe(unstar(source.emit))
-    RE.subscribe(print)
-
-    RE(scan([hw.motor], hw.motor, 0, 9, 10))
-
-    assert tt
-    assert set(p) == {"start", "stop", "event", "descriptor"}
-    assert d[0]["hello"] == "world"
-    assert d[1]["hints"] == {"analyzer": {"fields": ["ct"]}}
-    assert d[1]["data_keys"]["ct"]["units"] == "arb"
-    assert d[-3]["name"] == "final"
-    assert d[-1]["run_start"]
 
 
 def test_to_event_model_new_api_multi_parent(RE, hw):
