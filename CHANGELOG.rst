@@ -4,6 +4,20 @@ SHED Change Log
 
 .. current developments
 
+v0.7.1
+====================
+
+**Added:**
+
+* ``shed.simple.simple_to_event_stream_new_api`` which has a new API for
+  describing the data which is going to be converted to the event model
+
+**Changed:**
+
+* ``AlignEventStreams`` clears buffer on stop docs not start
+
+
+
 v0.7.0
 ====================
 
