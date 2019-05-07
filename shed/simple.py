@@ -825,9 +825,9 @@ class align_event_streams(szip):
             self.literals = self.true_literals[name]
             ret = super().update((name, doc), who)
             # if we have a list that means we returned something, meaning
-            # the buffers were full of starts, which means we can clear the
-            # rest of the buffers
-            if ret == [] and name == "start":
+            # if the name is stop we've exhausted all the data,
+            # which means we can clear the rest of the buffers
+            if ret == [] and name == "stop":
                 for name, tb in self.true_buffers.items():
                     for upstream, b in tb.items():
                         b.clear()

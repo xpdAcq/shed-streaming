@@ -1,0 +1,13 @@
+**Added:** None
+
+**Changed:**
+
+* ``AlignEventStreams`` clears buffer on stop docs not start
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:** None
+
+**Security:** None
