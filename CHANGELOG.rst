@@ -4,6 +4,16 @@ SHED Change Log
 
 .. current developments
 
+v0.7.2
+====================
+
+**Fixed:**
+
+* ``original_time`` metadata goes to ``original_start_time`` so file saving 
+  works properly
+
+
+
 v0.7.1
 ====================
 
