@@ -793,7 +793,7 @@ class align_event_streams(szip):
         if names[0] == "start":
             docs[0].update(
                 original_start_uid=docs[0]["uid"],
-                original_time=docs[0]["time"],
+                original_start_time=docs[0]["time"],
             )
         return super()._emit((names[0], _convert_to_dict(ChainDB(*docs))))
 
