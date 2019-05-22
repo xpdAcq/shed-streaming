@@ -330,6 +330,7 @@ def test_align_stream_syntax():
 
     assert len(sl) == 4
     assert sl[0][1].get("b") == {"hi": "world", "hi2": "world"}
+    assert "original_start_time" in sl[0][1]
 
 
 def test_align_interrupted(RE, hw):
