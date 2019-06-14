@@ -121,7 +121,8 @@ class simple_to_event_stream(Stream, CreateDocs):
     >>> from rapidz import Stream
     >>> from shed.translation import FromEventStream, ToEventStream
     >>> source = Stream()
-    >>> s2 = FromEventStream(source, 'event', ('data', 'det_image'), principle=True)
+    >>> s2 = FromEventStream(source, 'event', ('data', 'det_image'),
+    ...                      principle=True)
     >>> s3 = ToEventStream(s2, ('det_image',))
     >>> s3.sink(print)
     >>> from ophyd.sim import hw
@@ -308,7 +309,8 @@ class simple_to_event_stream_new_api(Stream):
 
     >>> from pprint import pprint
     >>> from rapidz import Stream
-    >>> from shed import simple_from_event_stream, simple_to_event_stream_new_api
+    >>> from shed import (simple_from_event_stream,
+    ...                   simple_to_event_stream_new_api)
     >>> import operator as op
     >>> source = Stream()
     >>> stop = simple_from_event_stream(source, 'stop', ())
