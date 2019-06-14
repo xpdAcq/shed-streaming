@@ -62,9 +62,14 @@ class ToEventStream(SimpleToEventStream):
     >>> ('stop',...)
     """
 
-    def __init__(self, upstream, data_keys=None, stream_name=None,
-                 env_capture_functions=None,
-                 **kwargs):
+    def __init__(
+        self,
+        upstream,
+        data_keys=None,
+        stream_name=None,
+        env_capture_functions=None,
+        **kwargs
+    ):
         super().__init__(
             upstream=upstream,
             data_keys=data_keys,

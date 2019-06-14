@@ -691,7 +691,6 @@ class simple_from_event_stream(Stream):
 
 
 class SimpleFromEventStream(simple_from_event_stream):
-
     def __init__(
         self,
         doc_type,
