@@ -42,7 +42,8 @@ class ToEventStream(SimpleToEventStream):
     >>> from rapidz import Stream
     >>> from shed.translation import FromEventStream, ToEventStream
     >>> source = Stream()
-    >>> s2 = FromEventStream(source, 'event', ('data', 'det_image'), principle=True)
+    >>> s2 = FromEventStream(source, 'event', ('data', 'det_image'),
+    ...                      principle=True)
     >>> s3 = ToEventStream(s2, ('det_image',))
     >>> s3.sink(print)
     >>> from ophyd.sim import hw
