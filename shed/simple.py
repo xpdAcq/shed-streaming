@@ -1,4 +1,4 @@
-"""Translation nodes"""
+"""Nodes for translating between base data and event model"""
 import time
 import uuid
 from collections import deque, Mapping
@@ -554,7 +554,6 @@ class simple_to_event_stream_new_api(Stream):
 
 @Stream.register_api()
 class SimpleToEventStream(simple_to_event_stream):
-    __doc__ = simple_to_event_stream.__doc__
     pass
 
 
@@ -692,7 +691,6 @@ class simple_from_event_stream(Stream):
 
 
 class SimpleFromEventStream(simple_from_event_stream):
-    __doc__ = simple_from_event_stream.__doc__
 
     def __init__(
         self,

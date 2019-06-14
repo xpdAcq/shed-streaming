@@ -11,14 +11,6 @@ Subpackages
 Submodules
 ----------
 
-shed\.event\_streams module
----------------------------
-
-.. automodule:: shed.event_streams
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 shed\.simple module
 ---------------------------
 
@@ -43,14 +35,6 @@ shed\.replay module
 ---------------------------
 
 .. automodule:: shed.replay
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-shed\.unused\_streams module
-----------------------------
-
-.. automodule:: shed.unused_streams
     :members:
     :undoc-members:
     :show-inheritance:
