@@ -1,4 +1,3 @@
-from bluesky.utils import sanitize_np
 from rapidz import Stream
 import os
 import numpy as np
