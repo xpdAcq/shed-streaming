@@ -1,6 +1,6 @@
 import inspect
 import json
-import subprocess
+from xonsh.lib import subprocess
 import time
 from hashlib import sha256
 

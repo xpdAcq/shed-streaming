@@ -1,0 +1,14 @@
+**Added:** None
+
+**Changed:** None
+
+**Deprecated:** None
+
+**Removed:** None
+
+**Fixed:**
+
+* use ``xonsh.lib.subprocess`` rather than ``subprocess`` so it does the right
+  things on windows
+
+**Security:** None
