@@ -4,6 +4,16 @@ SHED Change Log
 
 .. current developments
 
+v0.7.3
+====================
+
+**Fixed:**
+
+* use ``xonsh.lib.subprocess`` rather than ``subprocess`` so it does the right
+  things on windows
+
+
+
 v0.7.2
 ====================
 
