@@ -11,18 +11,30 @@ Subpackages
 Submodules
 ----------
 
-shed\.event\_streams module
+shed\.simple module
 ---------------------------
 
-.. automodule:: shed.event_streams
+.. automodule:: shed.simple
     :members:
     :undoc-members:
     :show-inheritance:
 
-shed\.unused\_streams module
-----------------------------
 
-.. automodule:: shed.unused_streams
+
+shed\.simple\_parallel module
+---------------------------
+
+.. automodule:: shed.simple_parallel
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+
+shed\.replay module
+---------------------------
+
+.. automodule:: shed.replay
     :members:
     :undoc-members:
     :show-inheritance:

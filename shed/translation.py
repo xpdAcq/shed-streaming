@@ -49,8 +49,8 @@ class FromEventStream(SimpleFromEventStream):
         The type of document to extract data from
     data_address : tuple
         A tuple of successive keys walking through the document considered,
-        if the tuple is empty all the data from that document is returned as
-        a dict
+        if the tuple is empty all the data from that document is returned
+        as a dict
     upstream : Stream instance or None, optional
         The upstream node to receive streams from, defaults to None
     event_stream_name : str, optional
@@ -61,31 +61,41 @@ class FromEventStream(SimpleFromEventStream):
     principle : bool, optional
         If True then when this node receives a stop document then all
         downstream ToEventStream nodes will issue a stop document.
-        Defaults to False. Note that one principle node is required for proper
-        pipeline operation.
+        Defaults to False. Note that one principle node is required for
+        proper pipeline operation.
 
     Notes
     -----
-    The result emitted from this stream no longer follows the document model.
+    The result emitted from this stream no longer follows the document
+    model.
 
-    This node also keeps track of when and which data came through the node.
+    This node also keeps track of when and which data came through the
+    node.
 
 
     Examples
     -------------
-    import uuid
-    from shed.event_streams import EventStream
-    from shed.translation import FromEventStream
+    >>> import uuid
+    >>> from rapidz import Stream
+    >>> from shed.translation import FromEventStream
+    >>> ssource = Stream()
+    >>> s2 = FromEventStream(source, 'event', ('data', 'motor1'))
+    >>> s3 = s2.map(print)
+    >>> from ophyd.sim import hw
+    >>> hw = hw()
+    >>> from bluesky.run_engine import RunEngine
+    >>> RE = RunEngine()
+    >>> import bluesky.plans as bp
+    >>> node.sink(pprint)
+    >>> RE.subscribe(lambda *x: source.emit(x))
+    >>> RE(bp.scan([hw.motor1], hw.motor1, 0, 10, 11))
 
-    s = EventStream()
-    s2 = FromEventStream(s, 'event', ('data', 'det_image'))
-    s3 = s2.map(print)
-    s.emit(('start', {'uid' : str(uuid.uuid4())}))
-    s.emit(('descriptor', {'uid' : str(uuid.uuid4())}))
-    s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
-    s.emit(('stop', {'uid' : str(uuid.uuid4())}))
     prints:
-    1
+
+    >>> 1
+    >>> 2
+    >>> ...
+    >>> 10
     """
 
     def __init__(
@@ -135,30 +145,39 @@ class ToEventStream(SimpleToEventStream):
         Name for this stream node
 
     Notes
-    --------
+    -----
     The result emitted from this stream follows the document model.
-
+    This is essentially a state machine. Transitions are:
+    start -> stop
+    start -> descriptor -> event -> stop
+    Note that start -> start is not allowed, this node always issues a stop
+    document so the data input times can be stored.
 
     Examples
-    -------------
-    import uuid
-    from shed.event_streams import EventStream
-    from shed.translation import FromEventStream, ToEventStream
+    --------
+    >>> import uuid
+    >>> from rapidz import Stream
+    >>> from shed.translation import FromEventStream, ToEventStream
+    >>> source = Stream()
+    >>> s2 = FromEventStream(source, 'event', ('data', 'det_image'),
+    ...                      principle=True)
+    >>> s3 = ToEventStream(s2, ('det_image',))
+    >>> s3.sink(print)
+    >>> from ophyd.sim import hw
+    >>> hw = hw()
+    >>> from bluesky.run_engine import RunEngine
+    >>> RE = RunEngine()
+    >>> import bluesky.plans as bp
+    >>> node.sink(pprint)
+    >>> RE.subscribe(lambda *x: source.emit(x))
+    >>> RE(bp.scan([hw.motor1], hw.motor1, 0, 10, 11))
 
-    s = EventStream()
-    s2 = FromEventStream(s, 'event', ('data', 'det_image'), principle=True)
-    s3 = ToEventStream(s2, ('det_image',))
-    s3.sink(print)
-    s.emit(('start', {'uid' : str(uuid.uuid4())}))
-    s.emit(('descriptor', {'uid' : str(uuid.uuid4()),
-                           'data_keys': {'det_image': {'units': 'arb'}}))
-    s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
-    s.emit(('stop', {'uid' : str(uuid.uuid4())}))
     prints:
-    ('start',...)
-    ('descriptor',...)
-    ('event',...)
-    ('stop',...)
+
+    >>> ('start',...)
+    >>> ('descriptor',...)
+    >>> ('event',...)
+    >>> ('stop',...)
     """
 
     def __init__(
@@ -354,7 +373,7 @@ def merkle_friendly_node(node):
     # *args, remove the args which are more than that and replace with
     # node.args in case they have changed
     sig = inspect.signature(node.__init__)
-    if "args" in sig.parameters and hasattr(node, 'args'):
+    if "args" in sig.parameters and hasattr(node, "args"):
         idx = list(sig.parameters).index("args")
         args[idx:] = node.args
 

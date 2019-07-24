@@ -34,24 +34,29 @@ class SimpleToEventStream(ParallelStream, CreateDocs):
 
     Examples
     --------
-    import uuid
-    from shed.event_streams import EventStream
-    from shed.translation import FromEventStream, ToEventStream
+    >>> import uuid
+    >>> from rapidz import Stream
+    >>> from shed.translation import FromEventStream, ToEventStream
+    >>> source = Stream()
+    >>> s2 = FromEventStream(source, 'event', ('data', 'det_image'),
+    ...                      principle=True)
+    >>> s3 = ToEventStream(s2, ('det_image',))
+    >>> s3.sink(print)
+    >>> from ophyd.sim import hw
+    >>> hw = hw()
+    >>> from bluesky.run_engine import RunEngine
+    >>> RE = RunEngine()
+    >>> import bluesky.plans as bp
+    >>> node.sink(pprint)
+    >>> RE.subscribe(lambda *x: source.emit(x))
+    >>> RE(bp.scan([hw.motor1], hw.motor1, 0, 10, 11))
 
-    s = EventStream()
-    s2 = FromEventStream(s, 'event', ('data', 'det_image'), principle=True)
-    s3 = ToEventStream(s2, ('det_image',))
-    s3.sink(print)
-    s.emit(('start', {'uid' : str(uuid.uuid4())}))
-    s.emit(('descriptor', {'uid' : str(uuid.uuid4()),
-                           'data_keys': {'det_image': {'units': 'arb'}}))
-    s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
-    s.emit(('stop', {'uid' : str(uuid.uuid4())}))
     prints:
-    ('start',...)
-    ('descriptor',...)
-    ('event',...)
-    ('stop',...)
+
+    >>> ('start',...)
+    >>> ('descriptor',...)
+    >>> ('event',...)
+    >>> ('stop',...)
     """
 
     # XXX: need to replace event seq_num with a conditional future.
@@ -148,7 +153,7 @@ class SimpleToEventStream(ParallelStream, CreateDocs):
                     for k, v in self.translation_nodes.items()
                     if v.start_uid is not None
                 },
-                outbound_node=self.uid
+                outbound_node=self.uid,
             )
         )
         self.start_document = ("start", new_start_doc)

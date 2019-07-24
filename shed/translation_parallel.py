@@ -28,35 +28,49 @@ class ToEventStream(SimpleToEventStream):
         Name for this stream node
 
     Notes
-    --------
+    -----
     The result emitted from this stream follows the document model.
-
+    This is essentially a state machine. Transitions are:
+    start -> stop
+    start -> descriptor -> event -> stop
+    Note that start -> start is not allowed, this node always issues a stop
+    document so the data input times can be stored.
 
     Examples
-    -------------
-    import uuid
-    from shed.event_streams import EventStream
-    from shed.translation import FromEventStream, ToEventStream
+    --------
+    >>> import uuid
+    >>> from rapidz import Stream
+    >>> from shed.translation import FromEventStream, ToEventStream
+    >>> source = Stream()
+    >>> s2 = FromEventStream(source, 'event', ('data', 'det_image'),
+    ...                      principle=True)
+    >>> s3 = ToEventStream(s2, ('det_image',))
+    >>> s3.sink(print)
+    >>> from ophyd.sim import hw
+    >>> hw = hw()
+    >>> from bluesky.run_engine import RunEngine
+    >>> RE = RunEngine()
+    >>> import bluesky.plans as bp
+    >>> node.sink(pprint)
+    >>> RE.subscribe(lambda *x: source.emit(x))
+    >>> RE(bp.scan([hw.motor1], hw.motor1, 0, 10, 11))
 
-    s = EventStream()
-    s2 = FromEventStream(s, 'event', ('data', 'det_image'), principle=True)
-    s3 = ToEventStream(s2, ('det_image',))
-    s3.sink(print)
-    s.emit(('start', {'uid' : str(uuid.uuid4())}))
-    s.emit(('descriptor', {'uid' : str(uuid.uuid4()),
-                           'data_keys': {'det_image': {'units': 'arb'}}))
-    s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
-    s.emit(('stop', {'uid' : str(uuid.uuid4())}))
     prints:
-    ('start',...)
-    ('descriptor',...)
-    ('event',...)
-    ('stop',...)
+
+    >>> ('start',...)
+    >>> ('descriptor',...)
+    >>> ('event',...)
+    >>> ('stop',...)
     """
 
-    def __init__(self, upstream, data_keys=None, stream_name=None,
-                 env_capture_functions=None,
-                 **kwargs):
+    def __init__(
+        self,
+        upstream,
+        data_keys=None,
+        stream_name=None,
+        env_capture_functions=None,
+        **kwargs
+    ):
         super().__init__(
             upstream=upstream,
             data_keys=data_keys,

@@ -1,4 +1,4 @@
-"""Translation nodes"""
+"""Nodes for translating between base data and event model"""
 import time
 import uuid
 from collections import deque, Mapping
@@ -117,24 +117,29 @@ class simple_to_event_stream(Stream, CreateDocs):
 
     Examples
     --------
-    import uuid
-    from shed.event_streams import EventStream
-    from shed.translation import FromEventStream, ToEventStream
+    >>> import uuid
+    >>> from rapidz import Stream
+    >>> from shed.translation import FromEventStream, ToEventStream
+    >>> source = Stream()
+    >>> s2 = FromEventStream(source, 'event', ('data', 'det_image'),
+    ...                      principle=True)
+    >>> s3 = ToEventStream(s2, ('det_image',))
+    >>> s3.sink(print)
+    >>> from ophyd.sim import hw
+    >>> hw = hw()
+    >>> from bluesky.run_engine import RunEngine
+    >>> RE = RunEngine()
+    >>> import bluesky.plans as bp
+    >>> node.sink(pprint)
+    >>> RE.subscribe(lambda *x: source.emit(x))
+    >>> RE(bp.scan([hw.motor1], hw.motor1, 0, 10, 11))
 
-    s = EventStream()
-    s2 = FromEventStream(s, 'event', ('data', 'det_image'), principle=True)
-    s3 = ToEventStream(s2, ('det_image',))
-    s3.sink(print)
-    s.emit(('start', {'uid' : str(uuid.uuid4())}))
-    s.emit(('descriptor', {'uid' : str(uuid.uuid4()),
-                           'data_keys': {'det_image': {'units': 'arb'}}))
-    s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
-    s.emit(('stop', {'uid' : str(uuid.uuid4())}))
     prints:
-    ('start',...)
-    ('descriptor',...)
-    ('event',...)
-    ('stop',...)
+
+    >>> ('start',...)
+    >>> ('descriptor',...)
+    >>> ('event',...)
+    >>> ('stop',...)
     """
 
     def __init__(
@@ -170,7 +175,13 @@ class simple_to_event_stream(Stream, CreateDocs):
             k: n["stream"]
             for k, n in self.graph.node.items()
             if isinstance(
-                n["stream"], (SimpleFromEventStream, SimpleToEventStream)
+                n["stream"],
+                (
+                    SimpleFromEventStream,
+                    SimpleToEventStream,
+                    simple_to_event_stream,
+                    simple_from_event_stream,
+                ),
             )
             and n["stream"] != self
         }
@@ -301,55 +312,51 @@ class simple_to_event_stream_new_api(Stream):
 
     Examples
     --------
-    from pprint import pprint
 
-    from rapidz import Stream
-    from shed import simple_from_event_stream, simple_to_event_stream_new_api
-    import operator as op
+    >>> from pprint import pprint
+    >>> from rapidz import Stream
+    >>> from shed import (simple_from_event_stream,
+    ...                   simple_to_event_stream_new_api)
+    >>> import operator as op
+    >>> source = Stream()
+    >>> stop = simple_from_event_stream(source, 'stop', ())
+    >>> fes = simple_from_event_stream(source, 'event', ('data', 'motor1'),
+    ...                                principle=True)
+    >>> fes2 = simple_from_event_stream(source, 'event', ('data', ),
+    ...                                 principle=True)
+    >>> a = fes.map(op.add, 2).zip(fes)
+    >>> b = fes.combine_latest(stop, emit_on=stop).pluck(0)
+    >>> node = simple_to_event_stream_new_api(
+    ...     {
+    ...         a: {
+    ...             'data_keys': {'motor1_2': {}, 'motor1': {}},
+    ...         },
+    ...         b: {
+    ...             'name': 'final',
+    ...             'data_keys': {'motor1': {}},
+    ...             'configuration': {'motor1': {'hi': 'world'}}
+    ...         },
+    ...         fes2: {'name': 'raw'}
+    ...     }
+    ... )
+    >>> node2 = simple_to_event_stream_new_api(
+    ...     {fes2: {'name': 'primary'}}
+    ... )
+    >>> from ophyd.sim import hw
+    >>> hw = hw()
+    >>> from bluesky.run_engine import RunEngine
+    >>> RE = RunEngine()
+    >>> import bluesky.plans as bp
+    >>> node.sink(pprint)
+    >>> RE.subscribe(lambda *x: source.emit(x))
+    >>> RE(bp.scan([hw.motor1], hw.motor1, 0, 10, 11))
 
-    source = Stream()
-    stop = simple_from_event_stream(source, 'stop', ())
-    fes = simple_from_event_stream(source, 'event', ('data', 'motor1'),
-                                   principle=True)
-    fes2 = simple_from_event_stream(source, 'event', ('data', ),
-                                   principle=True)
-
-    a = fes.map(op.add, 2).zip(fes)
-    b = fes.combine_latest(stop, emit_on=stop).pluck(0)
-
-    node = simple_to_event_stream_new_api(
-        {
-            a: {
-                'data_keys': {'motor1_2': {}, 'motor1': {}},
-            },
-            b: {
-                'name': 'final',
-                'data_keys': {'motor1': {}},
-                'configuration': {'motor1': {'hi': 'world'}}
-            },
-            fes2: {'name': 'raw'}
-        }
-    )
-
-    node2 = simple_to_event_stream_new_api(
-        {fes2: {'name': 'primary'}}
-    )
-
-    from ophyd.sim import hw
-    hw = hw()
-    from bluesky.run_engine import RunEngine
-    RE = RunEngine()
-    import bluesky.plans as bp
-    # node2.sink(pprint)
-    node.sink(pprint)
-    RE.subscribe(lambda *x: source.emit(x))
-    RE(bp.scan([hw.motor1], hw.motor1, 0, 10, 11))
     prints:
-    ('start',...)
-    ('descriptor',...)
-    ('event',...)
-    ...
-    ('stop',...)
+
+    >>> ('start',...)
+    >>> ('descriptor',...)
+    >>> ('event',...)
+    >>> ('stop',...)
     """
 
     def __init__(self, descriptor_dicts, stream_name=None, **kwargs):
@@ -562,54 +569,61 @@ class SimpleToEventStream(simple_to_event_stream):
 class simple_from_event_stream(Stream):
     """Extracts data from the event stream, and passes it downstream.
 
-        Parameters
-        ----------
+    Parameters
+    ----------
 
-        doc_type : {'start', 'descriptor', 'event', 'stop'}
-            The type of document to extract data from
-        data_address : tuple
-            A tuple of successive keys walking through the document considered,
-            if the tuple is empty all the data from that document is returned
-            as a dict
-        upstream : Stream instance or None, optional
-            The upstream node to receive streams from, defaults to None
-        event_stream_name : str, optional
-            Filter by en event stream name (see :
-            http://nsls-ii.github.io/databroker/api.html?highlight=stream_name#data)
-        stream_name : str, optional
-            Name for this stream node
-        principle : bool, optional
-            If True then when this node receives a stop document then all
-            downstream ToEventStream nodes will issue a stop document.
-            Defaults to False. Note that one principle node is required for
-            proper pipeline operation.
+    doc_type : {'start', 'descriptor', 'event', 'stop'}
+        The type of document to extract data from
+    data_address : tuple
+        A tuple of successive keys walking through the document considered,
+        if the tuple is empty all the data from that document is returned
+        as a dict
+    upstream : Stream instance or None, optional
+        The upstream node to receive streams from, defaults to None
+    event_stream_name : str, optional
+        Filter by en event stream name (see :
+        http://nsls-ii.github.io/databroker/api.html?highlight=stream_name#data)
+    stream_name : str, optional
+        Name for this stream node
+    principle : bool, optional
+        If True then when this node receives a stop document then all
+        downstream ToEventStream nodes will issue a stop document.
+        Defaults to False. Note that one principle node is required for
+        proper pipeline operation.
 
-        Notes
-        -----
-        The result emitted from this stream no longer follows the document
-        model.
+    Notes
+    -----
+    The result emitted from this stream no longer follows the document
+    model.
 
-        This node also keeps track of when and which data came through the
-        node.
+    This node also keeps track of when and which data came through the
+    node.
 
 
-        Examples
-        -------------
-        import uuid
-        from shed.event_streams import EventStream
-        from shed.translation import FromEventStream
+    Examples
+    -------------
+    >>> import uuid
+    >>> from rapidz import Stream
+    >>> from shed.translation import FromEventStream
+    >>> ssource = Stream()
+    >>> s2 = FromEventStream(source, 'event', ('data', 'motor1'))
+    >>> s3 = s2.map(print)
+    >>> from ophyd.sim import hw
+    >>> hw = hw()
+    >>> from bluesky.run_engine import RunEngine
+    >>> RE = RunEngine()
+    >>> import bluesky.plans as bp
+    >>> node.sink(pprint)
+    >>> RE.subscribe(lambda *x: source.emit(x))
+    >>> RE(bp.scan([hw.motor1], hw.motor1, 0, 10, 11))
 
-        s = EventStream()
-        s2 = FromEventStream(s, 'event', ('data', 'det_image'))
-        s3 = s2.map(print)
-        s.emit(('start', {'uid' : str(uuid.uuid4())}))
-        s.emit(('descriptor', {'uid' : str(uuid.uuid4())}))
-        s.emit(('event', {'uid' : str(uuid.uuid4()),
-                          'data': {'det_image' : 1}}))
-        s.emit(('stop', {'uid' : str(uuid.uuid4())}))
-        prints:
-        1
-        """
+    prints:
+
+    >>> 1
+    >>> 2
+    >>> ...
+    >>> 10
+    """
 
     def __init__(
         self,
@@ -621,8 +635,6 @@ class simple_from_event_stream(Stream):
         principle=False,
         **kwargs,
     ):
-        if stream_name is None:
-            stream_name = str(data_address)
         asynchronous = None
         if "asynchronous" in kwargs:
             asynchronous = kwargs.pop("asynchronous")
@@ -641,6 +653,8 @@ class simple_from_event_stream(Stream):
         self.descriptor_uids = []
         self.subs = []
         self.start_uid = None
+        if principle:
+            self._graphviz_style = "rounded,bold"
 
     def update(self, x, who=None):
         name, doc = x
@@ -685,54 +699,6 @@ class simple_from_event_stream(Stream):
 
 
 class SimpleFromEventStream(simple_from_event_stream):
-    """Extracts data from the event stream, and passes it downstream.
-
-    Parameters
-    ----------
-
-    doc_type : {'start', 'descriptor', 'event', 'stop'}
-        The type of document to extract data from
-    data_address : tuple
-        A tuple of successive keys walking through the document considered,
-        if the tuple is empty all the data from that document is returned as
-        a dict
-    upstream : Stream instance or None, optional
-        The upstream node to receive streams from, defaults to None
-    event_stream_name : str, optional
-        Filter by en event stream name (see :
-        http://nsls-ii.github.io/databroker/api.html?highlight=stream_name#data)
-    stream_name : str, optional
-        Name for this stream node
-    principle : bool, optional
-        If True then when this node receives a stop document then all
-        downstream ToEventStream nodes will issue a stop document.
-        Defaults to False. Note that one principle node is required for proper
-        pipeline operation.
-
-    Notes
-    -----
-    The result emitted from this stream no longer follows the document model.
-
-    This node also keeps track of when and which data came through the node.
-
-
-    Examples
-    -------------
-    import uuid
-    from shed.event_streams import EventStream
-    from shed.translation import FromEventStream
-
-    s = EventStream()
-    s2 = FromEventStream(s, 'event', ('data', 'det_image'))
-    s3 = s2.map(print)
-    s.emit(('start', {'uid' : str(uuid.uuid4())}))
-    s.emit(('descriptor', {'uid' : str(uuid.uuid4())}))
-    s.emit(('event', {'uid' : str(uuid.uuid4()), 'data': {'det_image' : 1}}))
-    s.emit(('stop', {'uid' : str(uuid.uuid4())}))
-    prints:
-    1
-    """
-
     def __init__(
         self,
         doc_type,
