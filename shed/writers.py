@@ -97,6 +97,6 @@ class NpyWriter:
                 event["data"][k] = datum["datum_id"]
                 event["filled"][k] = False
             # Don't write a file just for a single number!
-            elif isinstance(v, np.ndarray) and v.shape == ():
-                event["data"][k] = sanitize_np(v)
+            elif isinstance(v, np.ndarray) and np.isscalar(v):
+                event["data"][k] = v.item()
         yield "event", event

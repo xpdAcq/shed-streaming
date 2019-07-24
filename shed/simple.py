@@ -175,7 +175,8 @@ class simple_to_event_stream(Stream, CreateDocs):
             k: n["stream"]
             for k, n in self.graph.node.items()
             if isinstance(
-                n["stream"], (SimpleFromEventStream, SimpleToEventStream)
+                n["stream"], (SimpleFromEventStream, SimpleToEventStream,
+                              simple_to_event_stream, simple_from_event_stream)
             )
             and n["stream"] != self
         }
@@ -183,7 +184,7 @@ class simple_to_event_stream(Stream, CreateDocs):
             n
             for k, n in self.translation_nodes.items()
             if getattr(n, "principle", False)
-            or isinstance(n, SimpleToEventStream)
+            or isinstance(n, SimpleToEventStream,)
         ]
         if not self.principle_nodes:
             raise RuntimeError(
@@ -629,8 +630,6 @@ class simple_from_event_stream(Stream):
         principle=False,
         **kwargs,
     ):
-        if stream_name is None:
-            stream_name = str(data_address)
         asynchronous = None
         if "asynchronous" in kwargs:
             asynchronous = kwargs.pop("asynchronous")
@@ -649,6 +648,8 @@ class simple_from_event_stream(Stream):
         self.descriptor_uids = []
         self.subs = []
         self.start_uid = None
+        if principle:
+            self._graphviz_style = 'rounded,bold'
 
     def update(self, x, who=None):
         name, doc = x
