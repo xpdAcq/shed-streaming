@@ -1,0 +1,1037 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>shed.simple &mdash; SHED  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> SHED
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../shed.html">shed package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Tutorials</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">SHED</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>shed.simple</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for shed.simple</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Nodes for translating between base data and event model&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span><span class="p">,</span> <span class="n">Mapping</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">event_model</span> <span class="k">import</span> <span class="n">compose_descriptor</span><span class="p">,</span> <span class="n">compose_run</span>
+<span class="kn">from</span> <span class="nn">rapidz.core</span> <span class="k">import</span> <span class="n">Stream</span><span class="p">,</span> <span class="nb">zip</span> <span class="k">as</span> <span class="n">szip</span><span class="p">,</span> <span class="n">move_to_first</span>
+<span class="kn">from</span> <span class="nn">shed.doc_gen</span> <span class="k">import</span> <span class="n">CreateDocs</span><span class="p">,</span> <span class="n">get_dtype</span>
+<span class="kn">from</span> <span class="nn">xonsh.lib.collections</span> <span class="k">import</span> <span class="n">ChainDB</span><span class="p">,</span> <span class="n">_convert_to_dict</span>
+
+<span class="n">ALL</span> <span class="o">=</span> <span class="s2">&quot;--ALL THE DOCS--&quot;</span>
+
+<span class="n">DTYPE_MAP</span> <span class="o">=</span> <span class="p">{</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span> <span class="s2">&quot;array&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">:</span> <span class="s2">&quot;number&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">:</span> <span class="s2">&quot;number&quot;</span><span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_hash_or_uid</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s2">&quot;uid&quot;</span><span class="p">,</span> <span class="nb">hash</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="build_upstream_node_set"><a class="viewcode-back" href="../../shed.html#shed.simple.build_upstream_node_set">[docs]</a><span class="k">def</span> <span class="nf">build_upstream_node_set</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Build a set of all the nodes in a rapidz graph</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    node : Stream</span>
+<span class="sd">        The node to use as a starting point for building the set</span>
+<span class="sd">    s : set or None</span>
+<span class="sd">        The set to put the nodes into. If None return a new set full of nodes</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    s : set</span>
+<span class="sd">        The set of nodes in the graph</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">s</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">SimpleFromEventStream</span><span class="p">):</span>
+        <span class="k">return</span>
+    <span class="p">[</span><span class="n">build_upstream_node_set</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">upstreams</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">s</span></div>
+
+
+<div class="viewcode-block" id="walk_to_translation"><a class="viewcode-back" href="../../shed.html#shed.simple.walk_to_translation">[docs]</a><span class="k">def</span> <span class="nf">walk_to_translation</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">prior_node</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a graph that is a subset of the graph from the stream.</span>
+
+<span class="sd">    The walk starts at a translation ``ToEventStream`` node and ends at any</span>
+<span class="sd">    instances of FromEventStream or ToEventStream.  Each iteration of the walk</span>
+<span class="sd">    goes up one node, determines if that node is a ``FromEventStream`` node, if</span>
+<span class="sd">    not walks one down to see if there are any ``ToEventStream`` nodes, if not</span>
+<span class="sd">    it keeps walking up. The walk down allows us to replace live data with</span>
+<span class="sd">    stored data/stubs when it comes time to get the parent uids. Graph nodes</span>
+<span class="sd">    are hashes or uids of the node objects with ``stream=node`` in the nodes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    node : Stream instance</span>
+<span class="sd">    graph : DiGraph instance</span>
+<span class="sd">    prior_node : Stream instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">_hash_or_uid</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">prior_node</span><span class="p">:</span>
+        <span class="n">tt</span> <span class="o">=</span> <span class="n">_hash_or_uid</span><span class="p">(</span><span class="n">prior_node</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">graph</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tt</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tt</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">SimpleFromEventStream</span><span class="p">):</span>
+                <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">downstream</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">downstreams</span><span class="p">:</span>
+                    <span class="n">ttt</span> <span class="o">=</span> <span class="n">_hash_or_uid</span><span class="p">(</span><span class="n">downstream</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="p">(</span>
+                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">downstream</span><span class="p">,</span> <span class="n">SimpleToEventStream</span><span class="p">)</span>
+                        <span class="ow">and</span> <span class="n">ttt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">graph</span>
+                    <span class="p">):</span>
+                        <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">ttt</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">downstream</span><span class="p">)</span>
+                        <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">ttt</span><span class="p">)</span>
+                        <span class="k">return</span>
+
+    <span class="k">for</span> <span class="n">node2</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">upstreams</span><span class="p">:</span>
+        <span class="c1"># Stop at translation node</span>
+        <span class="k">if</span> <span class="n">node2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">walk_to_translation</span><span class="p">(</span><span class="n">node2</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="simple_to_event_stream"><a class="viewcode-back" href="../../shed.html#shed.simple.simple_to_event_stream">[docs]</a><span class="nd">@Stream</span><span class="o">.</span><span class="n">register_api</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">simple_to_event_stream</span><span class="p">(</span><span class="n">Stream</span><span class="p">,</span> <span class="n">CreateDocs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Converts data into a event stream, and passes it downstream.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    upstream :</span>
+<span class="sd">        the upstream node to receive streams from</span>
+<span class="sd">    data_keys: tuple, optional</span>
+<span class="sd">        Names of the data keys. If None assume incoming data is dict and use</span>
+<span class="sd">        the keys from the dict. Defauls to None</span>
+<span class="sd">    stream_name : str, optional</span>
+<span class="sd">        Name for this stream node</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The result emitted from this stream follows the document model.</span>
+<span class="sd">    This is essentially a state machine. Transitions are:</span>
+<span class="sd">    start -&gt; stop</span>
+<span class="sd">    start -&gt; descriptor -&gt; event -&gt; stop</span>
+<span class="sd">    Note that start -&gt; start is not allowed, this node always issues a stop</span>
+<span class="sd">    document so the data input times can be stored.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import uuid</span>
+<span class="sd">    &gt;&gt;&gt; from rapidz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from shed.translation import FromEventStream, ToEventStream</span>
+<span class="sd">    &gt;&gt;&gt; source = Stream()</span>
+<span class="sd">    &gt;&gt;&gt; s2 = FromEventStream(source, &#39;event&#39;, (&#39;data&#39;, &#39;det_image&#39;),</span>
+<span class="sd">    ...                      principle=True)</span>
+<span class="sd">    &gt;&gt;&gt; s3 = ToEventStream(s2, (&#39;det_image&#39;,))</span>
+<span class="sd">    &gt;&gt;&gt; s3.sink(print)</span>
+<span class="sd">    &gt;&gt;&gt; from ophyd.sim import hw</span>
+<span class="sd">    &gt;&gt;&gt; hw = hw()</span>
+<span class="sd">    &gt;&gt;&gt; from bluesky.run_engine import RunEngine</span>
+<span class="sd">    &gt;&gt;&gt; RE = RunEngine()</span>
+<span class="sd">    &gt;&gt;&gt; import bluesky.plans as bp</span>
+<span class="sd">    &gt;&gt;&gt; node.sink(pprint)</span>
+<span class="sd">    &gt;&gt;&gt; RE.subscribe(lambda *x: source.emit(x))</span>
+<span class="sd">    &gt;&gt;&gt; RE(bp.scan([hw.motor1], hw.motor1, 0, 10, 11))</span>
+
+<span class="sd">    prints:</span>
+
+<span class="sd">    &gt;&gt;&gt; (&#39;start&#39;,...)</span>
+<span class="sd">    &gt;&gt;&gt; (&#39;descriptor&#39;,...)</span>
+<span class="sd">    &gt;&gt;&gt; (&#39;event&#39;,...)</span>
+<span class="sd">    &gt;&gt;&gt; (&#39;stop&#39;,...)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">upstream</span><span class="p">,</span>
+        <span class="n">data_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">stream_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">data_key_md</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">stream_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">stream_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data_keys</span><span class="p">)</span>
+
+        <span class="n">Stream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">stream_name</span><span class="o">=</span><span class="n">stream_name</span><span class="p">)</span>
+        <span class="n">CreateDocs</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_keys</span><span class="p">,</span> <span class="n">data_key_md</span><span class="o">=</span><span class="n">data_key_md</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">move_to_first</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">incoming_start_uid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">incoming_stop_uid</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;stopped&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">uid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+
+        <span class="c1"># walk upstream to get all upstream nodes to the translation node</span>
+        <span class="c1"># get start_uids from the translation node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+        <span class="n">walk_to_translation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">translation_nodes</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">n</span><span class="p">[</span><span class="s2">&quot;stream&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">n</span><span class="p">[</span><span class="s2">&quot;stream&quot;</span><span class="p">],</span>
+                <span class="p">(</span>
+                    <span class="n">SimpleFromEventStream</span><span class="p">,</span>
+                    <span class="n">SimpleToEventStream</span><span class="p">,</span>
+                    <span class="n">simple_to_event_stream</span><span class="p">,</span>
+                    <span class="n">simple_from_event_stream</span><span class="p">,</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+            <span class="ow">and</span> <span class="n">n</span><span class="p">[</span><span class="s2">&quot;stream&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">principle_nodes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">n</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="s2">&quot;principle&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">SimpleToEventStream</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">principle_nodes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="n">f</span><span class="s2">&quot;No Principle Nodes Detected for node &quot;</span>
+                <span class="n">f</span><span class="s2">&quot;</span><span class="si">{data_keys}</span><span class="s2">, &quot;</span>
+                <span class="n">f</span><span class="s2">&quot;{[k.data_address for k in self.translation_nodes.values()]}&quot;</span>
+            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">principle_nodes</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">subs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="simple_to_event_stream.emit_start"><a class="viewcode-back" href="../../shed.html#shed.simple.simple_to_event_stream.emit_start">[docs]</a>    <span class="k">def</span> <span class="nf">emit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># if we have seen this start document already do nothing, we have</span>
+        <span class="c1"># multiple parents so we may get a start doc multiple times</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">if</span> <span class="n">doc</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">incoming_start_uid</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">incoming_start_uid</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]</span>
+            <span class="c1"># Prime stop document</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">incoming_stop_uid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Emergency stop if we get a new start document and no stop has been</span>
+        <span class="c1"># issued</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="s2">&quot;stopped&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">emit_stop</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># This is a bit of jank to make certain we don&#39;t override the</span>
+        <span class="c1"># user metadata with pipeline metadata</span>
+        <span class="n">old_md</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">parent_uids</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span>
+                    <span class="nb">set</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">v</span><span class="o">.</span><span class="n">start_uid</span>
+                            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                            <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">start_uid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="p">),</span>
+                <span class="n">parent_node_map</span><span class="o">=</span><span class="p">{</span>
+                    <span class="n">v</span><span class="o">.</span><span class="n">uid</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">start_uid</span>
+                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">start_uid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="p">},</span>
+                <span class="c1"># keep track of this so we know which node we&#39;re sending</span>
+                <span class="c1"># data from (see merkle hash in DBFriendly)</span>
+                <span class="n">outbound_node</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_doc</span><span class="p">(</span><span class="s2">&quot;start&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">md</span> <span class="o">=</span> <span class="n">old_md</span>
+
+        <span class="c1"># emit starts to subs first in case we create an event from the start</span>
+        <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">emit_start</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;started&quot;</span></div>
+
+<div class="viewcode-block" id="simple_to_event_stream.emit_stop"><a class="viewcode-back" href="../../shed.html#shed.simple.simple_to_event_stream.emit_stop">[docs]</a>    <span class="k">def</span> <span class="nf">emit_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">if</span> <span class="n">doc</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">incoming_stop_uid</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">incoming_stop_uid</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]</span>
+            <span class="c1"># Prime for next run</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">incoming_start_uid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_doc</span><span class="p">(</span><span class="s2">&quot;stop&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+        <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">emit_stop</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;stopped&quot;</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="simple_to_event_stream.update"><a class="viewcode-back" href="../../shed.html#shed.simple.simple_to_event_stream.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">rl</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># If we have a start document ready to go, release it.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s2">&quot;stopped&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Can&#39;t emit events from a stopped state &quot;</span>
+                <span class="s2">&quot;it seems that a start was not emitted&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s2">&quot;started&quot;</span><span class="p">:</span>
+            <span class="n">rl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">create_doc</span><span class="p">(</span><span class="s2">&quot;descriptor&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;described&quot;</span>
+        <span class="n">rl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">create_doc</span><span class="p">(</span><span class="s2">&quot;event&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="n">rl</span></div></div>
+
+
+<span class="n">_GLOBAL_SCAN_ID</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+<div class="viewcode-block" id="simple_to_event_stream_new_api"><a class="viewcode-back" href="../../shed.html#shed.simple.simple_to_event_stream_new_api">[docs]</a><span class="nd">@Stream</span><span class="o">.</span><span class="n">register_api</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">simple_to_event_stream_new_api</span><span class="p">(</span><span class="n">Stream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Converts data into a event stream, and passes it downstream.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    descriptor_dicts: dict</span>
+<span class="sd">        Dictionary describing the mapping between streams and their associated</span>
+<span class="sd">        metadata. Top level keys are the streams to use accept data from.</span>
+<span class="sd">        The values for these keys are the entries of the ``descriptor``</span>
+<span class="sd">        document (``data_keys``, ``name``, ``configuration``, etc.</span>
+<span class="sd">        see _https://nsls-ii.github.io/bluesky/event_descriptors.html for more</span>
+<span class="sd">        details. Note that some of this data is automatically generated if</span>
+<span class="sd">    stream_name : str, optional</span>
+<span class="sd">        Name for this stream node</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The result emitted from this stream follows the document model.</span>
+<span class="sd">    This is essentially a state machine. Transitions are:</span>
+<span class="sd">    start -&gt; stop</span>
+<span class="sd">    start -&gt; descriptor -&gt; event -&gt; stop</span>
+<span class="sd">    Note that start -&gt; start is not allowed, this node always issues a stop</span>
+<span class="sd">    document so the data input times can be stored.</span>
+
+<span class="sd">    Additionally note that this takes advantage of Python 3.6+ order stable</span>
+<span class="sd">    dictionaries. Since the key order is stable the data keys can be given</span>
+<span class="sd">    in the same order as the elements of streams which contain multiple</span>
+<span class="sd">    elements, see stream a in the example.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    &gt;&gt;&gt; from pprint import pprint</span>
+<span class="sd">    &gt;&gt;&gt; from rapidz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from shed import (simple_from_event_stream,</span>
+<span class="sd">    ...                   simple_to_event_stream_new_api)</span>
+<span class="sd">    &gt;&gt;&gt; import operator as op</span>
+<span class="sd">    &gt;&gt;&gt; source = Stream()</span>
+<span class="sd">    &gt;&gt;&gt; stop = simple_from_event_stream(source, &#39;stop&#39;, ())</span>
+<span class="sd">    &gt;&gt;&gt; fes = simple_from_event_stream(source, &#39;event&#39;, (&#39;data&#39;, &#39;motor1&#39;),</span>
+<span class="sd">    ...                                principle=True)</span>
+<span class="sd">    &gt;&gt;&gt; fes2 = simple_from_event_stream(source, &#39;event&#39;, (&#39;data&#39;, ),</span>
+<span class="sd">    ...                                 principle=True)</span>
+<span class="sd">    &gt;&gt;&gt; a = fes.map(op.add, 2).zip(fes)</span>
+<span class="sd">    &gt;&gt;&gt; b = fes.combine_latest(stop, emit_on=stop).pluck(0)</span>
+<span class="sd">    &gt;&gt;&gt; node = simple_to_event_stream_new_api(</span>
+<span class="sd">    ...     {</span>
+<span class="sd">    ...         a: {</span>
+<span class="sd">    ...             &#39;data_keys&#39;: {&#39;motor1_2&#39;: {}, &#39;motor1&#39;: {}},</span>
+<span class="sd">    ...         },</span>
+<span class="sd">    ...         b: {</span>
+<span class="sd">    ...             &#39;name&#39;: &#39;final&#39;,</span>
+<span class="sd">    ...             &#39;data_keys&#39;: {&#39;motor1&#39;: {}},</span>
+<span class="sd">    ...             &#39;configuration&#39;: {&#39;motor1&#39;: {&#39;hi&#39;: &#39;world&#39;}}</span>
+<span class="sd">    ...         },</span>
+<span class="sd">    ...         fes2: {&#39;name&#39;: &#39;raw&#39;}</span>
+<span class="sd">    ...     }</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; node2 = simple_to_event_stream_new_api(</span>
+<span class="sd">    ...     {fes2: {&#39;name&#39;: &#39;primary&#39;}}</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; from ophyd.sim import hw</span>
+<span class="sd">    &gt;&gt;&gt; hw = hw()</span>
+<span class="sd">    &gt;&gt;&gt; from bluesky.run_engine import RunEngine</span>
+<span class="sd">    &gt;&gt;&gt; RE = RunEngine()</span>
+<span class="sd">    &gt;&gt;&gt; import bluesky.plans as bp</span>
+<span class="sd">    &gt;&gt;&gt; node.sink(pprint)</span>
+<span class="sd">    &gt;&gt;&gt; RE.subscribe(lambda *x: source.emit(x))</span>
+<span class="sd">    &gt;&gt;&gt; RE(bp.scan([hw.motor1], hw.motor1, 0, 10, 11))</span>
+
+<span class="sd">    prints:</span>
+
+<span class="sd">    &gt;&gt;&gt; (&#39;start&#39;,...)</span>
+<span class="sd">    &gt;&gt;&gt; (&#39;descriptor&#39;,...)</span>
+<span class="sd">    &gt;&gt;&gt; (&#39;event&#39;,...)</span>
+<span class="sd">    &gt;&gt;&gt; (&#39;stop&#39;,...)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descriptor_dicts</span><span class="p">,</span> <span class="n">stream_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_dicts</span> <span class="o">=</span> <span class="n">descriptor_dicts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">stream_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">stream_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">descriptor_dicts</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">stream_name</span> <span class="o">+=</span> <span class="n">f</span><span class="s2">&quot;{v.get(&#39;name&#39;, &#39;primary&#39;)} &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data_keys&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                <span class="p">)</span>
+
+        <span class="n">Stream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">upstreams</span><span class="o">=</span><span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">descriptor_dicts</span><span class="o">.</span><span class="n">keys</span><span class="p">()],</span>
+            <span class="n">stream_name</span><span class="o">=</span><span class="n">stream_name</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">md</span> <span class="o">=</span> <span class="n">kwargs</span>
+
+        <span class="n">move_to_first</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">incoming_start_uid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">incoming_stop_uid</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;stopped&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">uid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+
+        <span class="c1"># walk upstream to get all upstream nodes to the translation node</span>
+        <span class="c1"># get start_uids from the translation node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+        <span class="n">walk_to_translation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">translation_nodes</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">n</span><span class="p">[</span><span class="s2">&quot;stream&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">n</span><span class="p">[</span><span class="s2">&quot;stream&quot;</span><span class="p">],</span>
+                <span class="p">(</span>
+                    <span class="n">simple_from_event_stream</span><span class="p">,</span>
+                    <span class="n">simple_to_event_stream</span><span class="p">,</span>
+                    <span class="n">simple_to_event_stream_new_api</span><span class="p">,</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+            <span class="ow">and</span> <span class="n">n</span><span class="p">[</span><span class="s2">&quot;stream&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">principle_nodes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">n</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="s2">&quot;principle&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">SimpleToEventStream</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">principle_nodes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="n">f</span><span class="s2">&quot;No Principle Nodes Detected for node &quot;</span>
+                <span class="n">f</span><span class="s2">&quot;</span><span class="si">{stream_name}</span><span class="s2">, &quot;</span>
+                <span class="n">f</span><span class="s2">&quot;{[k.data_address for k in self.translation_nodes.values()]}&quot;</span>
+            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">principle_nodes</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">subs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="simple_to_event_stream_new_api.emit_start"><a class="viewcode-back" href="../../shed.html#shed.simple.simple_to_event_stream_new_api.emit_start">[docs]</a>    <span class="k">def</span> <span class="nf">emit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># if we have seen this start document already do nothing, we have</span>
+        <span class="c1"># multiple parents so we may get a start doc multiple times</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">if</span> <span class="n">doc</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">incoming_start_uid</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">incoming_start_uid</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]</span>
+            <span class="c1"># Prime stop document</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">incoming_stop_uid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Emergency stop if we get a new start document and no stop has been</span>
+        <span class="c1"># issued</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="s2">&quot;stopped&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">emit_stop</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># This is a bit of jank to make certain we don&#39;t override the</span>
+        <span class="c1"># user metadata with pipeline metadata</span>
+        <span class="n">old_md</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">parent_uids</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span>
+                    <span class="nb">set</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">v</span><span class="o">.</span><span class="n">start_uid</span>
+                            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                            <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">start_uid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="p">),</span>
+                <span class="n">parent_node_map</span><span class="o">=</span><span class="p">{</span>
+                    <span class="n">v</span><span class="o">.</span><span class="n">uid</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">start_uid</span>
+                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">start_uid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="p">},</span>
+                <span class="c1"># keep track of this so we know which node we&#39;re sending</span>
+                <span class="c1"># data from (see merkle hash in DBFriendly)</span>
+                <span class="n">outbound_node</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">global</span> <span class="n">_GLOBAL_SCAN_ID</span>
+        <span class="n">_GLOBAL_SCAN_ID</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">scan_id</span><span class="o">=</span><span class="n">_GLOBAL_SCAN_ID</span><span class="p">)</span>
+        <span class="n">bundle</span> <span class="o">=</span> <span class="n">compose_run</span><span class="p">(</span><span class="n">metadata</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">md</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">desc_fac</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resc_fac</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_factory</span> <span class="o">=</span> <span class="n">bundle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_uid</span> <span class="o">=</span> <span class="n">start</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">md</span> <span class="o">=</span> <span class="n">old_md</span>
+
+        <span class="c1"># emit starts to subs first in case we create an event from the start</span>
+        <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">emit_start</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">((</span><span class="s2">&quot;start&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;started&quot;</span></div>
+
+<div class="viewcode-block" id="simple_to_event_stream_new_api.emit_stop"><a class="viewcode-back" href="../../shed.html#shed.simple.simple_to_event_stream_new_api.emit_stop">[docs]</a>    <span class="k">def</span> <span class="nf">emit_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">if</span> <span class="n">doc</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">incoming_stop_uid</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">incoming_stop_uid</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]</span>
+            <span class="c1"># Prime for next run</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">incoming_start_uid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_factory</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">((</span><span class="s2">&quot;stop&quot;</span><span class="p">,</span> <span class="n">stop</span><span class="p">))</span>
+        <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">emit_stop</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;stopped&quot;</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="simple_to_event_stream_new_api.update"><a class="viewcode-back" href="../../shed.html#shed.simple.simple_to_event_stream_new_api.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">rl</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># If we have a start document ready to go, release it.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s2">&quot;stopped&quot;</span><span class="p">:</span>  <span class="c1"># pragma: no coverage</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Can&#39;t emit events from a stopped state &quot;</span>
+                <span class="s2">&quot;it seems that a start was not emitted&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">descriptor_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_dicts</span><span class="p">[</span><span class="n">who</span><span class="p">]</span>
+        <span class="n">data_keys</span> <span class="o">=</span> <span class="n">descriptor_dict</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;data_keys&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+        <span class="c1"># If there are no data_keys then we are taking in a dict and the</span>
+        <span class="c1"># keys of the dict will be the keys for the stream</span>
+        <span class="k">if</span> <span class="n">data_keys</span> <span class="o">==</span> <span class="p">{}:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>  <span class="c1"># pragma: no coverage</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="n">f</span><span class="s2">&quot;No data keys were provided so expected &quot;</span>
+                    <span class="n">f</span><span class="s2">&quot;Mapping, but {type(x)} found&quot;</span>
+                <span class="p">)</span>
+            <span class="n">data_keys</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">x</span><span class="p">}</span>
+
+        <span class="c1"># If the incoming data is a dict extract the data as a tuple</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">data_keys</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+        <span class="c1"># normalize the data to a tuple</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">x</span><span class="p">])</span>
+        <span class="c1"># XXX: need to do something where the data is a tuple!</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_keys</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">x</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="n">x</span>
+
+        <span class="c1"># If we haven&#39;t issued a descriptor yet make one</span>
+        <span class="k">if</span> <span class="n">who</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span><span class="p">:</span>
+            <span class="c1"># clobber the user supplied metadata and the auto generated</span>
+            <span class="c1"># metadata via ChainDB with resolution favoring the user&#39;s input</span>
+            <span class="n">descriptor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span><span class="p">[</span><span class="n">who</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">desc_fac</span><span class="p">(</span>
+                <span class="o">**</span><span class="n">_convert_to_dict</span><span class="p">(</span>
+                    <span class="n">ChainDB</span><span class="p">(</span>
+                        <span class="nb">dict</span><span class="p">(</span>
+                            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;primary&quot;</span><span class="p">,</span>
+                            <span class="n">data_keys</span><span class="o">=</span><span class="p">{</span>
+                                <span class="n">k</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;analysis&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;dtype&quot;</span><span class="p">:</span> <span class="n">get_dtype</span><span class="p">(</span><span class="n">xx</span><span class="p">),</span>
+                                    <span class="s2">&quot;shape&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                                    <span class="o">**</span><span class="n">data_keys</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">{}),</span>
+                                <span class="p">}</span>
+                                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">xx</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">data_keys</span><span class="p">,</span> <span class="n">tx</span><span class="p">)</span>
+                            <span class="p">},</span>
+                            <span class="n">hints</span><span class="o">=</span><span class="p">{</span>
+                                <span class="s2">&quot;analyzer&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">data_keys</span><span class="p">))}</span>
+                            <span class="p">},</span>
+                            <span class="n">object_keys</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">data_keys</span><span class="p">},</span>
+                        <span class="p">),</span>
+                        <span class="n">descriptor_dict</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">),</span>
+                <span class="n">validate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">rl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">((</span><span class="s2">&quot;descriptor&quot;</span><span class="p">,</span> <span class="n">descriptor</span><span class="p">)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;described&quot;</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span><span class="p">[</span><span class="n">who</span><span class="p">](</span>
+            <span class="n">timestamps</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">data_keys</span><span class="p">},</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">data_keys</span><span class="p">,</span> <span class="n">tx</span><span class="p">)},</span>
+            <span class="n">validate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">rl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">((</span><span class="s2">&quot;event&quot;</span><span class="p">,</span> <span class="n">event</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="n">rl</span></div></div>
+
+
+<div class="viewcode-block" id="SimpleToEventStream"><a class="viewcode-back" href="../../shed.html#shed.simple.SimpleToEventStream">[docs]</a><span class="nd">@Stream</span><span class="o">.</span><span class="n">register_api</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">SimpleToEventStream</span><span class="p">(</span><span class="n">simple_to_event_stream</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="simple_from_event_stream"><a class="viewcode-back" href="../../shed.html#shed.simple.simple_from_event_stream">[docs]</a><span class="nd">@Stream</span><span class="o">.</span><span class="n">register_api</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">simple_from_event_stream</span><span class="p">(</span><span class="n">Stream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extracts data from the event stream, and passes it downstream.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    doc_type : {&#39;start&#39;, &#39;descriptor&#39;, &#39;event&#39;, &#39;stop&#39;}</span>
+<span class="sd">        The type of document to extract data from</span>
+<span class="sd">    data_address : tuple</span>
+<span class="sd">        A tuple of successive keys walking through the document considered,</span>
+<span class="sd">        if the tuple is empty all the data from that document is returned</span>
+<span class="sd">        as a dict</span>
+<span class="sd">    upstream : Stream instance or None, optional</span>
+<span class="sd">        The upstream node to receive streams from, defaults to None</span>
+<span class="sd">    event_stream_name : str, optional</span>
+<span class="sd">        Filter by en event stream name (see :</span>
+<span class="sd">        http://nsls-ii.github.io/databroker/api.html?highlight=stream_name#data)</span>
+<span class="sd">    stream_name : str, optional</span>
+<span class="sd">        Name for this stream node</span>
+<span class="sd">    principle : bool, optional</span>
+<span class="sd">        If True then when this node receives a stop document then all</span>
+<span class="sd">        downstream ToEventStream nodes will issue a stop document.</span>
+<span class="sd">        Defaults to False. Note that one principle node is required for</span>
+<span class="sd">        proper pipeline operation.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The result emitted from this stream no longer follows the document</span>
+<span class="sd">    model.</span>
+
+<span class="sd">    This node also keeps track of when and which data came through the</span>
+<span class="sd">    node.</span>
+
+
+<span class="sd">    Examples</span>
+<span class="sd">    -------------</span>
+<span class="sd">    &gt;&gt;&gt; import uuid</span>
+<span class="sd">    &gt;&gt;&gt; from rapidz import Stream</span>
+<span class="sd">    &gt;&gt;&gt; from shed.translation import FromEventStream</span>
+<span class="sd">    &gt;&gt;&gt; ssource = Stream()</span>
+<span class="sd">    &gt;&gt;&gt; s2 = FromEventStream(source, &#39;event&#39;, (&#39;data&#39;, &#39;motor1&#39;))</span>
+<span class="sd">    &gt;&gt;&gt; s3 = s2.map(print)</span>
+<span class="sd">    &gt;&gt;&gt; from ophyd.sim import hw</span>
+<span class="sd">    &gt;&gt;&gt; hw = hw()</span>
+<span class="sd">    &gt;&gt;&gt; from bluesky.run_engine import RunEngine</span>
+<span class="sd">    &gt;&gt;&gt; RE = RunEngine()</span>
+<span class="sd">    &gt;&gt;&gt; import bluesky.plans as bp</span>
+<span class="sd">    &gt;&gt;&gt; node.sink(pprint)</span>
+<span class="sd">    &gt;&gt;&gt; RE.subscribe(lambda *x: source.emit(x))</span>
+<span class="sd">    &gt;&gt;&gt; RE(bp.scan([hw.motor1], hw.motor1, 0, 10, 11))</span>
+
+<span class="sd">    prints:</span>
+
+<span class="sd">    &gt;&gt;&gt; 1</span>
+<span class="sd">    &gt;&gt;&gt; 2</span>
+<span class="sd">    &gt;&gt;&gt; ...</span>
+<span class="sd">    &gt;&gt;&gt; 10</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">upstream</span><span class="p">,</span>
+        <span class="n">doc_type</span><span class="p">,</span>
+        <span class="n">data_address</span><span class="p">,</span>
+        <span class="n">event_stream_name</span><span class="o">=</span><span class="n">ALL</span><span class="p">,</span>
+        <span class="n">stream_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">principle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">asynchronous</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s2">&quot;asynchronous&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">asynchronous</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;asynchronous&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">stream_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">stream_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">doc_type</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">data_address</span><span class="p">))</span>
+        <span class="n">Stream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">stream_name</span><span class="o">=</span><span class="n">stream_name</span><span class="p">,</span> <span class="n">asynchronous</span><span class="o">=</span><span class="n">asynchronous</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">principle</span> <span class="o">=</span> <span class="n">principle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doc_type</span> <span class="o">=</span> <span class="n">doc_type</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_address</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">data_address</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">data_address</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_address</span> <span class="o">=</span> <span class="n">data_address</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event_stream_name</span> <span class="o">=</span> <span class="n">event_stream_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_uids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_uid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">principle</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_graphviz_style</span> <span class="o">=</span> <span class="s2">&quot;rounded,bold&quot;</span>
+
+<div class="viewcode-block" id="simple_from_event_stream.update"><a class="viewcode-back" href="../../shed.html#shed.simple.simple_from_event_stream.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;start&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start_uid</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]</span>
+            <span class="c1"># Sideband start document in</span>
+            <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">emit_start</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subs</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;descriptor&quot;</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">event_stream_name</span> <span class="o">==</span> <span class="n">ALL</span>
+            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_stream_name</span> <span class="o">==</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;primary&quot;</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_uids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;stop&quot;</span><span class="p">:</span>
+            <span class="c1"># Trigger the downstream nodes to make a stop but they can emit</span>
+            <span class="c1"># on their own time</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_uids</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">emit_stop</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subs</span><span class="p">]</span>
+        <span class="n">inner</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">doc_type</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;descriptor&quot;</span>
+                <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_stream_name</span> <span class="o">==</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">ALL</span><span class="p">))</span>
+            <span class="p">)</span>
+            <span class="ow">or</span> <span class="p">(</span>
+                <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;event&quot;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="s2">&quot;descriptor&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_uids</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="ow">or</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">,</span> <span class="s2">&quot;stop&quot;</span><span class="p">]</span>
+        <span class="p">):</span>
+
+            <span class="c1"># If we have an empty address get everything</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_address</span> <span class="o">!=</span> <span class="p">():</span>
+                <span class="k">for</span> <span class="n">da</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_address</span><span class="p">:</span>
+                    <span class="c1"># If it&#39;s a tuple we want multiple things at once</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">da</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                        <span class="n">inner</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inner</span><span class="p">[</span><span class="n">daa</span><span class="p">]</span> <span class="k">for</span> <span class="n">daa</span> <span class="ow">in</span> <span class="n">da</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">da</span> <span class="ow">in</span> <span class="n">inner</span><span class="p">:</span>
+                            <span class="n">inner</span> <span class="o">=</span> <span class="n">inner</span><span class="p">[</span><span class="n">da</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">return</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">inner</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="SimpleFromEventStream"><a class="viewcode-back" href="../../shed.html#shed.simple.SimpleFromEventStream">[docs]</a><span class="k">class</span> <span class="nc">SimpleFromEventStream</span><span class="p">(</span><span class="n">simple_from_event_stream</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">doc_type</span><span class="p">,</span>
+        <span class="n">data_address</span><span class="p">,</span>
+        <span class="n">upstream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">event_stream_name</span><span class="o">=</span><span class="n">ALL</span><span class="p">,</span>
+        <span class="n">stream_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">principle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">simple_from_event_stream</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">upstream</span><span class="o">=</span><span class="n">upstream</span><span class="p">,</span>
+            <span class="n">doc_type</span><span class="o">=</span><span class="n">doc_type</span><span class="p">,</span>
+            <span class="n">data_address</span><span class="o">=</span><span class="n">data_address</span><span class="p">,</span>
+            <span class="n">event_stream_name</span><span class="o">=</span><span class="n">event_stream_name</span><span class="p">,</span>
+            <span class="n">stream_name</span><span class="o">=</span><span class="n">stream_name</span><span class="p">,</span>
+            <span class="n">principle</span><span class="o">=</span><span class="n">principle</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="align_event_streams"><a class="viewcode-back" href="../../shed.html#shed.simple.align_event_streams">[docs]</a><span class="nd">@Stream</span><span class="o">.</span><span class="n">register_api</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">align_event_streams</span><span class="p">(</span><span class="n">szip</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Zips and aligns multiple streams of documents, note that the last</span>
+<span class="sd">    upstream takes precedence where merging is not possible, this requires</span>
+<span class="sd">    the two streams to be of equal length.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">upstreams</span><span class="p">,</span> <span class="n">event_stream_name</span><span class="o">=</span><span class="n">ALL</span><span class="p">,</span> <span class="n">stream_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="n">szip</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">upstreams</span><span class="p">,</span> <span class="n">stream_name</span><span class="o">=</span><span class="n">stream_name</span><span class="p">)</span>
+        <span class="n">doc_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">,</span> <span class="s2">&quot;descriptor&quot;</span><span class="p">,</span> <span class="s2">&quot;event&quot;</span><span class="p">,</span> <span class="s2">&quot;stop&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event_stream_name</span> <span class="o">=</span> <span class="n">event_stream_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_uids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">true_buffers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="p">{</span>
+                <span class="n">upstream</span><span class="p">:</span> <span class="n">deque</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">upstream</span> <span class="ow">in</span> <span class="n">upstreams</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">upstream</span><span class="p">,</span> <span class="n">Stream</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">doc_names</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">true_literals</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">upstreams</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Stream</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">doc_names</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_emit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># flatten out the nested setup</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">x</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">l</span><span class="p">]</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">x</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">docs</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;start&quot;</span><span class="p">:</span>
+            <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="n">original_start_uid</span><span class="o">=</span><span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;uid&quot;</span><span class="p">],</span>
+                <span class="n">original_start_time</span><span class="o">=</span><span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;time&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_emit</span><span class="p">((</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">_convert_to_dict</span><span class="p">(</span><span class="n">ChainDB</span><span class="p">(</span><span class="o">*</span><span class="n">docs</span><span class="p">))))</span>
+
+<div class="viewcode-block" id="align_event_streams.update"><a class="viewcode-back" href="../../shed.html#shed.simple.align_event_streams.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;start&quot;</span><span class="p">:</span>
+            <span class="c1"># If we got a new start document for that incoming stream clear</span>
+            <span class="c1"># all its buffers</span>
+            <span class="k">for</span> <span class="n">buffer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_buffers</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">buffer</span><span class="p">[</span><span class="n">who</span><span class="p">]</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_uids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;descriptor&quot;</span><span class="p">:</span>
+            <span class="c1"># if we want the descriptor continue, else bounce out</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">event_stream_name</span> <span class="o">==</span> <span class="n">ALL</span>
+                <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_stream_name</span> <span class="o">==</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;primary&quot;</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_uids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[]</span>
+        <span class="c1"># If this isn&#39;t the event we&#39;re looking for then do nothing!</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;event&quot;</span> <span class="ow">and</span> <span class="n">doc</span><span class="p">[</span><span class="s2">&quot;descriptor&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_uids</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="c1"># don&#39;t buffer resource and datum, as those are weird and not zippable</span>
+        <span class="c1"># maybe at some point emit those without zip</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_buffers</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_buffers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">literals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_literals</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">doc</span><span class="p">),</span> <span class="n">who</span><span class="p">)</span>
+            <span class="c1"># if we have a list that means we returned something, meaning</span>
+            <span class="c1"># if the name is stop we&#39;ve exhausted all the data,</span>
+            <span class="c1"># which means we can clear the rest of the buffers</span>
+            <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="p">[]</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;stop&quot;</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">tb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_buffers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">tb</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="n">b</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">ret</span></div></div>
+
+
+<div class="viewcode-block" id="AlignEventStreams"><a class="viewcode-back" href="../../shed.html#shed.simple.AlignEventStreams">[docs]</a><span class="nd">@Stream</span><span class="o">.</span><span class="n">register_api</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">AlignEventStreams</span><span class="p">(</span><span class="n">align_event_streams</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="LastCache"><a class="viewcode-back" href="../../shed.html#shed.simple.LastCache">[docs]</a><span class="nd">@Stream</span><span class="o">.</span><span class="n">register_api</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">LastCache</span><span class="p">(</span><span class="n">Stream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Cache the last event in all streams then emit them under their own</span>
+<span class="sd">    descriptor when the stop document comes down.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="LastCache.update"><a class="viewcode-back" href="../../shed.html#shed.simple.LastCache.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">doc</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;start&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_caches</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">doc</span>
+        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;descriptor&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_caches</span><span class="p">[</span><span class="n">doc</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">doc</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s2">&quot;data_keys&quot;</span><span class="p">:</span> <span class="n">doc</span><span class="p">[</span><span class="s2">&quot;data_keys&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;event&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_caches</span><span class="p">[</span><span class="n">doc</span><span class="p">[</span><span class="s2">&quot;descriptor&quot;</span><span class="p">]][</span><span class="s2">&quot;doc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">doc</span>
+        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;stop&quot;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">descriptor_uid</span><span class="p">,</span> <span class="n">cache</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_caches</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># if we don&#39;t have any docs in this stream do nothing</span>
+                <span class="k">if</span> <span class="n">cache</span><span class="p">[</span><span class="s2">&quot;doc&quot;</span><span class="p">]:</span>
+                    <span class="n">descriptor</span><span class="p">,</span> <span class="n">events_func</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">compose_descriptor</span><span class="p">(</span>
+                        <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+                        <span class="n">streams</span><span class="o">=</span><span class="p">{},</span>
+                        <span class="n">event_counter</span><span class="o">=</span><span class="p">{},</span>
+                        <span class="n">name</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;final_</span><span class="si">{cache[&quot;name&quot;]}</span><span class="s1">&#39;</span><span class="p">,</span>
+                        <span class="n">validate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">data_keys</span><span class="o">=</span><span class="n">cache</span><span class="p">[</span><span class="s2">&quot;data_keys&quot;</span><span class="p">],</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">((</span><span class="s2">&quot;descriptor&quot;</span><span class="p">,</span> <span class="n">descriptor</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
+                        <span class="p">(</span>
+                            <span class="s2">&quot;event&quot;</span><span class="p">,</span>
+                            <span class="n">events_func</span><span class="p">(</span>
+                                <span class="n">data</span><span class="o">=</span><span class="n">cache</span><span class="p">[</span><span class="s2">&quot;doc&quot;</span><span class="p">][</span><span class="s2">&quot;data&quot;</span><span class="p">],</span>
+                                <span class="n">timestamps</span><span class="o">=</span><span class="n">cache</span><span class="p">[</span><span class="s2">&quot;doc&quot;</span><span class="p">][</span><span class="s2">&quot;timestamps&quot;</span><span class="p">],</span>
+                            <span class="p">),</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Author
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,309 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>shed.replay &mdash; SHED  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> SHED
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../shed.html">shed package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Tutorials</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">SHED</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>shed.replay</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for shed.replay</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Hashable</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">from</span> <span class="nn">rapidz</span> <span class="k">import</span> <span class="n">Stream</span>
+<span class="kn">from</span> <span class="nn">shed</span> <span class="k">import</span> <span class="n">SimpleFromEventStream</span>
+
+
+<span class="c1"># One problem we&#39;re facing is that the various pipelines handle document</span>
+<span class="c1"># filling external to the logic of the data processing (outside of the captured</span>
+<span class="c1"># graph. This is a good thing since assuming that the documents have the data</span>
+<span class="c1"># we&#39;re looking for is nice. However, we need to do this on the replay as well</span>
+<span class="c1"># since our pipeline expects the data to be loaded. This could be done in the</span>
+<span class="c1"># creation of the data dict but that requires us loading up all the data at</span>
+<span class="c1"># once which is a major anti-pattern. We could use a filler but then we</span>
+<span class="c1"># run into issues since we don&#39;t actually track the resource and datum</span>
+<span class="c1"># documents in the FromEventModel nodes since they didn&#39;t exist until recently</span>
+<span class="c1"># (and they aren&#39;t really used in the data processing).</span>
+
+
+<div class="viewcode-block" id="replay"><a class="viewcode-back" href="../../shed.html#shed.replay.replay">[docs]</a><span class="k">def</span> <span class="nf">replay</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">hdr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replay data analysis</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    db : Broker instance</span>
+<span class="sd">        The databroker to pull data from</span>
+<span class="sd">    hdr : Header instance</span>
+<span class="sd">        The analyzed data header</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    loaded_graph : DiGraph</span>
+<span class="sd">        The data processing pipeline as a graph</span>
+<span class="sd">    parent_nodes : dict</span>
+<span class="sd">        The source nodes for the graph</span>
+<span class="sd">    data : dict</span>
+<span class="sd">        A map between the document uids and documents</span>
+<span class="sd">    vs : list</span>
+<span class="sd">        List of document uid in time order</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    &gt;&gt;&gt; graph, parents, data, vs = replay(db, hdr)</span>
+<span class="sd">    &gt;&gt;&gt; for v in vs:</span>
+<span class="sd">    ...     parents[v[&quot;node&quot;]].update(data[v[&quot;uid&quot;]])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">parent_nodes</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># TODO: try either raw or analysis db (or stash something to know who comes</span>
+    <span class="c1">#  from where) Maybe take in a list of dbs?</span>
+    <span class="n">raw_hdrs</span> <span class="o">=</span> <span class="p">[</span><span class="n">db</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">hdr</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">][</span><span class="s2">&quot;parent_node_map&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    <span class="c1"># load data from raw/partially analyzed headers</span>
+
+    <span class="c1"># TODO: figure out how to handle filling documents, since we don&#39;t want</span>
+    <span class="c1">#  to fill them here but they need to be filled</span>
+    <span class="k">for</span> <span class="n">raw_hdr</span> <span class="ow">in</span> <span class="n">raw_hdrs</span><span class="p">:</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;uid&quot;</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;datum_id&quot;</span><span class="p">)):</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">raw_hdr</span><span class="o">.</span><span class="n">documents</span><span class="p">()</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+    <span class="c1"># get information from old analyzed header</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">hdr</span><span class="p">[</span><span class="s2">&quot;stop&quot;</span><span class="p">][</span><span class="s2">&quot;times&quot;</span><span class="p">]</span>
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">hdr</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">][</span><span class="s2">&quot;graph&quot;</span><span class="p">]</span>
+
+    <span class="n">loaded_graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">node_link_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="n">loaded_graph</span><span class="p">):</span>
+        <span class="n">loaded_graph</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s2">&quot;stream&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rebuild_node</span><span class="p">(</span>
+            <span class="n">loaded_graph</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s2">&quot;stream&quot;</span><span class="p">],</span> <span class="n">loaded_graph</span>
+        <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">node_uid</span> <span class="ow">in</span> <span class="n">hdr</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">][</span><span class="s2">&quot;parent_node_map&quot;</span><span class="p">]:</span>
+        <span class="n">parent_nodes</span><span class="p">[</span><span class="n">node_uid</span><span class="p">]</span> <span class="o">=</span> <span class="n">loaded_graph</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">node_uid</span><span class="p">][</span><span class="s2">&quot;stream&quot;</span><span class="p">]</span>
+
+    <span class="n">vs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([(</span><span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">times</span><span class="o">.</span><span class="n">items</span><span class="p">()],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">vs</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vs</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">loaded_graph</span><span class="p">,</span> <span class="n">parent_nodes</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">vs</span></div>
+
+
+<div class="viewcode-block" id="rebuild_node"><a class="viewcode-back" href="../../shed.html#shed.replay.rebuild_node">[docs]</a><span class="k">def</span> <span class="nf">rebuild_node</span><span class="p">(</span><span class="n">node_dict</span><span class="p">,</span> <span class="n">graph</span><span class="p">):</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">node_dict</span><span class="p">)</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;mod&quot;</span><span class="p">]),</span> <span class="n">d</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+    <span class="n">d</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+    <span class="n">d</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;mod&quot;</span><span class="p">)</span>
+
+    <span class="n">aa</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s2">&quot;args&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">)</span> <span class="ow">and</span> <span class="n">a</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">a</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mod&quot;</span><span class="p">):</span>
+            <span class="n">aa</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;mod&quot;</span><span class="p">]),</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="n">aa</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">node</span><span class="p">:</span>
+            <span class="n">aa</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">a</span><span class="p">][</span><span class="s2">&quot;stream&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">aa</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">d</span><span class="p">[</span><span class="s2">&quot;args&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aa</span>
+
+    <span class="n">kk</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s2">&quot;kwargs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># We can&#39;t check if non hashables are in the graph (also I don&#39;t think</span>
+        <span class="c1"># we can put non hashables as nodes in the graph)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">)</span> <span class="ow">and</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">node</span><span class="p">:</span>
+            <span class="n">kk</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">a</span><span class="p">][</span><span class="s2">&quot;stream&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">)</span> <span class="ow">and</span> <span class="n">a</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">a</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mod&quot;</span><span class="p">):</span>
+            <span class="n">kk</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;mod&quot;</span><span class="p">]),</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="c1"># If there is an upstream node for our FromEventStream node then</span>
+        <span class="c1"># it is out of scope, make a Placeholder node to keep the instantiation</span>
+        <span class="c1"># happy</span>
+        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">SimpleFromEventStream</span><span class="p">)</span> <span class="ow">and</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">&quot;upstream&quot;</span><span class="p">:</span>
+            <span class="n">kk</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">(</span><span class="n">stream_name</span><span class="o">=</span><span class="s2">&quot;Placeholder&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">kk</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+    <span class="n">d</span><span class="p">[</span><span class="s2">&quot;kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kk</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">node</span><span class="p">(</span><span class="o">*</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;args&quot;</span><span class="p">],</span> <span class="o">**</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;kwargs&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">n</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Author
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

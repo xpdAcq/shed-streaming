@@ -1,9 +1,9 @@
 ./_modules/index.html
-./_modules/shed/tests/conftest.html
-./_modules/shed/tests/utils.html
+./_modules/shed/replay.html
+./_modules/shed/simple.html
+./_modules/shed/simple_parallel.html
 ./_sources/index.rst.txt
 ./_sources/shed.rst.txt
-./_sources/shed.tests.rst.txt
 ./_sources/tutorials.rst.txt
 ./_static/basic.css
 ./_static/css/badge_only.css
@@ -58,5 +58,4 @@
 ./search.html
 ./searchindex.js
 ./shed.html
-./shed.tests.html
 ./tutorials.html
