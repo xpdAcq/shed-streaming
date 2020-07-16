@@ -266,8 +266,8 @@ class DBFriendly(Stream):
             )
             # TODO: this might not be possible if there are cycles!!!!
             for n in nx.topological_sort(graph):
-                graph.node[n]["stream"] = db_friendly_node(
-                    graph.node[n]["stream"]
+                graph.nodes[n]["stream"] = db_friendly_node(
+                    graph.nodes[n]["stream"]
                 )
             doc["graph"] = nx.node_link_data(graph)
         return self.emit((name, doc))

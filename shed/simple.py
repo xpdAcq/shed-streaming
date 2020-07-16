@@ -173,7 +173,7 @@ class simple_to_event_stream(Stream, CreateDocs):
 
         self.translation_nodes = {
             k: n["stream"]
-            for k, n in self.graph.node.items()
+            for k, n in self.graph.nodes.items()
             if isinstance(
                 n["stream"],
                 (
@@ -393,7 +393,7 @@ class simple_to_event_stream_new_api(Stream):
 
         self.translation_nodes = {
             k: n["stream"]
-            for k, n in self.graph.node.items()
+            for k, n in self.graph.nodes.items()
             if isinstance(
                 n["stream"],
                 (

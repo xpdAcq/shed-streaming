@@ -44,7 +44,7 @@ def test_replay(db):
     lg, parents, data, vs = replay(db, db[-1])
 
     assert set(graph.nodes) == set(lg.nodes)
-    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
+    l2 = lg.nodes[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
     # run the replay
     lg.nodes[g1.uid]["stream"].sink(print)
     for v in vs:
@@ -98,7 +98,7 @@ def test_replay_dummy_node(db):
     lg, parents, data, vs = replay(db, db[-1])
 
     assert set(graph.nodes) == set(lg.nodes)
-    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
+    l2 = lg.nodes[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
     # run the replay
     lg.nodes[g1.uid]["stream"].sink(print)
     for v in vs:
@@ -152,7 +152,7 @@ def test_replay_parallel(db):
 
     assert set(graph.nodes) == set(lg.nodes)
     l2 = (
-        lg.node[list(nx.topological_sort(lg))[-1]]["stream"]
+        lg.nodes[list(nx.topological_sort(lg))[-1]]["stream"]
         .buffer(10)
         .gather()
         .sink_to_list()
@@ -212,7 +212,7 @@ def test_replay_numpy(db):
     lg, parents, data, vs = replay(db, db[-1])
 
     assert set(graph.nodes) == set(lg.nodes)
-    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
+    l2 = lg.nodes[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
     # run the replay
     lg.nodes[g1.uid]["stream"].sink(print)
     print(graph.nodes)
@@ -276,7 +276,7 @@ def test_replay_parallel_numpy(db):
 
     assert set(graph.nodes) == set(lg.nodes)
     l2 = (
-        lg.node[list(nx.topological_sort(lg))[-1]]["stream"]
+        lg.nodes[list(nx.topological_sort(lg))[-1]]["stream"]
         .buffer(10)
         .gather()
         .sink_to_list()

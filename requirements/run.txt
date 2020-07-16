@@ -6,3 +6,5 @@ databroker
 bluesky
 event-model
 networkx
+rapidz
+xonsh
