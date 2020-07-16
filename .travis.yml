@@ -51,17 +51,18 @@ before_install:
 
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
-  - conda install python=$TRAVIS_PYTHON_VERSION orch
-  - orch score.yaml
+  - conda create -n test python=$TRAVIS_PYTHON_VERSION
+  - conda install -n test --file requirements/run.txt --file requirements/test.txt --file requirements/doc.txt
+  - python -m pip install .
   # Need to clean the python build directory (and other cruft) or pytest is
   # going to find the build directory and get confused why there are two sets
   # of every test file
   # make sure the sqlite file exists to avoid race conditions
   - git clean -xfd
-  - conda list
 
 script:
   - set -e
+  - source activate test
   - python -c "from bluesky.utils import get_history; get_history()"
   - coverage run run_tests.py
   - coverage report -m
