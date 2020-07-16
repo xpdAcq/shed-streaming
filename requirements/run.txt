@@ -8,3 +8,4 @@ event-model
 networkx
 rapidz
 xonsh
+dask-jobqueue
