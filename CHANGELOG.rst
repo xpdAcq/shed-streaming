@@ -4,6 +4,19 @@ SHED Change Log
 
 .. current developments
 
+v0.7.4
+====================
+
+**Changed:**
+
+* Future releases will be in the nsls-ii-forge channels on conda
+
+**Fixed:**
+
+* Fix syntax errors in the environment with the latest version of dependencies
+
+* Add missing dependencies in the requirements
+
 v0.7.3
 ====================
 
@@ -19,7 +32,7 @@ v0.7.2
 
 **Fixed:**
 
-* ``original_time`` metadata goes to ``original_start_time`` so file saving 
+* ``original_time`` metadata goes to ``original_start_time`` so file saving
   works properly
 
 
@@ -50,13 +63,13 @@ v0.7.0
 
 **Changed:**
 
-* ``replay.rebuild_node`` creates ``Placeholder`` streams so that we can build 
+* ``replay.rebuild_node`` creates ``Placeholder`` streams so that we can build
   the pipeline properly.
-* If no ``stream_name`` is provided for ``SimpleFromEventStream`` then a name 
+* If no ``stream_name`` is provided for ``SimpleFromEventStream`` then a name
   is produced from the ``data_address``.
-* ``translation.FromEventStream`` now captures environment information via an 
+* ``translation.FromEventStream`` now captures environment information via an
   iterable of funciton calls, it defaults to capturing the conda environment
-* ``translation.ToEventModel`` issues a ``RuntimeError`` if the pipeline 
+* ``translation.ToEventModel`` issues a ``RuntimeError`` if the pipeline
   contains a lambda function, as they are not capturable.
 
 **Removed:**
@@ -151,7 +164,7 @@ v0.5.0
 
 **Fixed:**
 
-* Run package level imports so that ``ToEventStream`` and others default to 
+* Run package level imports so that ``ToEventStream`` and others default to
   serial
 * A ``SimpleToEventStream`` node can now have multple principle nodes
 * The same header can be run into a pipeline multiple times
