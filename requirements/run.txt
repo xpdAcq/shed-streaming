@@ -6,3 +6,6 @@ databroker
 bluesky
 event-model
 networkx
+rapidz
+xonsh
+dask-jobqueue

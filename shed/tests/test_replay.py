@@ -44,7 +44,7 @@ def test_replay(db):
     lg, parents, data, vs = replay(db, db[-1])
 
     assert set(graph.nodes) == set(lg.nodes)
-    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
+    l2 = lg.nodes[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
     # run the replay
     lg.nodes[g1.uid]["stream"].sink(print)
     for v in vs:
@@ -98,7 +98,7 @@ def test_replay_dummy_node(db):
     lg, parents, data, vs = replay(db, db[-1])
 
     assert set(graph.nodes) == set(lg.nodes)
-    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
+    l2 = lg.nodes[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
     # run the replay
     lg.nodes[g1.uid]["stream"].sink(print)
     for v in vs:
@@ -152,7 +152,7 @@ def test_replay_parallel(db):
 
     assert set(graph.nodes) == set(lg.nodes)
     l2 = (
-        lg.node[list(nx.topological_sort(lg))[-1]]["stream"]
+        lg.nodes[list(nx.topological_sort(lg))[-1]]["stream"]
         .buffer(10)
         .gather()
         .sink_to_list()
@@ -212,7 +212,7 @@ def test_replay_numpy(db):
     lg, parents, data, vs = replay(db, db[-1])
 
     assert set(graph.nodes) == set(lg.nodes)
-    l2 = lg.node[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
+    l2 = lg.nodes[list(nx.topological_sort(lg))[-1]]["stream"].sink_to_list()
     # run the replay
     lg.nodes[g1.uid]["stream"].sink(print)
     print(graph.nodes)
@@ -276,7 +276,7 @@ def test_replay_parallel_numpy(db):
 
     assert set(graph.nodes) == set(lg.nodes)
     l2 = (
-        lg.node[list(nx.topological_sort(lg))[-1]]["stream"]
+        lg.nodes[list(nx.topological_sort(lg))[-1]]["stream"]
         .buffer(10)
         .gather()
         .sink_to_list()
@@ -305,36 +305,3 @@ def test_replay_parallel_numpy(db):
         assert nd1[0] == nd2[0]
         if nd1[0] == "event":
             assert nd1[1]["data"]["img2"] == nd2[1]["data"]["img2"]
-
-
-# def test_replay_export(db):
-#     print("build graph")
-#     g1 = FromEventStream(
-#         "event", ("data", "det_image"), principle=True, stream_name="g1"
-#     )
-#     g11 = FromEventStream("event", ("data", "det_image"), stream_name="g11")
-#     g11_1 = g1.zip(g11)
-#     g2 = g11_1.starmap(op.mul).map(np.log)
-#     g = g2.ToEventStream(("img2",))
-#     L = g.sink_to_list()
-#     dbf = g.DBFriendly()
-#     dbf.sink(print)
-#     dbf.starsink(db.insert)
-#
-#     print("run experiment")
-#     for yy in y():
-#         db.insert(*yy)
-#         g11.update(yy)
-#         g1.update(yy)
-#
-#     print(L[0][1]["uid"])
-#     s1 = db[L[0][1]["uid"]]["stop"]
-#     print("replay experiment")
-#     rp = replay(db, db[L[0][1]["uid"]], export=True)
-#     next(rp)
-#     next(rp)
-#     assert s1 != db[-1]["stop"]
-#     for (_, a), (_, b) in zip(db[-2].documents(), db[-1].documents()):
-#         assert a["uid"] != b["uid"]
-#         if "data" in a:
-#             assert a["data"] == b["data"]

@@ -7,8 +7,9 @@ import networkx as nx
 import numpy as np
 from event_model import compose_descriptor, compose_run
 from rapidz.core import Stream, zip as szip, move_to_first
-from shed.doc_gen import CreateDocs, get_dtype
 from xonsh.lib.collections import ChainDB, _convert_to_dict
+
+from shed.doc_gen import CreateDocs, get_dtype
 
 ALL = "--ALL THE DOCS--"
 
@@ -50,12 +51,13 @@ def walk_to_translation(node, graph, prior_node=None):
     """Creates a graph that is a subset of the graph from the stream.
 
     The walk starts at a translation ``ToEventStream`` node and ends at any
-    instances of FromEventStream or ToEventStream.  Each iteration of the walk
-    goes up one node, determines if that node is a ``FromEventStream`` node, if
-    not walks one down to see if there are any ``ToEventStream`` nodes, if not
-    it keeps walking up. The walk down allows us to replace live data with
-    stored data/stubs when it comes time to get the parent uids. Graph nodes
-    are hashes or uids of the node objects with ``stream=node`` in the nodes.
+    instances of FromEventStream or ToEventStream.  Each iteration of the
+    walk goes up one node, determines if that node is a ``FromEventStream``
+    node, if not walks one down to see if there are any ``ToEventStream``
+    nodes, if not it keeps walking up. The walk down allows us to replace
+    live data with stored data/stubs when it comes time to get the parent
+    uids. Graph nodes are hashes or uids of the node objects with
+    ``stream=node`` in the nodes.
 
     Parameters
     ----------
@@ -79,8 +81,8 @@ def walk_to_translation(node, graph, prior_node=None):
                 for downstream in node.downstreams:
                     ttt = _hash_or_uid(downstream)
                     if (
-                        isinstance(downstream, SimpleToEventStream)
-                        and ttt not in graph
+                            isinstance(downstream, SimpleToEventStream)
+                            and ttt not in graph
                     ):
                         graph.add_node(ttt, stream=downstream)
                         graph.add_edge(t, ttt)
@@ -143,12 +145,12 @@ class simple_to_event_stream(Stream, CreateDocs):
     """
 
     def __init__(
-        self,
-        upstream,
-        data_keys=None,
-        stream_name=None,
-        data_key_md=None,
-        **kwargs,
+            self,
+            upstream,
+            data_keys=None,
+            stream_name=None,
+            data_key_md=None,
+            **kwargs,
     ):
         if stream_name is None:
             stream_name = str(data_keys)
@@ -173,7 +175,7 @@ class simple_to_event_stream(Stream, CreateDocs):
 
         self.translation_nodes = {
             k: n["stream"]
-            for k, n in self.graph.node.items()
+            for k, n in self.graph.nodes.items()
             if isinstance(
                 n["stream"],
                 (
@@ -182,8 +184,7 @@ class simple_to_event_stream(Stream, CreateDocs):
                     simple_to_event_stream,
                     simple_from_event_stream,
                 ),
-            )
-            and n["stream"] != self
+            ) and n["stream"] != self
         }
         self.principle_nodes = [
             n
@@ -393,7 +394,7 @@ class simple_to_event_stream_new_api(Stream):
 
         self.translation_nodes = {
             k: n["stream"]
-            for k, n in self.graph.node.items()
+            for k, n in self.graph.nodes.items()
             if isinstance(
                 n["stream"],
                 (
@@ -401,8 +402,7 @@ class simple_to_event_stream_new_api(Stream):
                     simple_to_event_stream,
                     simple_to_event_stream_new_api,
                 ),
-            )
-            and n["stream"] != self
+            ) and n["stream"] != self
         }
         self.principle_nodes = [
             n
@@ -626,14 +626,14 @@ class simple_from_event_stream(Stream):
     """
 
     def __init__(
-        self,
-        upstream,
-        doc_type,
-        data_address,
-        event_stream_name=ALL,
-        stream_name=None,
-        principle=False,
-        **kwargs,
+            self,
+            upstream,
+            doc_type,
+            data_address,
+            event_stream_name=ALL,
+            stream_name=None,
+            principle=False,
+            **kwargs,
     ):
         asynchronous = None
         if "asynchronous" in kwargs:
@@ -663,8 +663,8 @@ class simple_from_event_stream(Stream):
             # Sideband start document in
             [s.emit_start(x) for s in self.subs]
         if name == "descriptor" and (
-            self.event_stream_name == ALL
-            or self.event_stream_name == doc.get("name", "primary")
+                self.event_stream_name == ALL
+                or self.event_stream_name == doc.get("name", "primary")
         ):
             self.descriptor_uids.append(doc["uid"])
         if name == "stop":
@@ -674,14 +674,13 @@ class simple_from_event_stream(Stream):
             [s.emit_stop(x) for s in self.subs]
         inner = doc.copy()
         if name == self.doc_type and (
-            (
-                name == "descriptor"
-                and (self.event_stream_name == doc.get("name", ALL))
-            )
-            or (
-                name == "event" and (doc["descriptor"] in self.descriptor_uids)
-            )
-            or name in ["start", "stop"]
+                (
+                    name == "descriptor"
+                    and (self.event_stream_name == doc.get("name", ALL))
+                ) or (
+                    name == "event"
+                    and (doc["descriptor"] in self.descriptor_uids)
+                ) or name in ["start", "stop"]
         ):
 
             # If we have an empty address get everything
@@ -700,14 +699,14 @@ class simple_from_event_stream(Stream):
 
 class SimpleFromEventStream(simple_from_event_stream):
     def __init__(
-        self,
-        doc_type,
-        data_address,
-        upstream=None,
-        event_stream_name=ALL,
-        stream_name=None,
-        principle=False,
-        **kwargs,
+            self,
+            doc_type,
+            data_address,
+            upstream=None,
+            event_stream_name=ALL,
+            stream_name=None,
+            principle=False,
+            **kwargs,
     ):
         simple_from_event_stream.__init__(
             self,
@@ -728,7 +727,7 @@ class align_event_streams(szip):
     the two streams to be of equal length."""
 
     def __init__(
-        self, *upstreams, event_stream_name=ALL, stream_name=None, **kwargs
+            self, *upstreams, event_stream_name=ALL, stream_name=None, **kwargs
     ):
         szip.__init__(self, *upstreams, stream_name=stream_name)
         doc_names = ["start", "descriptor", "event", "stop"]
@@ -753,7 +752,7 @@ class align_event_streams(szip):
 
     def _emit(self, x):
         # flatten out the nested setup
-        x = [k for l in x for k in l]
+        x = [xxx for xx in x for xxx in xx]
         names = x[::2]
         docs = x[1::2]
         if names[0] == "start":
@@ -775,8 +774,8 @@ class align_event_streams(szip):
         if name == "descriptor":
             # if we want the descriptor continue, else bounce out
             if (
-                self.event_stream_name == ALL
-                or self.event_stream_name == doc.get("name", "primary")
+                    self.event_stream_name == ALL
+                    or self.event_stream_name == doc.get("name", "primary")
             ):
                 self.descriptor_uids.append(doc["uid"])
             else:

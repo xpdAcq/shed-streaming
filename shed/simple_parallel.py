@@ -89,7 +89,7 @@ class SimpleToEventStream(ParallelStream, CreateDocs):
 
         self.translation_nodes = {
             k: n["stream"]
-            for k, n in self.graph.node.items()
+            for k, n in self.graph.nodes.items()
             if isinstance(
                 n["stream"], (SimpleFromEventStream, SimpleToEventStream)
             )

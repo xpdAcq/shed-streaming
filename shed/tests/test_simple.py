@@ -205,7 +205,7 @@ def test_walk_up():
     g = nx.DiGraph()
     walk_to_translation(e, g)
     att = []
-    for node, attrs in g.node.items():
+    for node, attrs in g.nodes.items():
         att.append(attrs["stream"])
     s = {a_translation, b_translation, d, dd, e}
     assert s == set(att)
@@ -225,7 +225,7 @@ def test_walk_up_partial():
     g = nx.DiGraph()
     walk_to_translation(e, g)
     att = []
-    for node, attrs in g.node.items():
+    for node, attrs in g.nodes.items():
         att.append(attrs["stream"])
     s = {ddd, dd, e, d}
     assert s == set(att)
@@ -648,8 +648,8 @@ def test_multi_path_principle(hw, RE):
     for i in range(1, 3):
         RE(count([hw.motor], md={"number": 5}))
 
-        for l in [la, lb]:
-            o1 = [z[0] for z in l]
+        for lst in [la, lb]:
+            o1 = [z[0] for z in lst]
             o2 = ["start", "descriptor", "event", "stop"] * i
             assert o1 == o2
 
@@ -675,8 +675,8 @@ def test_same_hdr_many_times(hw, RE):
     for i in range(1, 3):
         for ll in L:
             source.emit(ll)
-        for l in [la, lb]:
-            o1 = [z[0] for z in l]
+        for lst in [la, lb]:
+            o1 = [z[0] for z in lst]
             o2 = ["start", "descriptor", "event", "stop"] * i
             assert o1 == o2
 

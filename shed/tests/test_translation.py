@@ -132,7 +132,7 @@ def test_walk_up():
     g = nx.DiGraph()
     walk_to_translation(e, g)
     att = []
-    for node, attrs in g.node.items():
+    for node, attrs in g.nodes.items():
         att.append(attrs["stream"])
     s = {a_translation, b_translation, d, dd, e}
     assert s == set(att)
@@ -152,7 +152,7 @@ def test_walk_up_partial():
     g = nx.DiGraph()
     walk_to_translation(e, g)
     att = []
-    for node, attrs in g.node.items():
+    for node, attrs in g.nodes.items():
         att.append(attrs["stream"])
     s = {ddd, dd, e, d}
     assert s == set(att)

@@ -69,12 +69,12 @@ def replay(db, hdr):
 
     loaded_graph = nx.node_link_graph(graph)
     for n in nx.topological_sort(loaded_graph):
-        loaded_graph.node[n]["stream"] = rebuild_node(
-            loaded_graph.node[n]["stream"], loaded_graph
+        loaded_graph.nodes[n]["stream"] = rebuild_node(
+            loaded_graph.nodes[n]["stream"], loaded_graph
         )
 
     for node_uid in hdr["start"]["parent_node_map"]:
-        parent_nodes[node_uid] = loaded_graph.node[node_uid]["stream"]
+        parent_nodes[node_uid] = loaded_graph.nodes[node_uid]["stream"]
 
     vs = sorted([(t, v) for t, v in times.items()], key=lambda x: x[0])
     vs = [v for t, v in vs]
@@ -94,8 +94,8 @@ def rebuild_node(node_dict, graph):
             aa.append(getattr(importlib.import_module(a["mod"]), a["name"]))
         elif isinstance(a, (tuple, list)):
             aa.append(a)
-        elif a in graph.node:
-            aa.append(graph.node[a]["stream"])
+        elif a in graph.nodes:
+            aa.append(graph.nodes[a]["stream"])
         else:
             aa.append(a)
     d["args"] = aa
@@ -104,8 +104,8 @@ def rebuild_node(node_dict, graph):
     for k, a in d["kwargs"].items():
         # We can't check if non hashables are in the graph (also I don't think
         # we can put non hashables as nodes in the graph)
-        if isinstance(a, Hashable) and a in graph.node:
-            kk[k] = graph.node[a]["stream"]
+        if isinstance(a, Hashable) and a in graph.nodes:
+            kk[k] = graph.nodes[a]["stream"]
         elif isinstance(a, MutableMapping) and a.get("name") and a.get("mod"):
             kk[k] = getattr(importlib.import_module(a["mod"]), a["name"])
         # If there is an upstream node for our FromEventStream node then
