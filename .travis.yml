@@ -34,7 +34,7 @@ before_install:
   - ./miniconda.sh -b -p ~/mc
   - export PATH=~/mc/bin:$PATH
   - conda config --set always_yes yes --set changeps1 no --set quiet true
-  - conda config --add channels conda-forge
+  - conda config --append channels conda-forge
   - conda update conda --yes
   - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"
   - "export DISPLAY=:99.0"
@@ -48,11 +48,9 @@ before_install:
   - mkdir -p /home/travis/.config/filestore
   - 'echo ''port: 27017'' > /home/travis/.config/filestore/connection.yml'
 
-
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
-  - conda create -n test python=$TRAVIS_PYTHON_VERSION
-  - conda install -n test --file requirements/run.txt --file requirements/test.txt --file requirements/doc.txt
+  - conda install -n test --file requirements/build.txt --file requirements/run.txt --file requirements/test.txt --file requirements/doc.txt
   - python -m pip install .
   # Need to clean the python build directory (and other cruft) or pytest is
   # going to find the build directory and get confused why there are two sets
