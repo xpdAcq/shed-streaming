@@ -35,7 +35,7 @@ def test_replay(db):
     for yy in y(5):
         l0.append(yy)
         db.insert(*yy)
-        g1.update(yy)
+        yield g1.update(yy)
 
     assert "env" in db[-1].start
     print("start replay")
@@ -90,7 +90,7 @@ def test_replay_dummy_node(db):
     for yy in y(5):
         l0.append(yy)
         db.insert(*yy)
-        source.emit(yy)
+        yield source.emit(yy)
 
     print("start replay")
 
@@ -141,9 +141,9 @@ def test_replay_parallel(db):
     for yy in y(5):
         l0.append(yy)
         db.insert(*yy)
-        g1.update(yy)
+        yield g1.update(yy)
     while len(l1) < len(l0):
-        gen.sleep(.01)
+        yield gen.sleep(.01)
 
     print("start replay")
 
@@ -163,7 +163,7 @@ def test_replay_parallel(db):
         parents[v["node"]].update(data[v["uid"]])
 
     while len(l2) < len(l0):
-        gen.sleep(.01)
+        yield gen.sleep(.01)
 
     # check that all the things are ok
     assert len(l1) == len(l2)
@@ -204,7 +204,7 @@ def test_replay_numpy(db):
     for yy in y(5):
         l0.append(yy)
         db.insert(*yy)
-        g1.update(yy)
+        yield g1.update(yy)
 
     print("start replay")
 
@@ -264,10 +264,10 @@ def test_replay_parallel_numpy(db):
     for yy in y(5):
         l0.append(yy)
         db.insert(*yy)
-        g11.update(yy)
-        g1.update(yy)
+        yield g11.update(yy)
+        yield g1.update(yy)
     while len(l1) < len(l0):
-        gen.sleep(.01)
+        yield gen.sleep(.01)
 
     print("start replay")
 
@@ -290,7 +290,7 @@ def test_replay_parallel_numpy(db):
         parents[v["node"]].update(data[v["uid"]])
 
     while len(l2) < len(l0):
-        gen.sleep(.01)
+        yield gen.sleep(.01)
 
     # check that all the things are ok
     assert len(l1) == len(l2)
