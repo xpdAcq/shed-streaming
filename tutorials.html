@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -163,7 +163,7 @@ Before beginning, we’ll assume that you have the <code class="docutils literal
 <p>First, we begin with a quick review of simple streams. Let’s say we
 had a stream of incoming data, and needed to increment by one, and print
 the result. The definition is as simple as the following:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">rapidz</span> <span class="k">import</span> <span class="n">Stream</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">rapidz</span> <span class="kn">import</span> <span class="n">Stream</span>
 <span class="k">def</span> <span class="nf">myadder</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
 
@@ -201,10 +201,10 @@ then performs a running sum of the results.
 The results are then repackaged into the event model and printed via
 <code class="docutils literal notranslate"><span class="pre">pprint</span></code>.
 Finally we run a count scan with the <code class="docutils literal notranslate"><span class="pre">ab_det</span></code> detector:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">rapidz</span> <span class="k">import</span> <span class="n">Stream</span>
-<span class="kn">from</span> <span class="nn">shed.simple</span> <span class="k">import</span> <span class="n">SimpleFromEventStream</span><span class="p">,</span> <span class="n">SimpleToEventStream</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">rapidz</span> <span class="kn">import</span> <span class="n">Stream</span>
+<span class="kn">from</span> <span class="nn">shed.simple</span> <span class="kn">import</span> <span class="n">SimpleFromEventStream</span><span class="p">,</span> <span class="n">SimpleToEventStream</span>
 <span class="kn">import</span> <span class="nn">operator</span> <span class="k">as</span> <span class="nn">op</span>
-<span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
 
 <span class="c1"># where we&#39;ll input data</span>
 <span class="n">raw_source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
@@ -228,8 +228,8 @@ Finally we run a count scan with the <code class="docutils literal notranslate">
 <p>Now with the pipeline setup we can connect it to the <code class="docutils literal notranslate"><span class="pre">RunEngine</span></code> and
 run our experiment:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">bluesky.plans</span> <span class="k">as</span> <span class="nn">bp</span>
-<span class="kn">from</span> <span class="nn">ophyd.sim</span> <span class="k">import</span> <span class="n">hw</span>
-<span class="kn">from</span> <span class="nn">bluesky</span> <span class="k">import</span> <span class="n">RunEngine</span>
+<span class="kn">from</span> <span class="nn">ophyd.sim</span> <span class="kn">import</span> <span class="n">hw</span>
+<span class="kn">from</span> <span class="nn">bluesky</span> <span class="kn">import</span> <span class="n">RunEngine</span>
 
 <span class="c1"># make some simulated devices</span>
 <span class="n">hw</span> <span class="o">=</span> <span class="n">hw</span><span class="p">()</span>
@@ -244,8 +244,8 @@ run our experiment:</p>
 </div>
 <p>We can also subscribe <code class="docutils literal notranslate"><span class="pre">BestEffortCallback</span></code> into the pipeline for live
 visualization:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">bluesky.utils</span> <span class="k">import</span> <span class="n">install_qt_kicker</span><span class="p">()</span>
-<span class="kn">from</span> <span class="nn">bluesky.callbacks.best_effort</span> <span class="k">import</span> <span class="n">BestEffortCallback</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">bluesky.utils</span> <span class="kn">import</span> <span class="n">install_qt_kicker</span><span class="p">()</span>
+<span class="kn">from</span> <span class="nn">bluesky.callbacks.best_effort</span> <span class="kn">import</span> <span class="n">BestEffortCallback</span>
 <span class="n">install_qt_kicker</span><span class="p">()</span>
 
 <span class="n">bec</span> <span class="o">=</span> <span class="n">BestEffortCallback</span><span class="p">()</span>
@@ -263,7 +263,7 @@ document:</p>
 </pre></div>
 </div>
 <p>Finally we can send the data to a databroker:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">databroker</span> <span class="k">import</span> <span class="n">Broker</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">databroker</span> <span class="kn">import</span> <span class="n">Broker</span>
 
 <span class="c1"># create a temporary database</span>
 <span class="n">db</span> <span class="o">=</span> <span class="n">Broker</span><span class="o">.</span><span class="n">named</span><span class="p">(</span><span class="s1">&#39;temp&#39;</span><span class="p">)</span>
@@ -279,14 +279,14 @@ document:</p>
 <p>To capture the provenance of the data processing we need to use the full
 translation nodes (rather than the <code class="docutils literal notranslate"><span class="pre">Simple</span></code> nodes).
 We can use the pipeline from above with a small modification:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">rapidz</span> <span class="k">import</span> <span class="n">Stream</span>
-<span class="kn">from</span> <span class="nn">shed.translation</span> <span class="k">import</span> <span class="n">FromEventStream</span><span class="p">,</span> <span class="n">ToEventStream</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">rapidz</span> <span class="kn">import</span> <span class="n">Stream</span>
+<span class="kn">from</span> <span class="nn">shed.translation</span> <span class="kn">import</span> <span class="n">FromEventStream</span><span class="p">,</span> <span class="n">ToEventStream</span>
 <span class="kn">import</span> <span class="nn">operator</span> <span class="k">as</span> <span class="nn">op</span>
-<span class="kn">from</span> <span class="nn">databroker</span> <span class="k">import</span> <span class="n">Broker</span>
+<span class="kn">from</span> <span class="nn">databroker</span> <span class="kn">import</span> <span class="n">Broker</span>
 <span class="kn">import</span> <span class="nn">bluesky.plans</span> <span class="k">as</span> <span class="nn">bp</span>
-<span class="kn">from</span> <span class="nn">ophyd.sim</span> <span class="k">import</span> <span class="n">hw</span>
-<span class="kn">from</span> <span class="nn">bluesky</span> <span class="k">import</span> <span class="n">RunEngine</span>
-<span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">ophyd.sim</span> <span class="kn">import</span> <span class="n">hw</span>
+<span class="kn">from</span> <span class="nn">bluesky</span> <span class="kn">import</span> <span class="n">RunEngine</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
 
 <span class="c1"># where we&#39;ll input data</span>
 <span class="n">raw_source</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
@@ -329,8 +329,8 @@ We can use the pipeline from above with a small modification:</p>
 </div>
 <p>Now that we have created the pipeline, ran the experiment, and captured it into
 the databroker we can then replay the analysis:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shed.replay</span> <span class="k">import</span> <span class="n">replay</span>
-<span class="kn">from</span> <span class="nn">rapidz.graph</span> <span class="k">import</span> <span class="n">_clean_text</span><span class="p">,</span> <span class="n">readable_graph</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shed.replay</span> <span class="kn">import</span> <span class="n">replay</span>
+<span class="kn">from</span> <span class="nn">rapidz.graph</span> <span class="kn">import</span> <span class="n">_clean_text</span><span class="p">,</span> <span class="n">readable_graph</span>
 
 <span class="c1"># get the graph and data</span>
 <span class="n">graph</span><span class="p">,</span> <span class="n">parents</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">vs</span> <span class="o">=</span> <span class="n">replay</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">db</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
