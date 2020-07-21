@@ -50,7 +50,7 @@ before_install:
 
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
-  - conda install -n test --file requirements/build.txt --file requirements/run.txt --file requirements/test.txt --file requirements/doc.txt
+  - conda create -n test --file requirements/build.txt --file requirements/run.txt --file requirements/test.txt --file requirements/doc.txt
   - python -m pip install .
   # Need to clean the python build directory (and other cruft) or pytest is
   # going to find the build directory and get confused why there are two sets
