@@ -4,6 +4,11 @@ SHED Change Log
 
 .. current developments
 
+v0.7.4
+====================
+
+
+
 v0.7.3
 ====================
 
