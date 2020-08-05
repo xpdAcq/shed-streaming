@@ -80,7 +80,7 @@ class ToEventStream(SimpleToEventStream):
         if env_capture_functions is None:
             env_capture_functions = []
         self.env_capture_functions = env_capture_functions
-        self.times = {}
+        self.times = []
         for node, attrs in self.graph.nodes.items():
             for arg in getattr(attrs["stream"], "_init_args", []):
                 if getattr(arg, "__name__", "") == "<lambda>":
@@ -93,8 +93,8 @@ class ToEventStream(SimpleToEventStream):
     def emit(self, x, asynchronous=False):
         name, doc = x
         if name == "start":
-            self.times = {time.time(): self.start_uid}
-        self.times[time.time()] = self.start_uid
+            self.times = [(time.time(), self.start_uid)]
+        self.time.append((time.time(), self.start_uid))
         super().emit(x, asynchronous=asynchronous)
 
     def start_doc(self, x):
@@ -108,9 +108,9 @@ class ToEventStream(SimpleToEventStream):
 
     def stop(self, x):
         new_stop = super().stop(x)
-        times = {}
+        times = []
         for k, node in self.translation_nodes.items():
-            for t, uid in node.times.items():
-                times[t] = {"node": node.uid, "uid": uid}
+            for t, uid in node.times:
+                times.append({"time": t, "node": node.uid, "uid": uid})
         new_stop.update(times=times)
         return new_stop

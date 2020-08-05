@@ -227,8 +227,8 @@ def test_execution_order():
         (i + 1) * 2 for i in range(100, 110)
     ]
     assert l1 == ex_l
-    assert all((v == pppp.start_uid for v in pppp.times.values()))
-    t = sorted(pppp.times.keys())
+    assert all((v == pppp.start_uid for _, v in pppp.times))
+    t = sorted([t for t, _ in pppp.times])
     # ToEventStream executed first
     assert all((v < v2 for v, v2 in zip(t, l2)))
 
