@@ -76,8 +76,12 @@ def replay(db, hdr):
     for node_uid in hdr["start"]["parent_node_map"]:
         parent_nodes[node_uid] = loaded_graph.nodes[node_uid]["stream"]
 
-    vs = sorted([(t, v) for t, v in times.items()], key=lambda x: x[0])
-    vs = [v for t, v in vs]
+    vs = [
+        {'uid': dct['uid'], 'node': dct['node']}
+        for dct in sorted(
+            times, key=lambda d: d['time']
+        )
+    ]
 
     return loaded_graph, parent_nodes, data, vs
 

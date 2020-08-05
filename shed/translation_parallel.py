@@ -94,7 +94,7 @@ class ToEventStream(SimpleToEventStream):
         name, doc = x
         if name == "start":
             self.times = [(time.time(), self.start_uid)]
-        self.time.append((time.time(), self.start_uid))
+        self.times.append((time.time(), self.start_uid))
         super().emit(x, asynchronous=asynchronous)
 
     def start_doc(self, x):
