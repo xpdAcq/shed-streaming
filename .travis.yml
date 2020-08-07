@@ -65,7 +65,7 @@ script:
   - python -c "from bluesky.utils import get_history; get_history()"
   - coverage run run_tests.py
   - coverage report -m
-  - codecov
+  - bash <(curl -s https://codecov.io/bash)
   - flake8 shed
   - cd docs
   - make html
