@@ -9,6 +9,7 @@ from rapidz import Stream
 from shed.simple import walk_to_translation, _hash_or_uid
 from shed.translation import FromEventStream, ToEventStream, merkle_hash
 from shed.utils import unstar
+from databroker import Broker
 
 
 def test_from_event_model(RE, hw):
@@ -406,3 +407,17 @@ def test_dbfriendly(RE, hw):
     h2 = d[0].get("graph_hash")
     assert h1 != h2
     assert len(d) == 10 + 3
+
+
+def test_db_insertion(RE, hw):
+    db = Broker.named("temp")
+
+    source = Stream()
+    n0 = FromEventStream("event", ("data", "motor"), source, principle=True)
+    n1 = ToEventStream(n0, "motor")
+    n1.DBFriendly().starsink(db.v1.insert)
+
+    RE.subscribe(lambda *x: source.emit(x))
+    RE(scan([hw.motor], hw.motor, 0, 1, 2))
+
+    assert db[-1]
