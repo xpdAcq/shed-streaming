@@ -6,7 +6,6 @@ from rapidz.utils_test import gen_test
 from shed import SimpleFromEventStream as FromEventStream
 from shed.tests.utils import y, slow_inc, slow_filter0, slow_filter1
 from tornado import gen
-import pytest
 
 
 @gen_test(20)
