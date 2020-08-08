@@ -197,7 +197,7 @@ def test_double_buffer_to_event_model_parallel():
         yield gen.sleep(.01)
     t1 = time.time()
     # check that this was faster than running in series
-    assert t1 - t0 < .5 * 10
+    assert t1 - t0 < .5 * 10 + 0.1
 
     assert tt
     assert p == ["start", "descriptor"] + ["event"] * 10 + ["stop"]
@@ -211,7 +211,7 @@ def test_double_buffer_to_event_model_parallel():
     print(len(L), len(futures_L))
     t1 = time.time()
     # check that this was faster than running in series
-    assert t1 - t0 < .5 * 10
+    assert t1 - t0 < .5 * 10 + 0.1
 
     assert tt
     assert p == (["start", "descriptor"] + ["event"] * 10 + ["stop"]) * 2
