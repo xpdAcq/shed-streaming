@@ -1,3 +1,0 @@
-**Fixed:** None
-
-* Fix the issue that 'import shed' stops (but does not crash) python

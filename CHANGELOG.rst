@@ -4,6 +4,17 @@ SHED Change Log
 
 .. current developments
 
+v0.7.5
+====================
+
+**Fixed:**
+
+None
+
+* Fix the issue that 'import shed' stops (but does not crash) python
+
+
+
 v0.7.4
 ====================
 
