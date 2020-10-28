@@ -85,7 +85,9 @@ shed are described in greater detail in [@wright2020].
 
 # Figures
 
-Example data processing pipeline with SHED nodes. ![Example SHED pipeline.](tracking.png)
+Example data processing pipeline with SHED nodes.
+
+<img src="./tracking.png" alt="tracking" width="300">
 
 # Acknowledgments
 
