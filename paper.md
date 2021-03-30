@@ -38,9 +38,9 @@ adapted if desired, and rerun.
 # Statement of Need
 
 The accelerating rate of data coming from modern scientific experiments
-enable completely new classes of experiments to be carried out such as
+enables completely new classes of experiments to be carried out such as
 *in situ* and *operando* measurements of time-dependent phenomena.
-Many current and planned world class experimental facilities such as
+Many current and planned world-class experimental facilities such as
 x-ray synchrotron sources produce mountains of data.
 Real-time processing of these large volumes of data can be made possible by streaming
 data processing, where the data is processed and reduced as it is being collected.
@@ -52,7 +52,7 @@ Additionally, few streaming systems track the provenance of the processed
 data, creating reproducibility and discoverability concerns.
 
 ``SHED`` is a Python package for handling heterogeneous streaming data and
-the tracking of the provenance of the produced results.
+tracking the provenance of the produced results.
 The ``SHED`` API translates data coming from a streaming experiment
 into python objects
 which are passed into data processing pipelines written using the ``streamz``
@@ -67,7 +67,7 @@ and storage tools written for the Event Model.
 In addition to the translation features SHED passively tracks the provenance
 of produced data, capturing the data processing pipeline, data unique IDs,
 and the order of data insertion into the pipeline.
-The pipeline is captured in a way which is both human and machine readable,
+The pipeline is captured in a way which is both human and machine-readable,
 enabling searching and comparison of analyzed data sets.
 An extendable system also captures information about the software environment
 in which the pipeline ran, including the conda environment, allowing in principle
