@@ -9,4 +9,5 @@ conda install -n $env -c conda-forge \
 --file requirements/test.txt \
 --file requirements/doc.txt \
 --yes
+conda run -n $env python -m pip install -e .
 echo "Installtion is complete."
