@@ -13,6 +13,9 @@ provenance and workflow execution.
 Installation
 ============
 
+Installation using Conda
+------------------------
+
 ``shed`` is installable via the ``conda`` package manager.
 If you don't have Anaconda (or miniconda) installed please follow the instructions
 from `Data Carpentry <https://datacarpentry.org/2016-05-29-PyCon/install.html>`_.
@@ -24,12 +27,22 @@ ships with a dedicated command prompt) and type
 
 and follow the prompts. This will install the shed software and all of its dependencies.
 
+Installation from Source
+------------------------
+
+Fork and clone the `github repository <https://github.com/xpdAcq/SHED>`_.
+
+Open a terminal, change directory to the local repository and run the
+following commands:
+
+``bash install.sh``
+
 .. toctree::
    :maxdepth: 4
    :caption: Contents:
 
    shed
-   tutorials 
+   tutorials
 
 
 Indices and tables
