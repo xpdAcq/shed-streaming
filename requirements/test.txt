@@ -1,8 +1,8 @@
 pytest==5.4.3
+pytest-tornado==0.8.0
 flake8
 codecov
 coverage
 xpdsim
 ophyd
 nose
-pytest-tornado
