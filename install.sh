@@ -9,4 +9,4 @@ conda install -n $env -c conda-forge \
 --file requirements/test.txt \
 --file requirements/doc.txt \
 --yes
-echo "\nInstalltion is complete."
+echo "Installtion is complete."
