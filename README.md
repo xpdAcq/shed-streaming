@@ -1,7 +1,6 @@
 # SHED
-[![Build Status](https://travis-ci.org/xpdAcq/SHED.svg?branch=master)](https://travis-ci.org/xpdAcq/SHED)
+[![Build Status](https://app.travis-ci.com/st3107/SHED.svg?branch=master)](https://app.travis-ci.com/st3107/SHED)
 [![codecov](https://codecov.io/gh/xpdAcq/SHED/branch/master/graph/badge.svg)](https://codecov.io/gh/xpdAcq/SHED)
-[![Code Health](https://landscape.io/github/xpdAcq/SHED/master/landscape.svg?style=flat)](https://landscape.io/github/xpdAcq/SHED/master)
 
 Streaming Heterogeneous Event Data
 
