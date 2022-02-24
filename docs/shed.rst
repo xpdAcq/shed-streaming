@@ -1,18 +1,11 @@
 shed package
 ============
 
-Subpackages
------------
-
-.. toctree::
-
-    shed.tests
-
 Submodules
 ----------
 
 shed\.simple module
----------------------------
+-------------------
 
 .. automodule:: shed.simple
     :members:
@@ -22,7 +15,7 @@ shed\.simple module
 
 
 shed\.simple\_parallel module
----------------------------
+-----------------------------
 
 .. automodule:: shed.simple_parallel
     :members:
@@ -32,18 +25,9 @@ shed\.simple\_parallel module
 
 
 shed\.replay module
----------------------------
+-------------------
 
 .. automodule:: shed.replay
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: shed
     :members:
     :undoc-members:
     :show-inheritance:
