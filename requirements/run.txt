@@ -9,5 +9,5 @@ event-model
 networkx
 rapidz
 xonsh
-dask==2.20.0
+dask==2021.10.0
 dask-jobqueue
