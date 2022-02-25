@@ -1,9 +1,6 @@
 shed package
 ============
 
-Submodules
-----------
-
 shed\.simple module
 -------------------
 

@@ -41,6 +41,7 @@ following commands:
    :maxdepth: 4
    :caption: Contents:
 
+   introduction
    shed
    tutorials
 
