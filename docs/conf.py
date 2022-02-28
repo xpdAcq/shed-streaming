@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# shed_streaming-streaming documentation build configuration file, created by
+# shed_streaming documentation build configuration file, created by
 # sphinx-quickstart on Tue Jul 25 16:31:30 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -19,7 +19,7 @@
 #
 # import os
 # import sys
-# sys.path.insert(0, '/home/christopher/dev/shed_streaming-streaming/shed_streaming')
+# sys.path.insert(0, '/home/christopher/dev/shed_streaming/shed_streaming')
 
 
 # -- General configuration ------------------------------------------------
@@ -55,7 +55,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'shed_streaming-streaming'
+project = 'shed_streaming'
 copyright = '2017, Author'
 author = 'Author'
 
@@ -151,7 +151,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'shed_streaming-streaming.tex', 'shed_streaming-streaming Documentation',
+    (master_doc, 'shed_streaming.tex', 'shed_streaming Documentation',
      'Author', 'manual'),
 ]
 
@@ -161,7 +161,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'shed_streaming', 'shed_streaming-streaming Documentation',
+    (master_doc, 'shed_streaming', 'shed_streaming Documentation',
      [author], 1)
 ]
 
@@ -172,8 +172,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'shed_streaming-streaming', 'shed_streaming-streaming Documentation',
-     author, 'shed_streaming-streaming', 'One line description of project.',
+    (master_doc, 'shed_streaming', 'shed_streaming Documentation',
+     author, 'shed_streaming', 'One line description of project.',
      'Miscellaneous'),
 ]
 
