@@ -4,9 +4,9 @@ import networkx as nx
 import numpy as np
 import pytest
 from rapidz import Stream
-from shed import FromEventStream
-from shed.replay import replay
-from shed.tests.utils import y
+from shed_streaming import FromEventStream
+from shed_streaming.replay import replay
+from shed_streaming.tests.utils import y
 from tornado import gen
 
 

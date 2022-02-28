@@ -5,7 +5,7 @@ from bluesky import RunEngine
 import bluesky.plans as bp
 from ophyd.sim import hw
 from rapidz import Stream
-from shed.simple import SimpleFromEventStream, SimpleToEventStream, AlignEventStreams
+from shed_streaming.simple import SimpleFromEventStream, SimpleToEventStream, AlignEventStreams
 from bluesky.utils import short_uid
 from bluesky.plan_stubs import checkpoint, abs_set, wait, trigger_and_read
 from bluesky.preprocessors import pchain

@@ -7,15 +7,15 @@ import numpy as np
 import pytest
 from bluesky.plan_stubs import checkpoint, abs_set, trigger_and_read
 from bluesky.plans import scan, count
-from shed import (
+from shed_streaming import (
     SimpleFromEventStream as FromEventStream,
     SimpleToEventStream as ToEventStream,
     walk_to_translation,
     simple_to_event_stream_new_api,
 )
-from shed.simple import _hash_or_uid, build_upstream_node_set
-from shed.tests.utils import y
-from shed.utils import unstar
+from shed_streaming.simple import _hash_or_uid, build_upstream_node_set
+from shed_streaming.tests.utils import y
+from shed_streaming.utils import unstar
 from rapidz import Stream, move_to_first
 
 

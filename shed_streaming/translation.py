@@ -77,7 +77,7 @@ class FromEventStream(SimpleFromEventStream):
     -------------
     >>> import uuid
     >>> from rapidz import Stream
-    >>> from shed.translation import FromEventStream
+    >>> from shed_streaming.translation import FromEventStream
     >>> ssource = Stream()
     >>> s2 = FromEventStream(source, 'event', ('data', 'motor1'))
     >>> s3 = s2.map(print)
@@ -157,7 +157,7 @@ class ToEventStream(SimpleToEventStream):
     --------
     >>> import uuid
     >>> from rapidz import Stream
-    >>> from shed.translation import FromEventStream, ToEventStream
+    >>> from shed_streaming.translation import FromEventStream, ToEventStream
     >>> source = Stream()
     >>> s2 = FromEventStream(source, 'event', ('data', 'det_image'),
     ...                      principle=True)

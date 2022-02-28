@@ -1,7 +1,7 @@
 import bluesky.plans as bp
 from event_model import Filler
 from rapidz import Stream
-from shed.writers import NpyWriter
+from shed_streaming.writers import NpyWriter
 
 
 def test_storage(RE, hw, db, tmpdir):

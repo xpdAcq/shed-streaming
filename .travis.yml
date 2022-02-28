@@ -63,7 +63,7 @@ script:
   - coverage run run_tests.py
   - coverage report -m
   - bash <(curl -s https://codecov.io/bash)
-  - flake8 shed
+  - flake8 shed_streaming
   - make -C docs html
 
 deploy:

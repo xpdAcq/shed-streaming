@@ -1,7 +1,7 @@
 from bluesky.run_engine import RunEngine
 from ophyd.sim import hw
 from bluesky.plans import count
-from shed.translation import FromEventStream, ToEventStream
+from shed_streaming.translation import FromEventStream, ToEventStream
 from rapidz import Stream
 from bluesky.callbacks import LivePlot
 import matplotlib.pyplot as plt

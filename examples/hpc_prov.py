@@ -2,7 +2,7 @@ import operator as op
 
 from bluesky import RunEngine
 from rapidz import Stream
-from shed.translation import FromEventStream, ToEventStream, DBFriendly
+from shed_streaming.translation import FromEventStream, ToEventStream, DBFriendly
 
 from databroker import Broker
 import bluesky.plans as bp
@@ -34,7 +34,7 @@ RE.subscribe(lambda *x: source.emit(x))
 
 RE(bp.count([hw.motor1], 1))
 
-from shed.replay import replay
+from shed_streaming.replay import replay
 from rapidz.graph import _clean_text, readable_graph
 
 # get the graph and data

@@ -5,8 +5,8 @@ from pprint import pprint
 
 import networkx as nx
 from databroker import Broker
-from shed.translation import FromEventStream
-from shed.replay import replay
+from shed_streaming.translation import FromEventStream
+from shed_streaming.replay import replay
 
 db_path = '/home/christopher/ldrd_demo'
 config = {'description': 'lightweight personal database',

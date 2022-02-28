@@ -1,4 +1,4 @@
-from shed.simple import SimpleToEventStream, SimpleFromEventStream
+from shed_streaming.simple import SimpleToEventStream, SimpleFromEventStream
 from rapidz import Stream
 
 

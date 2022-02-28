@@ -9,7 +9,7 @@ from event_model import compose_descriptor, compose_run
 from rapidz.core import Stream, zip as szip, move_to_first
 from xonsh.lib.collections import ChainDB, _convert_to_dict
 
-from shed.doc_gen import CreateDocs, get_dtype
+from shed_streaming.doc_gen import CreateDocs, get_dtype
 
 ALL = "--ALL THE DOCS--"
 
@@ -121,7 +121,7 @@ class simple_to_event_stream(Stream, CreateDocs):
     --------
     >>> import uuid
     >>> from rapidz import Stream
-    >>> from shed.translation import FromEventStream, ToEventStream
+    >>> from shed_streaming.translation import FromEventStream, ToEventStream
     >>> source = Stream()
     >>> s2 = FromEventStream(source, 'event', ('data', 'det_image'),
     ...                      principle=True)
@@ -316,7 +316,7 @@ class simple_to_event_stream_new_api(Stream):
 
     >>> from pprint import pprint
     >>> from rapidz import Stream
-    >>> from shed import (simple_from_event_stream,
+    >>> from shed_streaming import (simple_from_event_stream,
     ...                   simple_to_event_stream_new_api)
     >>> import operator as op
     >>> source = Stream()
@@ -604,7 +604,7 @@ class simple_from_event_stream(Stream):
     -------------
     >>> import uuid
     >>> from rapidz import Stream
-    >>> from shed.translation import FromEventStream
+    >>> from shed_streaming.translation import FromEventStream
     >>> ssource = Stream()
     >>> s2 = FromEventStream(source, 'event', ('data', 'motor1'))
     >>> s3 = s2.map(print)

@@ -6,9 +6,9 @@ import networkx as nx
 import numpy as np
 from bluesky.plans import scan
 from rapidz import Stream
-from shed.simple import walk_to_translation, _hash_or_uid
-from shed.translation import FromEventStream, ToEventStream, merkle_hash
-from shed.utils import unstar
+from shed_streaming.simple import walk_to_translation, _hash_or_uid
+from shed_streaming.translation import FromEventStream, ToEventStream, merkle_hash
+from shed_streaming.utils import unstar
 from databroker import Broker
 
 

@@ -3,7 +3,7 @@ from collections import MutableMapping, Hashable
 
 import networkx as nx
 from rapidz import Stream
-from shed import SimpleFromEventStream
+from shed_streaming import SimpleFromEventStream
 
 
 # One problem we're facing is that the various pipelines handle document

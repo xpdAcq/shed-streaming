@@ -5,8 +5,8 @@ import networkx as nx
 from rapidz.clients import result_maybe
 from rapidz.core import move_to_first
 from rapidz.parallel import ParallelStream
-from shed.doc_gen import CreateDocs, get_dtype
-from shed.simple import walk_to_translation, SimpleFromEventStream
+from shed_streaming.doc_gen import CreateDocs, get_dtype
+from shed_streaming.simple import walk_to_translation, SimpleFromEventStream
 
 
 @ParallelStream.register_api()
@@ -36,7 +36,7 @@ class SimpleToEventStream(ParallelStream, CreateDocs):
     --------
     >>> import uuid
     >>> from rapidz import Stream
-    >>> from shed.translation import FromEventStream, ToEventStream
+    >>> from shed_streaming.translation import FromEventStream, ToEventStream
     >>> source = Stream()
     >>> s2 = FromEventStream(source, 'event', ('data', 'det_image'),
     ...                      principle=True)

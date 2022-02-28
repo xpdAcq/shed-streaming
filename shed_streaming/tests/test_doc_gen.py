@@ -1,4 +1,4 @@
-from shed.doc_gen import CreateDocs
+from shed_streaming.doc_gen import CreateDocs
 
 
 def test_docs():
