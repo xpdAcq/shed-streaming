@@ -7,6 +7,11 @@ shed-streaming Change Log
 v0.8.0
 ====================
 
+
+
+v0.8.0
+====================
+
 **Changed:**
 
 * The project name is changed to `shed-streaming`.
