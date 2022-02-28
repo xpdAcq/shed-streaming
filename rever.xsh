@@ -11,7 +11,7 @@ $VERSION_BUMP_PATTERNS = [
     ('setup.py', 'version\s*=.*', "version='$VERSION',")
     ]
 $CHANGELOG_FILENAME = 'CHANGELOG.rst'
-$CHANGELOG_IGNORE = ['TEMPLATE']
+$CHANGELOG_IGNORE = ['TEMPLATE.rst']
 $TAG_REMOTE = 'git@github.com:xpdAcq/shed-streaming.git'
 
 $GITHUB_REPO = 'shed-streaming'
