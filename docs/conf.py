@@ -124,7 +124,7 @@ html_sidebars = {
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'SHEDdoc'
+htmlhelp_basename = 'shed-streamingdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------

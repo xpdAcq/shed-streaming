@@ -1,16 +1,16 @@
-# SHED
-[![Build Status](https://app.travis-ci.com/st3107/SHED.svg?branch=master)](https://app.travis-ci.com/st3107/SHED)
-[![codecov](https://codecov.io/gh/xpdAcq/SHED/branch/master/graph/badge.svg)](https://codecov.io/gh/xpdAcq/SHED)
+# shed-streaming
+[![Build Status](https://app.travis-ci.com/st3107/shed-streaming.svg?branch=master)](https://app.travis-ci.com/st3107/shed-streaming)
+[![codecov](https://codecov.io/gh/xpdAcq/shed-streaming/branch/master/graph/badge.svg)](https://codecov.io/gh/xpdAcq/shed-streaming)
 
 Streaming Heterogeneous Event Data
 
-<img src="https://github.com/xpdAcq/SHED/blob/master/examples/mystream.png" style="width: 400px;"/>
+<img src="https://github.com/xpdAcq/shed-streaming/blob/master/examples/mystream.png" style="width: 400px;"/>
 
 
 ## Current Design/Architecture
 1. The tooling for the event model management should be as transparent and
 small as possible.
-   1. SHED accomplishes this by having only two additional nodes 
+   1. shed-streaming accomplishes this by having only two additional nodes 
    ``FromEventStream`` and ``ToEventStream``, which convert data from the 
    event model to base types/numpy and from base types/numpy to the event model
    1. Everything else will be handled by ``streamz`` nodes operating on base

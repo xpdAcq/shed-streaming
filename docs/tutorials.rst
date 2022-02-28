@@ -1,7 +1,7 @@
 Tutorials
 =========
 
-These area tutorials designed to better understand what SHED is, and what it
+These area tutorials designed to better understand what shed-streaming is, and what it
 attempts to resolve.
 Before beginning, we'll assume that you have the ``shed`` and
 `rapidz <http://www.github.com/xpdAcq/rapidz>`_ libraries installed.
@@ -41,18 +41,18 @@ series of documents, beginning from a start document, descriptor, event
 documents and stop documents. Please refer to the NSLS-II documentation for
 more details.
 
-SHED handles the translations between the event model, raw data, and back. 
+shed-streaming handles the translations between the event model, raw data, and back.
 To better understand the general
-idea, let's begin with a simple event stream. 
+idea, let's begin with a simple event stream.
 We'll use the ``bluesky.run_engine.RunEngine`` and ``ophyd.sim.hw`` to mimic
 an experiment run at a beamline.
 
-Here is an example pipeline which multiplies the output of a detector by 5 and 
+Here is an example pipeline which multiplies the output of a detector by 5 and
 then performs a running sum of the results.
-The results are then repackaged into the event model and printed via 
+The results are then repackaged into the event model and printed via
 ``pprint``.
 Finally we run a count scan with the ``ab_det`` detector::
-    
+
     from rapidz import Stream
     from shed.simple import SimpleFromEventStream, SimpleToEventStream
     import operator as op
@@ -60,10 +60,10 @@ Finally we run a count scan with the ``ab_det`` detector::
 
     # where we'll input data
     raw_source = Stream()
-    
+
     # extract from the events the values associated with 'data' and 'det_a'
     # (principle=True means that we listen to this node for when to issue
-    # start and stop documents, all SHED pipelines must have at least one
+    # start and stop documents, all shed-streaming pipelines must have at least one
     # principle node)
     raw_output = SimpleFromEventStream('event', ('data', 'det_a'), raw_source,
                                        principle=True)
@@ -147,7 +147,7 @@ We can use the pipeline from above with a small modification::
 
     # extract from the events the values associated with 'data' and 'det_a'
     # (principle=True means that we listen to this node for when to issue
-    # start and stop documents, all SHED pipelines must have at least one
+    # start and stop documents, all shed-streaming pipelines must have at least one
     # principle node)
     raw_output = FromEventStream('event', ('data', 'det_a'),
                                  upstream=raw_source, principle=True)
