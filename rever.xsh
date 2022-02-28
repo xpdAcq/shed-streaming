@@ -1,17 +1,19 @@
 $PROJECT = 'shed-streaming'
-$ACTIVITIES = ['version_bump',
-               'changelog',
-               'tag',
-               'push_tag',
-               'ghrelease',
-               'conda_forge']
+$ACTIVITIES = [
+    'version_bump',
+    'changelog',
+    'tag',
+    'push_tag',
+    'ghrelease',
+#    'conda_forge'
+]
 
 $VERSION_BUMP_PATTERNS = [
     ('shed_streaming/__init__.py', '__version__\s*=.*', "__version__ = '$VERSION'"),
     ('setup.py', 'version\s*=.*', "version='$VERSION',")
     ]
 $CHANGELOG_FILENAME = 'CHANGELOG.rst'
-$CHANGELOG_IGNORE = ['TEMPLATE']
+$CHANGELOG_IGNORE = ['TEMPLATE.rst']
 $TAG_REMOTE = 'git@github.com:xpdAcq/shed-streaming.git'
 
 $GITHUB_REPO = 'shed-streaming'

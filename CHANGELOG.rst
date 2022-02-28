@@ -1,5 +1,5 @@
 ===============
-SHED Change Log
+shed-streaming Change Log
 ===============
 
 .. current developments
@@ -158,7 +158,7 @@ v0.5.0
 
 **Added:**
 
-* ``examples/best_effort.py`` as an example of using SHED with
+* ``examples/best_effort.py`` as an example of using shed-streaming with
   ``BestEffortCallback``.
 * ``ToEventStream`` can now take no ``data_keys``. This assumes that the
   incoming data will be a dict and that the keys of the dict are the data keys.

@@ -1,12 +1,12 @@
-.. SHED documentation master file, created by
+.. shed-streaming documentation master file, created by
    sphinx-quickstart on Tue Jul 25 16:31:30 2017.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to SHED's documentation!
+Welcome to shed-streaming's documentation!
 ================================
 
-Streaming Heterogeneous Event Data (SHED) is a system for streaming
+Streaming Heterogeneous Event Data (shed-streaming) is a system for streaming
 data from the event model into a Streamz graph while tracking data
 provenance and workflow execution.
 
@@ -30,7 +30,7 @@ and follow the prompts. This will install the shed software and all of its depen
 Installation from Source
 ------------------------
 
-Fork and clone the `github repository <https://github.com/xpdAcq/SHED>`_.
+Fork and clone the `github repository <https://github.com/xpdAcq/shed-streaming>`_.
 
 Open a terminal, change directory to the local repository and run the
 following commands:
