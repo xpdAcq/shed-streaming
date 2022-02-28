@@ -222,7 +222,7 @@ def test_double_buffer_to_event_model_parallel():
 
 
 @gen_cluster(client=True)
-def test_slow_to_event_model_parallel_dask(c, s, a, b):
+async def test_slow_to_event_model_parallel_dask(c, s, a, b):
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "det_image"), source, principle=True)
     assert t.principle
@@ -243,9 +243,9 @@ def test_slow_to_event_model_parallel_dask(c, s, a, b):
     futures_L = []
     for gg in y(10):
         futures_L.append(gg)
-        yield source.emit(gg)
+        await source.emit(gg)
     while len(L) < len(futures_L):
-        yield gen.sleep(.01)
+        await gen.sleep(.01)
     t1 = time.time()
     # check that this was faster than running in series
     td = t1 - t0
@@ -261,7 +261,7 @@ def test_slow_to_event_model_parallel_dask(c, s, a, b):
 
 
 @gen_cluster(client=True)
-def test_double_buffer_to_event_model_parallel_dask(c, s, a, b):
+async def test_double_buffer_to_event_model_parallel_dask(c, s, a, b):
     source = Stream(asynchronous=True)
     t = FromEventStream("event", ("data", "det_image"), source, principle=True)
     assert t.principle
@@ -282,9 +282,9 @@ def test_double_buffer_to_event_model_parallel_dask(c, s, a, b):
     t0 = time.time()
     for gg in y(10):
         futures_L.append(gg)
-        yield source.emit(gg)
+        await source.emit(gg)
     while len(L) < len(futures_L):
-        yield gen.sleep(.01)
+        await gen.sleep(.01)
     t1 = time.time()
     # check that this was faster than running in series
     assert t1 - t0 < .5 * 10
@@ -295,9 +295,9 @@ def test_double_buffer_to_event_model_parallel_dask(c, s, a, b):
 
     for gg in y(10):
         futures_L.append(gg)
-        yield source.emit(gg)
+        await source.emit(gg)
     while len(L) < len(futures_L):
-        yield gen.sleep(.01)
+        await gen.sleep(.01)
     print(len(L), len(futures_L))
     t1 = time.time()
     # check that this was faster than running in series
