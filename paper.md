@@ -55,14 +55,14 @@ data, creating reproducibility and discoverability concerns.
 tracking the provenance of the produced results.
 The ``SHED`` API translates data coming from a streaming experiment
 into python objects
-which are passed into data processing pipelines written using the ``streamz``
+which are passed into data processing pipelines written using the ``rapidz``
 library.  It expects data in the form of the Bluesky Event Model schema,
 which is a flexible open-source document model suitable for scientific
 time-series experiments.  The Bluesky event model [@koerner2020] is 
 used by nearly all of the beamlines at the National Synchrotron Light Source-II 
 (NSLS-II) as well as at other facilities.  
 ``SHED`` also provides translation from the python objects flowing through
-a ``streamz`` pipeline back into the Event Model enabling the use of data visualization
+a ``rapidz`` pipeline back into the Event Model enabling the use of data visualization
 and storage tools written for the Event Model.
 In addition to the translation features SHED passively tracks the provenance
 of produced data, capturing the data processing pipeline, data unique IDs,
