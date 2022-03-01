@@ -44,7 +44,8 @@ Many current and planned world-class experimental facilities such as
 x-ray synchrotron sources produce mountains of data.
 Real-time processing of these large volumes of data can be made possible by streaming
 data processing, where the data is processed and reduced as it is being collected.
-While many streaming data processing systems exist [@silva2007][@davison2014][@picard2018][@carbone2015] 
+While many streaming data processing systems exist
+[@silva2007][@davison2014][@picard2018][@carbone2015][@murray2013] 
 few handle the heterogeneity which is prevalent in many experimental environments.  For
 example, x-ray synchrotrons support thousands of users per year doing a wide
 array of bespoke experiments and measurements.
