@@ -4,6 +4,11 @@ shed-streaming Change Log
 
 .. current developments
 
+v0.8.0
+====================
+
+
+
 
 v0.8.0
 ====================
