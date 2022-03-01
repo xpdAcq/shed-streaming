@@ -1,5 +1,5 @@
 import time
-from collections import MutableMapping
+from collections.abc import MutableMapping
 
 import numpy as np
 from event_model import compose_run

@@ -1,5 +1,5 @@
 import uuid
-from collections import MutableMapping
+from collections.abc import MutableMapping
 
 import networkx as nx
 from rapidz.clients import result_maybe

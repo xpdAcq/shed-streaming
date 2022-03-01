@@ -1,7 +1,8 @@
 """Nodes for translating between base data and event model"""
 import time
 import uuid
-from collections import deque, Mapping
+from collections import deque
+from collections.abc import Mapping
 
 import networkx as nx
 import numpy as np

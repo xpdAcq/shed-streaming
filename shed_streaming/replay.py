@@ -1,5 +1,5 @@
 import importlib
-from collections import MutableMapping, Hashable
+from collections.abc import MutableMapping, Hashable
 
 import networkx as nx
 from rapidz import Stream
