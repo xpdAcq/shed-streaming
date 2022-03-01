@@ -4,7 +4,7 @@ numpy
 scipy
 matplotlib
 databroker
-bluesky==1.6.4
+bluesky
 event-model
 networkx
 rapidz
