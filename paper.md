@@ -1,5 +1,5 @@
 ---
-title: 'SHED: Streaming Heterogeneous Event Data Tracking with Provenance'
+title: 'shed-streaming: Streaming Heterogeneous Event Data Tracking with Provenance'
 tags:
   - Python
   - provenance
@@ -27,7 +27,7 @@ bibliography: paper.bib
 ---
 # Summary
 
-The SHED package provides a python based software framework for 
+The shed-streaming package provides a python based software framework for 
 real time analysis of streaming data with provenance.  It is highly
 flexible, allowing analysis pipelines to be built for any variety of
 experimental data that is arriving in a time series.  It allows straightforward
@@ -52,9 +52,9 @@ array of bespoke experiments and measurements.
 Additionally, few streaming systems track the provenance of the processed
 data, creating reproducibility and discoverability concerns.
 
-``SHED`` is a Python package for handling heterogeneous streaming data and
+``shed-streaming`` is a Python package for handling heterogeneous streaming data and
 tracking the provenance of the produced results.
-The ``SHED`` API translates data coming from a streaming experiment
+The ``shed-streaming`` API translates data coming from a streaming experiment
 into python objects
 which are passed into data processing pipelines written using the ``rapidz``
 library.  It expects data in the form of the Bluesky Event Model schema,
@@ -62,10 +62,10 @@ which is a flexible open-source document model suitable for scientific
 time-series experiments.  The Bluesky event model [@koerner2020] is 
 used by nearly all of the beamlines at the National Synchrotron Light Source-II 
 (NSLS-II) as well as at other facilities.  
-``SHED`` also provides translation from the python objects flowing through
+``shed-streaming`` also provides translation from the python objects flowing through
 a ``rapidz`` pipeline back into the Event Model enabling the use of data visualization
 and storage tools written for the Event Model.
-In addition to the translation features SHED passively tracks the provenance
+In addition to the translation features shed-streaming passively tracks the provenance
 of produced data, capturing the data processing pipeline, data unique IDs,
 and the order of data insertion into the pipeline.
 The pipeline is captured in a way which is both human and machine-readable,
@@ -75,7 +75,7 @@ in which the pipeline ran, including the conda environment, allowing in principl
 data analysis campaigns to be serialized into a database then later 
 recovered and rerun, or adapted and then rerun and stored independently.
 
-``SHED`` is designed to provide a bridge between the data collected from 
+``shed-streaming`` is designed to provide a bridge between the data collected from 
 high throughput experiments if they are, or can be put, into event model form
 (such as data from NSLS-II experiments),
 and the NSLS-II's data visualization and storage tools.
@@ -86,7 +86,7 @@ shed are described in greater detail in [@wright2020].
 
 # Figures
 
-Example data processing pipeline with SHED nodes.
+Example data processing pipeline with shed-streaming nodes.
 
 ![example pipeline](tracking.png)
 
