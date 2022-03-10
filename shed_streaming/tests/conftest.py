@@ -21,7 +21,8 @@ import pytest
 from .utils import insert_imgs
 import tempfile
 import asyncio
-from bluesky.tests.conftest import NumpySeqHandler, RunEngine
+from bluesky.tests.conftest import NumpySeqHandler, RE, hw
+from bluesky.run_engine import RunEngine, TransitionError
 import uuid
 import copy
 
@@ -37,24 +38,6 @@ def db():
 
 
 @pytest.fixture(scope="function")
-def fresh_RE(request):
-    loop = asyncio.new_event_loop()
-    loop.set_debug(True)
-    RE = RunEngine({}, loop=loop)
-    RE.ignore_callback_exceptions = False
-
-    def clean_event_loop():
-        if RE.state != "idle":
-            RE.halt()
-        ev = asyncio.Event(loop=loop)
-        ev.set()
-        loop.run_until_complete(ev.wait())
-
-    request.addfinalizer(clean_event_loop)
-    return RE
-
-
-@pytest.fixture(scope="function")
 def start_uid1(exp_db):
     print(exp_db[1])
     assert "start_uid1" in exp_db[2]["start"]
@@ -64,14 +47,13 @@ def start_uid1(exp_db):
 @pytest.fixture(scope="module")
 def img_size():
     a = np.random.random_integers(100, 200)
-    yield (a, a)
+    yield a, a
 
 
 @pytest.fixture(scope="function")
-def exp_db(db, tmp_dir, img_size, fresh_RE):
+def exp_db(db, tmp_dir, img_size, RE):
     db2 = db
     reg = db2.reg
-    RE = fresh_RE
     RE.subscribe(db2.insert)
     bt_uid = str(uuid.uuid4)
 
