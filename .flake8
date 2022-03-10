@@ -7,7 +7,7 @@ exclude =
     build,
     dist,
     examples,
-    shed/tests/conftest.py,
+    shed_streaming/tests/conftest.py,
     __init__.py
 max-line-length = 115
 ignore = C901, W503

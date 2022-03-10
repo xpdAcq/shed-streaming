@@ -20,9 +20,7 @@ import pytest
 
 from .utils import insert_imgs
 import tempfile
-import asyncio
 from bluesky.tests.conftest import NumpySeqHandler, RE, hw
-from bluesky.run_engine import RunEngine, TransitionError
 import uuid
 import copy
 
