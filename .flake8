@@ -9,4 +9,5 @@ exclude =
     examples,
     shed/tests/conftest.py,
     __init__.py
+max-line-length = 115
 ignore = C901, W503

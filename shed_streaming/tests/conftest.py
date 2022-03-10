@@ -20,7 +20,8 @@ import pytest
 
 from .utils import insert_imgs
 import tempfile
-from bluesky.tests.conftest import *
+import asyncio
+from bluesky.tests.conftest import NumpySeqHandler, RunEngine
 import uuid
 import copy
 
