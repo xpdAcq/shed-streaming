@@ -1,6 +1,5 @@
 [run]
-source = 
-    shed
+source = shed_streaming
 branch = True
 [report]
 omit =
